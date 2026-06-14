@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets & local config (keep *.env.example tracked)
+*.env
+
+# Large / local artifacts
+oracle/models/
+models/
+exports/
+
+# Personal notes — not for the public repo
+private/
+
+# Your own ingested content — generate your own via the tutorial
+sources/*/
+
+# OS / misc
+.DS_Store
+node_modules/
