@@ -17,12 +17,12 @@ from content import search_content, get_post
 MODEL = "claude-opus-4-8"
 
 SYSTEM = (
-    "You are a research assistant over Linda's OWN content library (her videos/posts, "
-    "stored in Oracle). Answer the question GROUNDED ONLY in her content: call "
-    "search_content to find relevant items, optionally get_post for full detail, then give "
-    "a concise synthesized answer and cite the titles you used. If her content doesn't "
-    "cover the question, say so honestly rather than inventing. Use the prior research "
-    "notes if they're relevant."
+    "You are a research assistant for Linda. Research the question using BOTH her OWN content "
+    "library (call search_content, optionally get_post) AND the web (web_search) when outside "
+    "context helps. Ground any claim about HER work in her content and cite her video titles; "
+    "use the web for current or external facts and cite those sources. Be explicit about what "
+    "comes from her content vs. the web, and say honestly if something isn't covered. Use the "
+    "prior research notes if they're relevant."
 )
 
 TOOLS = [
@@ -49,6 +49,8 @@ TOOLS = [
             "required": ["post_id"],
         },
     },
+    # server-side web search — runs on Anthropic's side; combines external/current info
+    {"type": "web_search_20260209", "name": "web_search"},
 ]
 
 
@@ -69,13 +71,17 @@ def run_research(client, conn, question):
         "content": f"Question about my content: {question}\n\nPrior research notes:\n{prior_txt}",
     }]
 
-    sources = []   # (title, url)
+    sources = []   # (title, url) from HER content
     answer = ""
     while True:
         resp = client.messages.create(
-            model=MODEL, max_tokens=2048, thinking={"type": "adaptive"},
+            model=MODEL, max_tokens=4096, thinking={"type": "adaptive"},
             system=SYSTEM, tools=TOOLS, messages=messages,
         )
+        # web_search is server-side; when it hits its loop limit, re-send to let it continue
+        if resp.stop_reason == "pause_turn":
+            messages.append({"role": "assistant", "content": resp.content})
+            continue
         if resp.stop_reason != "tool_use":
             answer = "".join(b.text for b in resp.content if b.type == "text")
             break
