@@ -12,6 +12,9 @@ import anthropic
 QUESTIONS = [
     "What have I made about using AI in my actual workflow?",
     "If someone wants to break into tech, what advice have I shared?",
+    # needs BOTH my content (LLM inference video) AND the web (current 2026 info):
+    "I made a video on LLM inference vs traditional inference — what are the latest "
+    "2026 developments in LLM inference I could make a follow-up about?",
 ]
 
 
