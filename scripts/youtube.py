@@ -24,7 +24,7 @@ load_dotenv(ROOT / "oracle" / ".env")
 oracledb.defaults.fetch_lobs = False
 
 SRC = ROOT / "sources" / "youtube"
-EXPORT = ROOT / "exports" / "youtube" / "videos.jsonl"
+EXPORT_DIR = ROOT / "exports" / "youtube"   # reads every *.jsonl here (videos.jsonl, shorts.jsonl, ...)
 
 
 def connect():
@@ -55,7 +55,15 @@ def frontmatter(v):
 
 def main():
     SRC.mkdir(parents=True, exist_ok=True)
-    videos = [json.loads(l) for l in open(EXPORT) if l.strip()]
+    # merge every yt-dlp dump in the folder (videos.jsonl + shorts.jsonl + ...), dedup by id
+    seen, videos = set(), []
+    for path in sorted(EXPORT_DIR.glob("*.jsonl")):
+        for line in open(path):
+            if not line.strip():
+                continue
+            v = json.loads(line)
+            if v.get("id") and v["id"] not in seen:
+                seen.add(v["id"]); videos.append(v)
     conn = connect()
     cur = conn.cursor()
 
@@ -73,14 +81,16 @@ def main():
         (SRC / f"{v['id']}.md").write_text(frontmatter(v) + f"# {title}\n\n{desc}\n")
         # 2) Oracle row, with the embedding generated INSIDE the database
         emb_text = (title + ". " + desc)[:3000]
+        dur = v.get("duration") or 0
+        kind = "short" if 0 < dur <= 65 else "video"   # Shorts are <=60s
         cur.execute(
             """
             insert into posts (platform_id, kind, title, caption, url, published_at,
                                views, content_embedding)
-            values ('youtube','video', :title, :caption, :url, :pub, :views,
+            values ('youtube', :kind, :title, :caption, :url, :pub, :views,
                     vector_embedding(MINILM using :emb as data))
             """,
-            title=title, caption=desc, url=v.get("webpage_url"),
+            kind=kind, title=title, caption=desc, url=v.get("webpage_url"),
             pub=yyyymmdd(v.get("upload_date")), views=v.get("view_count") or 0,
             emb=emb_text,
         )
