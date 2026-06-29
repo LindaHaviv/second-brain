@@ -29,8 +29,10 @@ drop table deals cascade constraints;
 drop table brands cascade constraints;
 drop table platforms cascade constraints;
 drop table agent_memory cascade constraints;
+drop table semantic_memory cascade constraints;
 @/container-entrypoint-initdb.d/01_content_duality.sql
 @/container-entrypoint-initdb.d/02_agent_memory.sql
+@/container-entrypoint-initdb.d/03_semantic_memory.sql
 exit
 SQL
 
