@@ -37,6 +37,8 @@ CREATE TABLE posts (
   likes         NUMBER DEFAULT 0,
   comments      NUMBER DEFAULT 0,
   views         NUMBER DEFAULT 0,
+  sponsored     NUMBER(1) DEFAULT 0,                     -- paid partnership? (authoritative from Notion)
+  brand         VARCHAR2(200),                            -- brand, for sponsored items
   content_embedding VECTOR(384, FLOAT32)                 -- semantic search over the content (in-DB MiniLM)
 );
 
