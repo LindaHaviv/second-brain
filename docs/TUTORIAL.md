@@ -4,7 +4,8 @@ A guided, first-steps walkthrough. By the end you'll have, running **locally on 
 a content store, semantic search over it, and a Claude research agent that answers grounded
 in *your* content and remembers what it found.
 
-Three parts: **set it up → see it work → make it yours.**
+Three parts: **set it up → see it work → make it yours** — plus an optional **Part 4** to
+level up with a self-improving knowledge wiki and using your brain from Claude Desktop.
 
 ---
 
@@ -100,6 +101,51 @@ work over the new content immediately, no other changes.
 
 > So the system is **collector-agnostic**: exports, APIs, or a scraper all funnel into the
 > same `posts` model.
+
+---
+
+## Part 4 — Level it up (optional)
+
+Two additions that make this a real "second brain" — and showcase more of Oracle 26ai.
+
+### A self-improving knowledge wiki (JSON Relational Duality)
+Beyond raw posts, an LLM can **compile** your content into synthesized, linked **topic pages** —
+a knowledge layer that improves as you add content. It's the strongest Duality showcase here:
+a page is *both* a JSON **document** *and* a **graph** of relationships (links + citations).
+
+```bash
+cd oracle/agent
+../../.venv/bin/python wiki.py        # compile topic pages (needs ANTHROPIC_API_KEY)
+../../.venv/bin/python demo_wiki.py   # a page as a Duality JSON doc + the link/citation graph
+```
+
+What it builds in Oracle:
+- `wiki_pages` — the page (document + vector embedding)
+- `page_links` — page → page cross-links (relational graph)
+- `page_sources` — citations back to your `posts` (relational)
+- `wiki_page_dv` — a **Duality view** serving a page as ONE JSON document, citations nested
+
+So a single wiki page exercises **relational + JSON Relational Duality + AI Vector Search** at
+once. Search and the research agent then draw on these synthesized pages automatically.
+
+### Use your brain from Claude Desktop (MCP)
+An MCP server exposes the brain to any MCP client (e.g. Claude Desktop) over a local stdio
+connection — everything stays on your machine. Register it (Claude Desktop → **Settings →
+Developer → Edit Config**), then restart Claude:
+
+```json
+{
+  "mcpServers": {
+    "content-brain": {
+      "command": "<repo>/.venv/bin/python",
+      "args": ["<repo>/oracle/agent/mcp_server.py"]
+    }
+  }
+}
+```
+
+Now ask Claude things like *"search my brain for what I've covered on AI inference"* or *"show
+my wiki topics."* Tools exposed: `search`, `fetch`, `wiki`, `topics`, `recent`, `ingest_note`.
 
 ---
 
