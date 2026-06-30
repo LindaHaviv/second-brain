@@ -33,12 +33,17 @@ drop table agent_memory cascade constraints;
 drop table semantic_memory cascade constraints;
 drop table conversations cascade constraints;
 drop table procedural_memory cascade constraints;
+drop view wiki_page_dv;
+drop table page_links cascade constraints;
+drop table page_sources cascade constraints;
+drop table wiki_pages cascade constraints;
 @/container-entrypoint-initdb.d/01_content_duality.sql
 @/container-entrypoint-initdb.d/02_agent_memory.sql
 @/container-entrypoint-initdb.d/03_semantic_memory.sql
 @/container-entrypoint-initdb.d/04_content_chunks.sql
 @/container-entrypoint-initdb.d/05_conversational_memory.sql
 @/container-entrypoint-initdb.d/06_procedural_memory.sql
+@/container-entrypoint-initdb.d/07_wiki.sql
 exit
 SQL
 
