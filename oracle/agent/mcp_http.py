@@ -59,5 +59,17 @@ class BearerAuth(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-# Starlette/ASGI app exposing the MCP endpoint at /mcp, gated by the bearer middleware.
-app = mcp.http_app(middleware=[Middleware(BearerAuth)])
+class _Health(BaseHTTPMiddleware):
+    """Keep /health open (for uptime checks) regardless of the auth mode."""
+    async def dispatch(self, request, call_next):
+        if request.url.path == "/health":
+            return JSONResponse({"ok": True})
+        return await call_next(request)
+
+
+# When AUTHKIT_DOMAIN is set, FastMCP's WorkOS OAuth (+ email allowlist) protects /mcp; otherwise
+# fall back to the bearer-token middleware. /health stays open in both.
+_mw = [Middleware(_Health)]
+if not os.environ.get("AUTHKIT_DOMAIN"):
+    _mw.append(Middleware(BearerAuth))
+app = mcp.http_app(middleware=_mw)
