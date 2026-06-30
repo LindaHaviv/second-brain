@@ -23,6 +23,7 @@ docker exec -i ccc-oracle bash -lc "sqlplus -s CCC/${APP}@${DSN}" <<'SQL'
 whenever sqlerror continue
 drop view post_dv;
 drop view tool_stats;
+drop table content_chunks cascade constraints;
 drop table media cascade constraints;
 drop table posts cascade constraints;
 drop table deals cascade constraints;
@@ -30,9 +31,14 @@ drop table brands cascade constraints;
 drop table platforms cascade constraints;
 drop table agent_memory cascade constraints;
 drop table semantic_memory cascade constraints;
+drop table conversations cascade constraints;
+drop table procedural_memory cascade constraints;
 @/container-entrypoint-initdb.d/01_content_duality.sql
 @/container-entrypoint-initdb.d/02_agent_memory.sql
 @/container-entrypoint-initdb.d/03_semantic_memory.sql
+@/container-entrypoint-initdb.d/04_content_chunks.sql
+@/container-entrypoint-initdb.d/05_conversational_memory.sql
+@/container-entrypoint-initdb.d/06_procedural_memory.sql
 exit
 SQL
 

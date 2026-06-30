@@ -63,18 +63,20 @@ def _run_tool(conn, name, inp):
     return {"error": f"unknown tool {name}"}
 
 
-def run_research(client, conn, question):
-    """Answer `question` grounded in the content; record the run to memory. Returns (answer, sources)."""
+def run_research(client, conn, question, history=None):
+    """Answer `question` grounded in the content; record the run to memory. Returns (answer, sources).
+    `history` = prior conversation turns (working memory) for multi-turn follow-ups."""
     prior = recall(conn, question, k=3)
     prior_txt = "\n".join(f"- {m.get('detail') or ''}" for m in prior) if prior else "(no prior research yet)"
     facts = semantic_recall(conn, question, k=5)
     facts_txt = "\n".join(f"- [{f['category']}] {f['fact']}" for f in facts) if facts else "(none yet)"
-    messages = [{
+    messages = list(history or [])   # conversational / working memory (prior turns this session)
+    messages.append({
         "role": "user",
         "content": (f"Question about my content: {question}\n\n"
                     f"What I already know about my content (semantic memory):\n{facts_txt}\n\n"
                     f"Prior research notes (episodic):\n{prior_txt}"),
-    }]
+    })
 
     sources = []   # (title, url) from HER content
     answer = ""

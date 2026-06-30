@@ -10,12 +10,14 @@ import anthropic
 
 from db import connect
 from research_agent import run_research
+from conversation import new_session, record_turn, recent_turns
 
 
 def main():
     client = anthropic.Anthropic()
     conn = connect()
-    print("🧠  Ask your brain. (type 'exit' to quit)\n")
+    sid = new_session()
+    print(f"🧠  Ask your brain. (type 'exit' to quit)  [session {sid}]\n")
     try:
         while True:
             try:
@@ -26,7 +28,10 @@ def main():
                 continue
             if q.lower() in ("exit", "quit"):
                 break
-            answer, sources = run_research(client, conn, q)
+            history = recent_turns(conn, sid, 12)        # working memory: prior turns
+            answer, sources = run_research(client, conn, q, history=history)
+            record_turn(conn, sid, "user", q)            # persist the exchange
+            record_turn(conn, sid, "assistant", answer)
             print("\n" + answer + "\n")
             if sources:
                 print("grounded in: " + ", ".join(sources[:6]) + "\n")
