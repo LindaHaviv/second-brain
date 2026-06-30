@@ -1,7 +1,8 @@
 """MCP server over your second brain — so Claude Desktop (or any MCP client) can search,
 read, and add to the brain over a local stdio connection. Everything stays on your machine.
 
-Exposes the standard connector contract: search / fetch (+ recent, ingest_note).
+Exposes the standard connector contract: search / fetch, plus wiki / topics (synthesized
+knowledge pages), recent, and ingest_note.
 
 Register in Claude Desktop (Settings -> Developer -> Edit Config), then restart Claude:
 {
@@ -31,7 +32,10 @@ mcp = FastMCP("content-brain")
 @mcp.tool
 def search(query: str, k: int = 8) -> list:
     """Search Linda's second brain (her videos, Shorts, Claude chats, Notion ideas/scripts,
-    brand deals, and code sessions) by MEANING. Returns ranked matches."""
+    brand deals, and code sessions) by MEANING. Returns ranked matches across three levels
+    (in each result's `match` field): "wiki" = a synthesized topic page, "item" = a post,
+    "passage" = a specific chunk. For a "wiki" hit, `id` is null and `title` is the topic —
+    call wiki(title) to read the full synthesized page."""
     conn = db.connect()
     try:
         return [{"id": r["post_id"], "title": r["title"], "source": r["platform_id"],
@@ -43,10 +47,32 @@ def search(query: str, k: int = 8) -> list:
 
 @mcp.tool
 def fetch(id: int) -> dict:
-    """Fetch the full content of one brain item by its id."""
+    """Fetch the full content of one brain item by its id (from a "item"/"passage" search hit)."""
     conn = db.connect()
     try:
         return content.get_post(conn, id) or {"error": "not found"}
+    finally:
+        conn.close()
+
+
+@mcp.tool
+def wiki(topic: str) -> dict:
+    """Fetch a compiled WIKI PAGE — a synthesized overview of everything in the brain about a
+    topic, with citations back to the source content. Call this for a "wiki" search hit (its
+    title is the topic), or to get Linda's synthesized take on a subject. topics() lists them."""
+    conn = db.connect()
+    try:
+        return content.get_wiki_page(conn, topic) or {"error": "no page; try topics()"}
+    finally:
+        conn.close()
+
+
+@mcp.tool
+def topics() -> list:
+    """List the compiled wiki topics — Linda's synthesized knowledge pages over her content."""
+    conn = db.connect()
+    try:
+        return content.list_topics(conn)
     finally:
         conn.close()
 

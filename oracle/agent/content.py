@@ -8,9 +8,14 @@ EMBED_MODEL = "MINILM"
 
 
 def search_content(conn, query, k=5):
-    """Return the k most semantically relevant matches, by meaning — searching BOTH the
-    item-level overview (posts) AND the passage-level detail (content_chunks), ranked together.
-    So a query lands on the right post *and* the specific passage inside a long chat."""
+    """Return the k most semantically relevant matches, by meaning — across THREE levels,
+    ranked together by distance:
+      - 'wiki'    : a compiled topic page (synthesized knowledge over your content)
+      - 'item'    : a post overview
+      - 'passage' : a specific chunk inside a long chat/transcript
+    So a query can land on the synthesized page, the right post, AND the exact passage.
+    Wiki hits carry the topic in `title` (and post_id IS NULL) — fetch the full page with
+    get_wiki_page(topic)."""
     with conn.cursor() as cur:
         cur.execute(
             f"""
@@ -27,6 +32,13 @@ def search_content(conn, query, k=5):
                      VECTOR_DISTANCE(ch.embedding,
                                      VECTOR_EMBEDDING({EMBED_MODEL} USING :q AS DATA), COSINE) AS dist
               FROM   content_chunks ch JOIN posts p ON p.post_id = ch.post_id
+              UNION ALL
+              SELECT NULL AS post_id, 'wiki' AS platform_id, 'page' AS kind, topic AS title,
+                     SUBSTR(body, 1, 400) AS snippet, NULL AS url, 'wiki' AS lvl,
+                     VECTOR_DISTANCE(embedding,
+                                     VECTOR_EMBEDDING({EMBED_MODEL} USING :q AS DATA), COSINE) AS dist
+              FROM   wiki_pages
+              WHERE  embedding IS NOT NULL
             )
             ORDER BY dist
             FETCH FIRST {int(k)} ROWS ONLY
@@ -35,6 +47,31 @@ def search_content(conn, query, k=5):
         )
         cols = [c[0].lower() for c in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def get_wiki_page(conn, topic):
+    """Full compiled wiki page for a topic, with its citations back to your content.
+    Returns {topic, body, citations:[{post_id,title,platform,url}]} or None."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT page_id, topic, body FROM wiki_pages WHERE topic = :t", t=topic)
+        row = cur.fetchone()
+        if not row:
+            return None
+        page_id, topic, body = row
+        cur.execute(
+            "SELECT p.post_id, p.title, p.platform_id, p.url "
+            "FROM page_sources ps JOIN posts p ON p.post_id = ps.post_id "
+            "WHERE ps.page_id = :p", p=page_id)
+        cites = [{"post_id": r[0], "title": r[1], "platform": r[2], "url": r[3]}
+                 for r in cur.fetchall()]
+        return {"topic": topic, "body": body, "citations": cites}
+
+
+def list_topics(conn):
+    """The compiled wiki topics (titles only)."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT topic FROM wiki_pages ORDER BY topic")
+        return [r[0] for r in cur.fetchall()]
 
 
 def get_post(conn, post_id):
