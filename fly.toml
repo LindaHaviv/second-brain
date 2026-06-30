@@ -1,4 +1,4 @@
-# Fly.io config for the hosted Second Brain MCP server.
+# Fly.io config for the hosted Second Brain MCP server (kept at repo root so build paths resolve).
 # Region iad (Ashburn) sits next to the Autonomous DB (us-ashburn-1) for low latency.
 app = "my-second-brain"
 primary_region = "iad"

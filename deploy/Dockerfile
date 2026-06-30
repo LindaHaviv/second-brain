@@ -8,9 +8,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # the agent code (mcp_http reuses mcp_server's tools; db/content do the DB work)
 COPY oracle/agent/ ./agent/
-WORKDIR /app/agent
+COPY deploy/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
+WORKDIR /app/agent
 ENV PORT=8000
 EXPOSE 8000
-# Config comes from real env vars / Fly secrets (DB_DSN, DB_USER, APP_PWD, MCP_AUTH_TOKEN).
-CMD ["sh", "-c", "uvicorn mcp_http:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# entrypoint unpacks the wallet (BRAIN_WALLET_B64) then runs uvicorn. Other config comes from
+# Fly secrets (DB_DSN, DB_USER, APP_PWD, DB_WALLET_PASSWORD, MCP_AUTH_TOKEN).
+CMD ["/app/entrypoint.sh"]
