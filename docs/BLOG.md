@@ -1,24 +1,29 @@
 # Build a Second Brain on Oracle Database 26ai
 
-*A self-improving research agent grounded in your own content — content, embeddings, and the
-agent's memory all living in one database.*
+*A self-improving research agent grounded in **your own sources** — the data, its embeddings, and
+the agent's memory all living in one database.*
 
 ---
 
-We make a lot of stuff. Videos, posts, threads, notes, long AI chats where the real thinking
-happens. And it all scatters — across apps that each remember a little and forget the rest. Your
-ideas live in one place, what you've already said in another, and the assistant you ask for help
-has no idea about either.
+Everything you make or collect scatters — across apps that each remember a little and forget the
+rest. Your notes live in one place, your research in another, the long AI chats where the real
+thinking happened in a third, and the assistant you ask for help has no idea about any of them.
 
-This tutorial builds the fix: a **second brain** — one place that holds everything you've made,
-searchable by *meaning*, with an agent that researches on top of it and **remembers what it
-learned**. We'll build it on **Oracle Database 26ai**, and the reason that matters is simple: one
-engine does relational data, JSON documents, **AI Vector Search**, and even runs the embedding
-model **inside the database** — so there's far less glue code, and your data, its meaning, and the
-agent's memory all live together.
+This tutorial builds the fix: a **second brain** — one place that holds *your* stuff, searchable
+by *meaning*, with an agent that researches on top of it and **remembers what it learned**.
+**You choose the sources** — point it at Notion, your videos, your AI chats, docs, bookmarks,
+whatever matters for your use case (content, research, work knowledge, a personal wiki). The build
+is the same; only the sources change.
 
-By the end you'll have a working research agent you can ask *"what have I covered about X, and
-what's new this week?"* — and watch it get sharper every time you use it.
+We'll build it on **Oracle Database 26ai**, and the reason that matters is simple: one engine does
+relational data, JSON documents, **AI Vector Search**, and even runs the embedding model **inside
+the database** — so there's far less glue code, and your data, its meaning, and the agent's memory
+all live together.
+
+By the end you'll have a working research agent you can ask *"what do I know about X, and what's
+new this week?"* — and watch it get sharper every time you use it.
+
+![Second Brain architecture: your chosen sources → one Oracle 26ai database (content + wiki + memory) → a research agent + an MCP server any AI client can call](images/architecture.svg)
 
 > Full, runnable code: **[github.com/LindaHaviv/second-brain](https://github.com/LindaHaviv/second-brain)**.
 > Everything runs **locally and headless** first (no cloud account needed); going to Oracle Cloud
@@ -26,11 +31,12 @@ what's new this week?"* — and watch it get sharper every time you use it.
 
 ## The shape of it
 
-```
-   Collect  →  Store  →  Search  →  Reason + Remember
-   your        Oracle      in-DB       a Claude agent over
-   content     (Duality)   vectors     content + memory + web
-```
+> **📌 Pick your sources.** The system is *collector-agnostic* — it only needs your stuff as rows
+> in one `posts` table. This build ships loaders for **Notion** (pages/databases), **YouTube**
+> (videos + transcripts), **AI chats** (Claude/ChatGPT exports), and **Claude Code** sessions —
+> but a docs folder, bookmarks, or an email export work the same way. Map each source's fields to
+> `title`, `text`, `url`, `published_at`; the embedding is generated in-DB on insert. Swap sources
+> for your use case (content, research, work, a personal wiki) without touching anything downstream.
 
 Three layers, **one database**:
 1. **Content** — everything you've made, as rows you can read back as JSON documents.
@@ -91,6 +97,9 @@ No embedding service, no keys, no data leaving the database. We also chunk long 
 (transcripts, chats) into a `content_chunks` table so a query lands on the right *passage*, not
 just the right item — and search ranks items and passages together.
 
+> **📸 Screenshot:** one query returning all three levels at once — a synthesized **wiki** page,
+> the matching **item**, and the exact **passage** inside a long transcript.
+
 ## 3. The research agent — and four kinds of memory
 
 Here's the agent you came for. It's a small, transparent loop (Claude + tools) — the database
@@ -117,9 +126,12 @@ loop:
  answer  →  record the run  →  recall + consolidate  →  answer better next time
 ```
 
-The more you use it, the more it knows your themes, your audience's recurring questions, your
-formats, and your gaps — and it stops re-deriving them every time. (In the repo this runs
-automatically every few research runs, plus a daily scheduled consolidation.)
+The more you use it, the more it knows your themes, your recurring questions, your patterns, and
+your gaps — and it stops re-deriving them every time. (In the repo this runs automatically every
+few research runs, plus a daily scheduled consolidation.)
+
+> **📸 Screenshot:** the agent answering a question with citations to your own sources, then a
+> follow-up where it visibly builds on the previous turn — and the `agent_memory` count ticking up.
 
 ## 4. A self-improving knowledge wiki (the Duality + relational showcase)
 
@@ -143,7 +155,10 @@ or note.
 Finally, make the brain a tool any AI client can call. A small **MCP server** exposes
 `search`, `fetch`, `wiki`, `topics`, `recent`, and `ingest_note` — so you can open Claude and ask
 *"search my brain for what I've covered on AI inference"* and it answers from your own content.
-Run it locally over stdio, or host it (HTTP + a bearer token) so it's reachable from your phone.
+Run it locally over stdio, or host it (HTTP + auth) so it's reachable from your phone.
+
+> **📸 Screenshot:** asking Claude *"search my brain for …"* and it answering from your own
+> sources — the brain showing up as a connector.
 
 ## Going to the cloud (optional)
 
