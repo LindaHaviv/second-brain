@@ -34,8 +34,8 @@ fly launch --no-deploy --copy-config --name second-brain-mcp   # uses deploy/fly
 # secrets (never baked into the image)
 fly secrets set \
   DB_DSN='<the TLS connection string>' \
-  DB_USER='ADMIN' \
-  APP_PWD='<your ADMIN password>' \
+  DB_USER='CCC' \
+  APP_PWD='<the CCC app-user password>' \
   MCP_AUTH_TOKEN='<a long random token you generate>'
 
 fly deploy
