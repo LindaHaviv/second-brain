@@ -40,7 +40,7 @@ def _build_auth():
     if not allowed:
         raise SystemExit("AUTHKIT_DOMAIN is set but ALLOWED_EMAILS is empty — refusing to start "
                          "(that would let any WorkOS user in).")
-    from fastmcp.server.auth.providers.workos import AuthKitProvider, WorkOSTokenVerifier
+    from fastmcp.server.auth.providers.workos import AuthKitProvider
     base_url = os.environ.get("MCP_BASE_URL")
     if not base_url:
         raise SystemExit("AUTHKIT_DOMAIN is set but MCP_BASE_URL is not — set it to this server's "
@@ -61,23 +61,35 @@ def _build_auth():
                     cfg = (await c.get(f"{domain}/.well-known/openid-configuration")).json()
                     _cache["userinfo"] = cfg.get("userinfo_endpoint", f"{domain}/oauth2/userinfo")
                 r = await c.get(_cache["userinfo"], headers={"Authorization": f"Bearer {token}"})
+                print(f"[allowlist] userinfo {r.status_code} @ {_cache['userinfo']}: {r.text[:160]}", flush=True)
                 email = str((r.json() or {}).get("email") or "").lower()
-        except Exception:
+        except Exception as e:
+            print(f"[allowlist] userinfo error: {e!r}", flush=True)
             email = ""
         if sub:
             _cache[sub] = email
         return email
 
-    class _AllowlistVerifier(WorkOSTokenVerifier):
-        async def verify_token(self, token):
-            at = await super().verify_token(token)
-            if not at:
-                return None
-            email = await _email_for(token, getattr(at, "claims", None) or {})
-            return at if email in allowed else None   # authenticated but not allow-listed -> deny
+    # Let AuthKitProvider build its verifier (correctly bound to this resource's audience/issuer),
+    # then wrap that verifier's verify_token to ALSO enforce the email allowlist.
+    provider = AuthKitProvider(authkit_domain=domain, base_url=base_url)
+    verifier = getattr(provider, "token_verifier", None) or getattr(provider, "_token_verifier", None)
+    if verifier is None or not hasattr(verifier, "verify_token"):
+        raise SystemExit("could not access AuthKitProvider's token verifier to apply the allowlist")
+    _orig_verify = verifier.verify_token
 
-    return AuthKitProvider(authkit_domain=domain, base_url=base_url,
-                           token_verifier=_AllowlistVerifier(authkit_domain=domain))
+    async def _verify_with_allowlist(token):
+        at = await _orig_verify(token)
+        if not at:
+            print("[allowlist] base token verify failed", flush=True)
+            return None
+        email = await _email_for(token, getattr(at, "claims", None) or {})
+        ok = email in allowed
+        print(f"[allowlist] email={email!r} allowed={ok}", flush=True)
+        return at if ok else None
+
+    verifier.verify_token = _verify_with_allowlist
+    return provider
 
 
 mcp = FastMCP("second-brain", auth=_build_auth())
