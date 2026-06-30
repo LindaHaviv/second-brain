@@ -13,7 +13,7 @@ import json
 import anthropic
 
 from memory import record, recall
-from content import search_content, get_post, get_wiki_page
+from content import search_hybrid, get_post, get_wiki_page
 from semantic_memory import semantic_recall, consolidate
 
 MODEL = "claude-opus-4-8"
@@ -93,7 +93,7 @@ def _maybe_consolidate(client, conn, every=None):
 
 def _run_tool(conn, name, inp):
     if name == "search_content":
-        return search_content(conn, inp["query"], int(inp.get("k", 5)))
+        return search_hybrid(conn, inp["query"], int(inp.get("k", 5)))
     if name == "get_post":
         return get_post(conn, int(inp["post_id"]))
     if name == "get_wiki_page":

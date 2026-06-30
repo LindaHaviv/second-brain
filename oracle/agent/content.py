@@ -4,6 +4,8 @@ This is the 'knowledge' the research agent reasons over — distinct from agent_
 (its 'experience'). Both live in the same Oracle database.
 """
 
+import re
+
 EMBED_MODEL = "MINILM"
 
 
@@ -47,6 +49,52 @@ def search_content(conn, query, k=5):
         )
         cols = [c[0].lower() for c in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def _terms(query):
+    return [t for t in re.findall(r"[a-z0-9]+", query.lower()) if len(t) > 2][:8]
+
+
+def _lexical_posts(conn, terms, k):
+    """Keyword search over posts (title + caption), ranked by how many query terms match.
+    Catches exact names/handles/error codes that pure-vector search can miss."""
+    if not terms:
+        return []
+    score = " + ".join(f"(CASE WHEN UPPER(NVL(title,' ')||' '||caption) LIKE :t{i} "
+                       f"THEN 1 ELSE 0 END)" for i in range(len(terms)))
+    where = " OR ".join(f"UPPER(NVL(title,' ')||' '||caption) LIKE :t{i}" for i in range(len(terms)))
+    sql = (f"SELECT post_id, platform_id, kind, title, SUBSTR(caption,1,400) AS snippet, url, "
+           f"'item' AS lvl FROM posts WHERE caption IS NOT NULL AND ({where}) "
+           f"ORDER BY ({score}) DESC, post_id FETCH FIRST {int(k)} ROWS ONLY")
+    binds = {f"t{i}": f"%{terms[i].upper()}%" for i in range(len(terms))}
+    with conn.cursor() as cur:
+        cur.execute(sql, **binds)
+        cols = [c[0].lower() for c in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def _rid(r):
+    return f"wiki:{r['title']}" if r.get("lvl") == "wiki" else f"{r['lvl']}:{r.get('post_id')}"
+
+
+def search_hybrid(conn, query, k=8, C=60):
+    """Hybrid retrieval: fuse semantic (vector) and keyword (lexical) results with Reciprocal
+    Rank Fusion. Vector handles meaning; lexical rescues exact tokens. Returns the same row
+    shape as search_content."""
+    pool = max(k * 3, 20)
+    vec = search_content(conn, query, pool)
+    lex = _lexical_posts(conn, _terms(query), pool)
+    scores, meta = {}, {}
+    for rank, r in enumerate(vec):
+        rid = _rid(r)
+        scores[rid] = scores.get(rid, 0.0) + 1.0 / (C + rank)
+        meta[rid] = r
+    for rank, r in enumerate(lex):
+        rid = _rid(r)
+        scores[rid] = scores.get(rid, 0.0) + 1.0 / (C + rank)
+        meta.setdefault(rid, r)
+    ranked = sorted(scores, key=lambda x: scores[x], reverse=True)[:k]
+    return [meta[rid] for rid in ranked]
 
 
 def get_wiki_page(conn, topic):

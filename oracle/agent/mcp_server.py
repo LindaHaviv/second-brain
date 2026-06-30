@@ -39,7 +39,7 @@ def search(query: str, k: int = 8) -> dict:
     conn = db.connect()
     try:
         results = []
-        for r in content.search_content(conn, query, k):
+        for r in content.search_hybrid(conn, query, k):
             rid = f"wiki:{r['title']}" if r["lvl"] == "wiki" else str(r["post_id"])
             results.append({"id": rid, "title": r["title"] or "", "url": r["url"] or "",
                             "text": r["snippet"] or "", "source": r["platform_id"],
