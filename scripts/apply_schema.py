@@ -52,6 +52,11 @@ def main():
         print(f"\n== {f.name}  ({len(stmts)} statements) ==")
         for s in stmts:
             head = " ".join(s.split())[:72]
+            # CURRENT_SCHEMA=CCC is a local-container convenience; on cloud we create in the
+            # connected user's own schema, so skip it.
+            if s.upper().startswith("ALTER SESSION SET CURRENT_SCHEMA"):
+                print("   (skip CURRENT_SCHEMA — using connected user's schema)")
+                continue
             if dry:
                 print("   ", head)
                 continue
