@@ -45,33 +45,12 @@ def _build_auth():
     if not base_url:
         raise SystemExit("AUTHKIT_DOMAIN is set but MCP_BASE_URL is not — set it to this server's "
                          "public URL (e.g. https://<your-app>.fly.dev).")
-    _cache = {}   # sub -> email, and the discovered userinfo endpoint
-
-    async def _email_for(token, claims):
-        email = str(claims.get("email") or "").lower()
-        if email:
-            return email
-        sub = claims.get("sub")
-        if sub in _cache:
-            return _cache[sub]
-        import httpx
-        try:
-            async with httpx.AsyncClient(timeout=6) as c:
-                if "userinfo" not in _cache:
-                    cfg = (await c.get(f"{domain}/.well-known/openid-configuration")).json()
-                    _cache["userinfo"] = cfg.get("userinfo_endpoint", f"{domain}/oauth2/userinfo")
-                r = await c.get(_cache["userinfo"], headers={"Authorization": f"Bearer {token}"})
-                print(f"[allowlist] userinfo {r.status_code} @ {_cache['userinfo']}: {r.text[:160]}", flush=True)
-                email = str((r.json() or {}).get("email") or "").lower()
-        except Exception as e:
-            print(f"[allowlist] userinfo error: {e!r}", flush=True)
-            email = ""
-        if sub:
-            _cache[sub] = email
-        return email
+    # AuthKit access tokens may not carry email, so we also allow by `sub` (the WorkOS user id),
+    # which IS in the token, via ALLOWED_SUBS. Set it from the sub logged below if email is absent.
+    allowed_subs = {s.strip() for s in os.environ.get("ALLOWED_SUBS", "").split(",") if s.strip()}
 
     # Let AuthKitProvider build its verifier (correctly bound to this resource's audience/issuer),
-    # then wrap that verifier's verify_token to ALSO enforce the email allowlist.
+    # then wrap that verifier's verify_token to enforce the allowlist.
     provider = AuthKitProvider(authkit_domain=domain, base_url=base_url)
     verifier = getattr(provider, "token_verifier", None) or getattr(provider, "_token_verifier", None)
     if verifier is None or not hasattr(verifier, "verify_token"):
@@ -83,9 +62,12 @@ def _build_auth():
         if not at:
             print("[allowlist] base token verify failed", flush=True)
             return None
-        email = await _email_for(token, getattr(at, "claims", None) or {})
-        ok = email in allowed
-        print(f"[allowlist] email={email!r} allowed={ok}", flush=True)
+        claims = getattr(at, "claims", None) or {}
+        email = str(claims.get("email") or "").lower()
+        sub = str(claims.get("sub") or "")
+        ok = (email and email in allowed) or (sub and sub in allowed_subs)
+        print(f"[allowlist] email={email!r} sub={sub!r} allowed={ok} claims={sorted(claims.keys())}",
+              flush=True)
         return at if ok else None
 
     verifier.verify_token = _verify_with_allowlist
