@@ -14,6 +14,7 @@ Register in Claude Desktop (Settings -> Developer -> Edit Config), then restart 
   }
 }
 """
+import os
 import pathlib
 import sys
 
@@ -26,7 +27,36 @@ import db                # noqa: E402
 import content           # noqa: E402
 from fastmcp import FastMCP   # noqa: E402
 
-mcp = FastMCP("content-brain")
+
+def _build_auth():
+    """OAuth via WorkOS AuthKit when AUTHKIT_DOMAIN is set (for claude.ai/ChatGPT chat), gated by a
+    strict email allowlist so only YOU can access — even a valid WorkOS login is rejected unless
+    its email is on ALLOWED_EMAILS. Refuses to start with an empty allowlist (no open door).
+    No env -> no auth (the local stdio server); bearer is handled in mcp_http.py instead."""
+    domain = os.environ.get("AUTHKIT_DOMAIN")
+    if not domain:
+        return None
+    allowed = {e.strip().lower() for e in os.environ.get("ALLOWED_EMAILS", "").split(",") if e.strip()}
+    if not allowed:
+        raise SystemExit("AUTHKIT_DOMAIN is set but ALLOWED_EMAILS is empty — refusing to start "
+                         "(that would let any WorkOS user in).")
+    from fastmcp.server.auth.providers.workos import AuthKitProvider, WorkOSTokenVerifier
+    base_url = os.environ.get("MCP_BASE_URL", "https://second-brain-mcp.fly.dev")
+
+    class _AllowlistVerifier(WorkOSTokenVerifier):
+        async def verify_token(self, token):
+            at = await super().verify_token(token)
+            if not at:
+                return None
+            claims = getattr(at, "claims", None) or {}
+            email = str(claims.get("email") or claims.get("preferred_username") or "").lower()
+            return at if email in allowed else None   # authenticated but not allow-listed -> deny
+
+    return AuthKitProvider(authkit_domain=domain, base_url=base_url,
+                           token_verifier=_AllowlistVerifier(authkit_domain=domain))
+
+
+mcp = FastMCP("second-brain", auth=_build_auth())
 
 
 @mcp.tool
