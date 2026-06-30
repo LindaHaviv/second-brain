@@ -1,0 +1,5 @@
+oracledb
+fastmcp
+python-dotenv
+uvicorn
+starlette
