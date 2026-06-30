@@ -1,17 +1,35 @@
-"""Oracle 26ai connection helper (thin mode — no Oracle client install needed)."""
+"""Oracle 26ai connection helper (thin mode — no Oracle client install needed).
+
+Local by default. To point at Oracle Autonomous Database (cloud), set in oracle/.env:
+    DB_DSN=<tns_alias>            e.g. mybrain_high  (from the wallet's tnsnames.ora)
+    DB_USER=<app_user>           e.g. CCC
+    APP_PWD=<password>
+    DB_WALLET_DIR=/abs/path/to/wallet     (unzipped Autonomous wallet, has tnsnames.ora + ewallet.pem)
+    DB_WALLET_PASSWORD=<wallet password>
+With DB_WALLET_DIR set, this connects over mTLS to the cloud; without it, it connects locally.
+Nothing else in the codebase changes.
+"""
 import os
 import oracledb
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# CLOB columns (action, detail) come back as str instead of LOB objects.
+# CLOB columns come back as str instead of LOB objects.
 oracledb.defaults.fetch_lobs = False
 
 
 def connect():
-    return oracledb.connect(
+    params = dict(
         user=os.environ.get("DB_USER", "CCC"),
         password=os.environ.get("APP_PWD", "CHANGE_ME_AppPwd1"),
         dsn=os.environ.get("DB_DSN", "localhost:1521/FREEPDB1"),
     )
+    wallet = os.environ.get("DB_WALLET_DIR")
+    if wallet:   # Autonomous Database (cloud) — mTLS via wallet
+        params.update(
+            config_dir=wallet,
+            wallet_location=wallet,
+            wallet_password=os.environ.get("DB_WALLET_PASSWORD"),
+        )
+    return oracledb.connect(**params)

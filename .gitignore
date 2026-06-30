@@ -6,6 +6,19 @@ __pycache__/
 # Secrets & local config (keep *.env.example tracked)
 *.env
 
+# Oracle Autonomous wallet — NEVER commit (mTLS keys to your cloud DB)
+*-wallet/
+wallet/
+cwallet.sso
+ewallet.p12
+ewallet.pem
+tnsnames.ora
+sqlnet.ora
+keystore.jks
+truststore.jks
+ojdbc.properties
+*.wallet.zip
+
 # Large / local artifacts
 oracle/models/
 models/
