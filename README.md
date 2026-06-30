@@ -1,4 +1,4 @@
-# Content Control Center
+# Second Brain
 
 Build a **self-improving research agent grounded in your own content**, on a single
 Oracle database. Your content + its embeddings + the agent's memory all live in one engine;
