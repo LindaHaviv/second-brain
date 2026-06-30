@@ -30,27 +30,43 @@ mcp = FastMCP("content-brain")
 
 
 @mcp.tool
-def search(query: str, k: int = 8) -> list:
-    """Search Linda's second brain (her videos, Shorts, Claude chats, Notion ideas/scripts,
-    brand deals, and code sessions) by MEANING. Returns ranked matches across three levels
-    (in each result's `match` field): "wiki" = a synthesized topic page, "item" = a post,
-    "passage" = a specific chunk. For a "wiki" hit, `id` is null and `title` is the topic —
-    call wiki(title) to read the full synthesized page."""
+def search(query: str, k: int = 8) -> dict:
+    """Search Linda's second brain (her videos, Shorts, AI chats, Notion ideas/scripts, and code
+    sessions) by MEANING. Returns {"results": [{id, title, url, text}]} — the standard connector
+    contract Claude and ChatGPT expect. Each result also carries `match` ("wiki" = a synthesized
+    topic page, "item" = a post, "passage" = a chunk). Pass a result's `id` to fetch() for the
+    full text."""
     conn = db.connect()
     try:
-        return [{"id": r["post_id"], "title": r["title"], "source": r["platform_id"],
-                 "kind": r["kind"], "match": r["lvl"], "snippet": r["snippet"], "url": r["url"]}
-                for r in content.search_content(conn, query, k)]
+        results = []
+        for r in content.search_content(conn, query, k):
+            rid = f"wiki:{r['title']}" if r["lvl"] == "wiki" else str(r["post_id"])
+            results.append({"id": rid, "title": r["title"] or "", "url": r["url"] or "",
+                            "text": r["snippet"] or "", "source": r["platform_id"],
+                            "match": r["lvl"]})
+        return {"results": results}
     finally:
         conn.close()
 
 
 @mcp.tool
-def fetch(id: int) -> dict:
-    """Fetch the full content of one brain item by its id (from a "item"/"passage" search hit)."""
+def fetch(id: str) -> dict:
+    """Fetch the full content of one search result by its `id`. Returns {id, title, text, url,
+    metadata}. Handles both posts and wiki pages (ids like "wiki:<topic>")."""
     conn = db.connect()
     try:
-        return content.get_post(conn, id) or {"error": "not found"}
+        if isinstance(id, str) and id.startswith("wiki:"):
+            page = content.get_wiki_page(conn, id[5:])
+            if not page:
+                return {"id": id, "title": "", "text": "not found", "url": "", "metadata": {}}
+            return {"id": id, "title": page["topic"], "text": page["body"], "url": "",
+                    "metadata": {"type": "wiki", "citations": len(page["citations"])}}
+        post = content.get_post(conn, int(id))
+        if not post:
+            return {"id": str(id), "title": "", "text": "not found", "url": "", "metadata": {}}
+        return {"id": str(id), "title": post.get("title") or "", "text": post.get("caption") or "",
+                "url": post.get("url") or "",
+                "metadata": {"type": post.get("kind"), "source": post.get("platform_id")}}
     finally:
         conn.close()
 
