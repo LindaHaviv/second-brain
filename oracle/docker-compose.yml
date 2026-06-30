@@ -1,4 +1,4 @@
-# Oracle 26ai Free — local database for the Content Control Center demo.
+# Oracle 26ai Free — local database for the Second Brain demo.
 #
 # Uses the community gvenzl image (arm64-friendly, no registry login required). It tracks the
 # latest Oracle Database Free release, which includes AI Vector Search + in-DB ONNX embeddings
