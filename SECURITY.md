@@ -43,8 +43,14 @@ before you point it at your real content or put it online.
 ## Prompt-injection (LLM-specific)
 - Treat everything the brain returns (chats, web pages, emails) as **untrusted data, not
   instructions** — never let retrieved content override the agent's system prompt.
-- **Gate write tools.** `ingest_note` is additive/low-risk; anything destructive or that touches an
-  external system (e.g. updating Notion) should be **human-in-the-loop**.
+- **Separate reads from writes.** The MCP tools are split by capability: the read tools
+  (`search`/`fetch`/`wiki`/`topics`/`recent`) are annotated **`readOnlyHint`** so clients can
+  auto-allow them, while the one write tool (`ingest_note`) is annotated as a write so a client can
+  **gate/ask before** calling it. Anything destructive or that touches an external system (e.g.
+  updating Notion) should stay **human-in-the-loop**.
+- **Ship read-only when you can.** Set **`MCP_READONLY=1`** and the write tool isn't registered at
+  all — the server can only *read* the brain. Use it for any deployment that shouldn't accept
+  writes (a shared connector, a public demo), so a prompt-injected client has nothing to write with.
 
 ## Quick checklist before going public or online
 - [ ] `git status` clean of `.env`, wallet, `private/`, real content

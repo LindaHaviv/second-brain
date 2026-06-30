@@ -87,3 +87,7 @@ Autonomous DB doesn't idle out and the first real query skips the cold path.
 - **Rotate** `MCP_AUTH_TOKEN` periodically (`fly secrets set ...` redeploys).
 - Keep the DB **ACL** tight (Fly egress IPs). Consider a least-privilege DB user (see hardening).
 - Token is the only credential a client needs — treat it like a password.
+- **Read/write separation.** Read tools are annotated `readOnlyHint` (clients can auto-allow them);
+  the one write tool (`ingest_note`) is annotated as a write so clients gate it. To make the hosted
+  server **read-only** — recommended unless you actually ingest *through* the connector — set
+  `fly secrets set MCP_READONLY=1` and the write tool isn't registered at all.

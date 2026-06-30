@@ -75,8 +75,19 @@ def _build_auth():
 
 mcp = FastMCP("second-brain", auth=_build_auth())
 
+# Read/write separation (best practice). MCP tool *annotations* tell every client which tools
+# only read vs. which mutate the brain, so a client can auto-allow reads and gate writes:
+#   readOnlyHint  — the tool never changes state (all the search/fetch tools)
+#   openWorldHint — False: it operates on a closed set (your brain), not the open internet
+# And MCP_READONLY=1 ships a *fully* read-only server (the write tool isn't even registered) —
+# the safe default for any deployment that shouldn't accept writes, e.g. a shared/public one.
+READONLY = os.environ.get("MCP_READONLY", "").lower() in ("1", "true", "yes")
+_READ = {"readOnlyHint": True, "openWorldHint": False}
+_WRITE = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False,
+          "openWorldHint": False}
 
-@mcp.tool
+
+@mcp.tool(annotations=_READ)
 def search(query: str, k: int = 8) -> dict:
     """Search Linda's second brain (her videos, Shorts, AI chats, Notion ideas/scripts, and code
     sessions) by MEANING. Returns {"results": [{id, title, url, text}]} — the standard connector
@@ -96,7 +107,7 @@ def search(query: str, k: int = 8) -> dict:
         conn.close()
 
 
-@mcp.tool
+@mcp.tool(annotations=_READ)
 def fetch(id: str) -> dict:
     """Fetch the full content of one search result by its `id`. Returns {id, title, text, url,
     metadata}. Handles both posts and wiki pages (ids like "wiki:<topic>")."""
@@ -118,7 +129,7 @@ def fetch(id: str) -> dict:
         conn.close()
 
 
-@mcp.tool
+@mcp.tool(annotations=_READ)
 def wiki(topic: str) -> dict:
     """Fetch a compiled WIKI PAGE — a synthesized overview of everything in the brain about a
     topic, with citations back to the source content. Call this for a "wiki" search hit (its
@@ -130,7 +141,7 @@ def wiki(topic: str) -> dict:
         conn.close()
 
 
-@mcp.tool
+@mcp.tool(annotations=_READ)
 def topics() -> list:
     """List the compiled wiki topics — Linda's synthesized knowledge pages over her content."""
     conn = db.connect()
@@ -140,7 +151,7 @@ def topics() -> list:
         conn.close()
 
 
-@mcp.tool
+@mcp.tool(annotations=_READ)
 def recent(k: int = 10) -> list:
     """The k most recently published items in the brain."""
     conn = db.connect()
@@ -155,23 +166,27 @@ def recent(k: int = 10) -> list:
         conn.close()
 
 
-@mcp.tool
-def ingest_note(title: str, text: str) -> str:
-    """Add a quick note/idea to the brain (embedded for future semantic search)."""
-    conn = db.connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("MERGE INTO platforms p USING (SELECT 'note' id FROM dual) s "
-                        "ON (p.platform_id=s.id) WHEN NOT MATCHED THEN "
-                        "INSERT (platform_id, display_name) VALUES ('note','Quick notes')")
-            cur.execute(
-                "INSERT INTO posts (platform_id, kind, title, caption, content_embedding) "
-                "VALUES ('note','note', :t, :c, VECTOR_EMBEDDING(MINILM USING :e AS DATA))",
-                t=title[:1000], c=text, e=f"{title}. {text}"[:3000])
-        conn.commit()
-        return f"saved note: {title}"
-    finally:
-        conn.close()
+# The one WRITE tool. It's marked non-read-only (clients should gate it / ask before calling),
+# and is omitted entirely when MCP_READONLY=1 — so a read-only deployment exposes no way to
+# mutate the brain. Anything more powerful than this (e.g. editing Notion) stays human-in-the-loop.
+if not READONLY:
+    @mcp.tool(annotations=_WRITE)
+    def ingest_note(title: str, text: str) -> str:
+        """Add a quick note/idea to the brain (embedded for future semantic search)."""
+        conn = db.connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("MERGE INTO platforms p USING (SELECT 'note' id FROM dual) s "
+                            "ON (p.platform_id=s.id) WHEN NOT MATCHED THEN "
+                            "INSERT (platform_id, display_name) VALUES ('note','Quick notes')")
+                cur.execute(
+                    "INSERT INTO posts (platform_id, kind, title, caption, content_embedding) "
+                    "VALUES ('note','note', :t, :c, VECTOR_EMBEDDING(MINILM USING :e AS DATA))",
+                    t=title[:1000], c=text, e=f"{title}. {text}"[:3000])
+            conn.commit()
+            return f"saved note: {title}"
+        finally:
+            conn.close()
 
 
 if __name__ == "__main__":

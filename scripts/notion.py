@@ -1,0 +1,174 @@
+"""Collect step (Notion): your content calendar + planning/brand pages -> the brain.
+
+Pulls every page the integration can access (calendar rows are pages too), captures the
+editorial properties (Type / Status / Publication Date / Link / Category), chunks the page
+body, and sets the PAID/brand flag from Type/Category. LOCAL only.
+
+Setup: NOTION_TOKEN in oracle/.env; the integration connected to your pages (••• -> Connections).
+Run from repo root:  ./.venv/bin/python scripts/notion.py
+"""
+import datetime
+import os
+import pathlib
+
+import oracledb
+from dotenv import load_dotenv
+from notion_client import Client
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+load_dotenv(ROOT / "oracle" / ".env")
+oracledb.defaults.fetch_lobs = False
+notion = Client(auth=os.environ["NOTION_TOKEN"])
+
+
+def connect():
+    return oracledb.connect(
+        user=os.environ.get("DB_USER", "CCC"),
+        password=os.environ.get("APP_PWD", "CHANGE_ME_AppPwd1"),
+        dsn=os.environ.get("DB_DSN", "localhost:1521/FREEPDB1"),
+    )
+
+
+def rich(arr):
+    return "".join(s.get("plain_text", "") for s in (arr or []))
+
+
+def title_of(props):
+    for v in props.values():
+        if v.get("type") == "title":
+            return rich(v.get("title"))
+    return ""
+
+
+def sel(props, name):
+    v = props.get(name)
+    return v["select"]["name"] if v and v.get("type") == "select" and v.get("select") else None
+
+
+def date_of(props, *names):
+    for name in names:
+        v = props.get(name)
+        if v and v.get("type") == "date" and v.get("date"):
+            return v["date"].get("start")
+    return None
+
+
+def url_of(props, name):
+    v = props.get(name)
+    return v.get("url") if v and v.get("type") == "url" else None
+
+
+def iso(s):
+    if not s:
+        return None
+    try:
+        return datetime.datetime.fromisoformat(s.replace("Z", "+00:00")).replace(tzinfo=None)
+    except Exception:
+        try:
+            return datetime.datetime.strptime(s[:10], "%Y-%m-%d")
+        except Exception:
+            return None
+
+
+def body_text(page_id, cap=80):
+    out, cursor, count = [], None, 0
+    while True:
+        r = notion.blocks.children.list(block_id=page_id, start_cursor=cursor, page_size=100)
+        for b in r.get("results", []):
+            data = b.get(b.get("type"), {})
+            if isinstance(data, dict) and data.get("rich_text"):
+                out.append(rich(data["rich_text"]))
+            count += 1
+        if count >= cap or not r.get("has_more"):
+            break
+        cursor = r.get("next_cursor")
+    return "\n".join(x for x in out if x.strip())
+
+
+def chunks_of(text, size=1500):
+    out, buf = [], ""
+    for para in text.split("\n"):
+        if buf and len(buf) + len(para) + 1 > size:
+            out.append(buf)
+            buf = para
+        else:
+            buf = f"{buf}\n{para}" if buf else para
+    if buf.strip():
+        out.append(buf)
+    return out
+
+
+def main():
+    conn = connect()
+    cur = conn.cursor()
+    cur.execute("merge into platforms p using (select 'notion' id from dual) s "
+                "on (p.platform_id=s.id) when not matched then "
+                "insert (platform_id, display_name) values ('notion','Notion')")
+    cur.execute("delete from posts where platform_id='notion'")
+
+    n, total_chunks, cursor = 0, 0, None
+    while True:
+        r = notion.search(page_size=100, start_cursor=cursor,
+                          filter={"property": "object", "value": "page"})
+        for x in r.get("results", []):
+            if x.get("object") != "page":
+                continue
+            props = x.get("properties", {})
+            title = title_of(props) or "(untitled)"
+            link = url_of(props, "Link") or x.get("url")
+            # Brand-deals DB carries financials/PII -> flag sponsored, keep only brand+status
+            # (rates, contacts, emails, and the page body deliberately stay OUT of the brain).
+            is_deal = len({"Payment Status", "Rate", "Fee", "Deliverables", "Contract"}
+                          & set(props.keys())) >= 2
+            if is_deal:
+                kind, sponsored, brand = "deal", 1, title
+                stage, pay = sel(props, "Stage"), sel(props, "Payment Status")
+                pub = date_of(props, "Published Date", "Deadline")
+                caption = f"Brand deal | brand: {title} | stage: {stage} | payment: {pay}"
+                body = ""
+            else:
+                typ, status, cat = sel(props, "Type"), sel(props, "Status"), sel(props, "Category")
+                sponsored = 1 if ((typ and "Sponsor" in typ) or (cat and "Brand" in cat)) else 0
+                brand = title if sponsored else None
+                kind = "note"
+                pub = date_of(props, "Publication Date", "Deadline")
+                body = body_text(x["id"])
+                caption = (f"Type: {typ} | Status: {status} | Category: {cat}"
+                           + ("\n\n" + body if body else ""))[:4000]
+            emb = (f"{title}. {caption}")[:3000]
+            outid = cur.var(oracledb.NUMBER)
+            cur.execute(
+                """
+                insert into posts (platform_id, kind, title, caption, url, published_at,
+                                   sponsored, brand, content_embedding)
+                values ('notion', :kind, :title, :caption, :url, :pub, :sp, :brand,
+                        vector_embedding(MINILM using :emb as data))
+                returning post_id into :outid
+                """,
+                kind=kind, title=title[:1000], caption=caption, url=link, pub=iso(pub),
+                sp=sponsored, brand=(brand[:200] if brand else None), emb=emb, outid=outid,
+            )
+            post_id = int(outid.getvalue()[0])
+            for i, ch in enumerate(chunks_of(body)):
+                cur.execute(
+                    """insert into content_chunks (post_id, seq, chunk, embedding)
+                       values (:pid, :seq, :chunk, vector_embedding(MINILM using :emb as data))""",
+                    pid=post_id, seq=i, chunk=ch, emb=ch[:3000],
+                )
+                total_chunks += 1
+            n += 1
+            if n % 25 == 0:
+                conn.commit()
+                print(f"  {n} pages, {total_chunks} chunks...")
+        if not r.get("has_more"):
+            break
+        cursor = r.get("next_cursor")
+    conn.commit()
+    cur.execute("select count(*) from posts where platform_id='notion' and sponsored=1")
+    sp = cur.fetchone()[0]
+    print(f"loaded {n} Notion pages ({sp} sponsored) + {total_chunks} chunks into the brain")
+    conn.close()
+
+
+if __name__ == "__main__":
+    main()
