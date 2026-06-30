@@ -69,7 +69,9 @@ class _Health(BaseHTTPMiddleware):
 
 # When AUTHKIT_DOMAIN is set, FastMCP's WorkOS OAuth (+ email allowlist) protects /mcp; otherwise
 # fall back to the bearer-token middleware. /health stays open in both.
+# stateless_http=True: no in-memory session affinity, so it works across multiple Fly machines /
+# load balancing (otherwise a tool call can land on a machine without the connect-time session).
 _mw = [Middleware(_Health)]
 if not os.environ.get("AUTHKIT_DOMAIN"):
     _mw.append(Middleware(BearerAuth))
-app = mcp.http_app(middleware=_mw)
+app = mcp.http_app(middleware=_mw, stateless_http=True)
