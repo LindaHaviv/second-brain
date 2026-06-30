@@ -8,12 +8,13 @@ This ties the whole thesis together:
 The agent searches your content, synthesizes a grounded answer, cites your videos,
 and records what it found so future questions build on past research.
 """
+import os
 import json
 import anthropic
 
 from memory import record, recall
 from content import search_content, get_post, get_wiki_page
-from semantic_memory import semantic_recall
+from semantic_memory import semantic_recall, consolidate
 
 MODEL = "claude-opus-4-8"
 
@@ -69,6 +70,25 @@ TOOLS = [
     # server-side web search — runs on Anthropic's side; combines external/current info
     {"type": "web_search_20260209", "name": "web_search"},
 ]
+
+
+def _maybe_consolidate(client, conn, every=None):
+    """Auto-improve: once enough new research runs have accumulated since the last
+    consolidation, re-distill episodic -> semantic so the agent's learned facts stay current.
+    Best-effort — never let it break a research answer."""
+    every = every or int(os.environ.get("CONSOLIDATE_EVERY", "5"))
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM agent_memory WHERE created_at > "
+                "NVL((SELECT MAX(created_at) FROM semantic_memory WHERE source = 'consolidation'),"
+                " TIMESTAMP '2000-01-01 00:00:00')")
+            new = cur.fetchone()[0]
+        if new >= every:
+            facts = consolidate(client, conn)
+            print(f"[auto-consolidate] {new} new runs -> refreshed {len(facts)} semantic facts")
+    except Exception:
+        pass
 
 
 def _run_tool(conn, name, inp):
@@ -137,4 +157,5 @@ def run_research(client, conn, question, history=None):
     record(conn, "research", question, (answer[:500] or "(no answer)"),
            "research", "success" if found else "failure",
            reward=1.0 if found else 0.0, detail=detail)
+    _maybe_consolidate(client, conn)   # auto-improve: refresh semantic facts as runs accrue
     return answer, uniq

@@ -44,7 +44,7 @@ def consolidate(client, conn, limit=30):
         "\n\nExtract the durable facts."
     )
     resp = client.messages.create(
-        model=MODEL, max_tokens=2048, system=_SYS,
+        model=MODEL, max_tokens=8192, system=_SYS,
         messages=[{"role": "user", "content": prompt}],
         output_config={"format": {"type": "json_schema", "schema": _SCHEMA}},
     )
