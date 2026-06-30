@@ -108,21 +108,33 @@ each research run to `agent_memory`.
 ## Repo layout
 
 ```
-oracle/            the database: docker-compose, schema (Duality + agent memory),
-                   setup SQL, the Claude agent (db / memory / content / research_agent)
-scripts/           collectors/normalizers (export bundle -> sources/*.md + Oracle)
+oracle/            the database: docker-compose, schema (Duality + 4 memory types + wiki),
+                   setup SQL; the agents (db / content / memory / research_agent / idea_agent /
+                   wiki) + the MCP server (mcp_server stdio, mcp_http hosted)
+scripts/           collectors (youtube, notion, …) + ops (apply_schema, load_model_cloud,
+                   copy_local_to_cloud, consolidate, lint_wiki, review)
+deploy/            hosted-MCP container (Dockerfile + fly.toml)
 sources/           canonical content as Markdown + frontmatter (source of truth)
-docs/              BUILD_WALKTHROUGH (concepts) · EXPORT_GUIDE (collecting data)
+docs/              TUTORIAL (start here) · BLOG · BUILD_WALKTHROUGH · EXPORT_GUIDE ·
+                   ARCHITECTURE · CLOUD_MIGRATION · HOSTED_MCP
 ```
 
 `sources/` is the canonical layer; the database is a derived, rebuildable view of it.
 
-## Roadmap
+## What's included
 
-- [x] Local: Collect → Store → Search → Converse (research agent over your content)
-- [ ] Lift to **Oracle Cloud** (Always Free Autonomous) for always-on + durability (optional)
-- [ ] Knowledge wiki layer (LLM-compiled) over `sources/`
-- [ ] More sources (Instagram/LinkedIn/TikTok/X exports), a UI, brand-deal CRM
+- [x] Collect → Store → Search → Converse — self-improving research agent over your content
+- [x] **All four agent-memory types** — episodic, semantic (auto-consolidated, on a cadence + a
+  daily job), conversational, procedural
+- [x] **Knowledge wiki layer** — LLM-compiled, self-improving topic pages (`wiki.py`) + a Duality
+  view; the strongest relational + JSON + vector showcase
+- [x] **Hybrid search** — vector + keyword (Reciprocal Rank Fusion)
+- [x] **Idea & repurposing agent** — grounded next-content suggestions (`idea_agent.py`)
+- [x] **MCP server** — use the brain from Claude or any client (`mcp_server.py`); hosted HTTP
+  variant + Fly config in `deploy/` (see [docs/HOSTED_MCP.md](docs/HOSTED_MCP.md))
+- [x] **Cloud** — lift to Oracle Autonomous Database ([docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md))
+- [x] **Maintenance** — `lint_wiki.py` (review candidates) + `review.py` (leaked-secret scan)
+- [ ] More sources (Instagram/LinkedIn/TikTok/X exports) · hosted-MCP OAuth for ChatGPT/mobile · a UI
 
 ## Notes
 
