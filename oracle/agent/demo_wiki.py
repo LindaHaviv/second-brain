@@ -22,8 +22,8 @@ def main():
 
     pid = pages[0][0]
     print("\n=== that page as a JSON DOCUMENT via the Duality view (page + nested citations) ===")
-    cur.execute('SELECT JSON_SERIALIZE(data RETURNING CLOB PRETTY) FROM wiki_page_dv '
-                'WHERE data."_id".number() = :p', p=pid)
+    cur.execute("SELECT JSON_SERIALIZE(data RETURNING CLOB PRETTY) FROM wiki_page_dv "
+                "WHERE JSON_VALUE(data, '$._id' RETURNING NUMBER) = :p", p=pid)
     print((cur.fetchone()[0] or "")[:1600])
 
     print("\n=== RELATIONAL: the cross-link graph (page -> page) ===")
