@@ -47,30 +47,23 @@ cd oracle/agent && ../../.venv/bin/python -c "import db; print(db.connect().curs
   \"select 'connected to '||sys_context('userenv','con_name') from dual\").fetchone()[0])"
 ```
 
-## Phase 4 — Apply the schema
-In **Database Actions → SQL** (as CCC, or as ADMIN with `ALTER SESSION SET CURRENT_SCHEMA=CCC`),
-paste and run the schema files in order: `oracle/schema/01` → `07`.
-(They create the content/duality tables, all four memory types, content chunks, and the wiki layer.)
-
-## Phase 5 — Load the embedding model (in-DB, from object storage)
-Autonomous can't read your laptop's `/models`, so stage the ONNX model in Object Storage:
-1. **Object Storage → Buckets → Create Bucket** (e.g. `models`). Upload
-   `oracle/models/all_MiniLM_L12_v2.onnx`.
-2. On the object → **Create Pre-Authenticated Request** (read, object-only). Copy the PAR URL.
-3. In **Database Actions → SQL** (as CCC):
-```sql
-BEGIN
-  DBMS_CLOUD.GET_OBJECT(
-    object_uri      => '<PAR URL>',
-    directory_name  => 'DATA_PUMP_DIR');
-  DBMS_VECTOR.LOAD_ONNX_MODEL(
-    'DATA_PUMP_DIR', 'all_MiniLM_L12_v2.onnx', 'MINILM',
-    JSON('{"function":"embedding","embeddingOutput":"embedding","input":{"input":["DATA"]}}'));
-END;
-/
--- verify:
-SELECT VECTOR_EMBEDDING(MINILM USING 'hello' AS DATA) IS NOT NULL AS ok FROM dual;
+## Phase 4 — Apply the schema (one command)
+With the cloud env set (Phase 3), run the applier — it builds all 7 layers over the wallet
+connection, in the connected user's schema:
+```bash
+./.venv/bin/python scripts/apply_schema.py
 ```
+Idempotent (re-runnable). Creates the content/Duality tables, all four memory types, content
+chunks, and the wiki layer. No manual SQL pasting.
+
+## Phase 5 — Load the embedding model (direct BLOB — no Object Storage needed)
+```bash
+./.venv/bin/python scripts/load_model_cloud.py
+```
+This streams `oracle/models/all_MiniLM_L12_v2.onnx` straight into the database as a BLOB and
+registers it as `MINILM` via `DBMS_VECTOR.LOAD_ONNX_MODEL`, then verifies an embedding — so no
+bucket, no Pre-Authenticated Request, no `DBMS_CLOUD.GET_OBJECT`.
+(If you'd rather stage it in Object Storage instead, that path is in the git history.)
 
 ## Phase 6 — Load your data (re-ingest from your local sources)
 Cleanest path: with the cloud env set (Phase 3), re-run the loaders — embeddings regenerate in-DB
