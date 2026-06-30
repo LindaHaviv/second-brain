@@ -12,6 +12,10 @@ later step.)
 > **New here? Start with the guided walkthrough → [docs/TUTORIAL.md](docs/TUTORIAL.md)**
 > (set it up → see it work → make it yours). The sections below are the reference version.
 
+> 🔒 **Using your real data, or putting it online? Read [SECURITY.md](SECURITY.md) first** —
+> redaction, secrets handling, least-privilege DB users, and OAuth + an email allowlist for the
+> hosted MCP.
+
 ## What you'll build
 
 ```

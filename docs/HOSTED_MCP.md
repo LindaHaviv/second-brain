@@ -40,20 +40,39 @@ fly secrets set \
 
 fly deploy
 ```
-Your server is then at `https://my-second-brain.fly.dev` (health: `/health`, MCP: `/mcp`).
+Your server is then at `https://<your-app>.fly.dev` (health: `/health`, MCP: `/mcp`).
 
 > Prefer mTLS over walletless? Ship the wallet as a Fly secret (base64 the zip, decode at start to
 > a dir, set `DB_WALLET_DIR`/`DB_WALLET_PASSWORD`). `db.py` already supports the wallet path.
 
 ## Connect clients
-- **Claude Code / Claude Desktop / the API:** point them at `https://my-second-brain.fly.dev/mcp`
+- **Claude Code / Claude Desktop / the API:** point them at `https://<your-app>.fly.dev/mcp`
   with header `Authorization: Bearer <MCP_AUTH_TOKEN>`. `search`/`fetch` follow the standard
   connector contract (`{results:[{id,title,url,text}]}`), plus `wiki`, `topics`, `recent`,
   `ingest_note`.
 - **ChatGPT + claude.ai web/mobile:** these connector UIs require **OAuth** (Dynamic Client
-  Registration), *not* a static bearer header — so they need an OAuth seam (e.g. WorkOS AuthKit)
-  added on top of this server. The tools are already ChatGPT-shaped; only the auth transport is
-  missing. **TODO** before ChatGPT/phone work.
+  Registration), not a bearer header. This repo supports it via **WorkOS AuthKit** — see below.
+
+## OAuth for claude.ai / ChatGPT (WorkOS AuthKit + email allowlist)
+The code is built in (`mcp_server.py` → `_build_auth`); turn it on with a WorkOS account + env:
+1. **WorkOS** (free): create a workspace. In **Connect → Configuration**, enable **Dynamic Client
+   Registration** (and CIMD), and under **MCP resource indicators** add
+   `https://<your-app>.fly.dev/mcp`. Get your **AuthKit domain** from the **Domains** page (looks
+   like `https://<slug>.authkit.app`).
+2. Set secrets and redeploy:
+   ```bash
+   fly secrets set \
+     AUTHKIT_DOMAIN='https://<slug>.authkit.app' \
+     MCP_BASE_URL='https://<your-app>.fly.dev' \
+     ALLOWED_EMAILS='you@example.com'     # ONLY these emails get in; everyone else is denied
+   fly deploy
+   ```
+3. In claude.ai / ChatGPT → add a custom connector with URL `https://<your-app>.fly.dev/mcp` (no
+   token) → log in via WorkOS with an allow-listed email.
+
+> **Security:** OAuth *authenticates*; the `ALLOWED_EMAILS` allowlist *authorizes* — only your
+> email(s) get in, even though anyone can attempt a WorkOS login. The server **refuses to start**
+> with an empty allowlist. Full guidance: [SECURITY.md](../SECURITY.md).
 
 ## Keep-warm (built in)
 The server runs a background keep-warm thread (`KEEP_WARM=1`, every `KEEP_WARM_SECONDS`, default

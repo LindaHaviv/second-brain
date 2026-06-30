@@ -41,7 +41,10 @@ def _build_auth():
         raise SystemExit("AUTHKIT_DOMAIN is set but ALLOWED_EMAILS is empty — refusing to start "
                          "(that would let any WorkOS user in).")
     from fastmcp.server.auth.providers.workos import AuthKitProvider, WorkOSTokenVerifier
-    base_url = os.environ.get("MCP_BASE_URL", "https://my-second-brain.fly.dev")
+    base_url = os.environ.get("MCP_BASE_URL")
+    if not base_url:
+        raise SystemExit("AUTHKIT_DOMAIN is set but MCP_BASE_URL is not — set it to this server's "
+                         "public URL (e.g. https://<your-app>.fly.dev).")
     _cache = {}   # sub -> email, and the discovered userinfo endpoint
 
     async def _email_for(token, claims):
