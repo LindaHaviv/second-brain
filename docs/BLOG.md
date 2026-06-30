@@ -29,6 +29,11 @@ new this week?"* — and watch it get sharper every time you use it.
 > Everything runs **locally and headless** first (no cloud account needed); going to Oracle Cloud
 > is an optional last step.
 
+**Who this is for / what you need:** any developer comfortable with a terminal — **no prior Oracle
+experience required.** You'll need a Mac with [Homebrew](https://brew.sh), Python 3.12, and ~20
+minutes. The quickstart spins up the database in a container and loads a public sample channel, so
+you watch the whole thing work *before* pointing it at your own data.
+
 ## The shape of it
 
 > **📌 Pick your sources.** The system is *collector-agnostic* — it only needs your stuff as rows
@@ -160,16 +165,38 @@ Finally, make the brain a tool any AI client can call. A small **MCP server** ex
 `search`/`fetch` connector contract — the same shape **Claude *and* ChatGPT** expect — plus
 `wiki`, `topics`, `recent`, and `ingest_note`, so you can open Claude (or ChatGPT) and ask
 *"search my brain for what I've covered on AI inference"* and it answers from your own content.
-Run it locally over stdio, or host it (HTTP + auth) so it's reachable from your phone.
+Run it **locally over stdio** (Claude Desktop / Claude Code), or **host it** (HTTP) so it's
+reachable from **claude.ai on your phone and ChatGPT** too. Hosting puts your brain on the public
+internet, though — so lock it down (see security, below).
 
-> **📸 Screenshot:** asking Claude *"search my brain for …"* and it answering from your own
-> sources — the brain showing up as a connector.
+> **📸 Screenshot:** asking Claude *"search my brain for …"* — on your phone — and it answering
+> from your own sources, the brain showing up as a connector.
 
 ## Going to the cloud (optional)
 
 Everything above runs locally. When you want it always-on and backed up, lift it to **Oracle
 Autonomous Database** — same engine, managed. The app connects over a wallet with **no code
 changes**; you load the same ONNX model, copy the data, and you're running in the cloud.
+
+## Keep it private — security (don't skip this)
+
+Your brain holds *your* data, so treat it that way. The repo bakes these in; if you fork it, keep
+them on:
+
+- **Redact before you ingest.** AI-chat and coding transcripts leak API keys — scrub secret
+  patterns *before* they hit the database. A `review.py` scans for anything that slipped through.
+- **Never commit secrets.** `.env`, the cloud wallet, and your raw content are gitignored — keep
+  them that way; keep the real copies in a password manager, and rotate anything that's exposed.
+- **Least privilege, no public database.** The app runs as a limited DB user (not admin), and the
+  database is *never* exposed to the internet — only the MCP server talks to it.
+- **Lock the front door if you host it.** A public MCP needs auth on *every* request. For
+  claude.ai/ChatGPT that means **OAuth + an allowlist** — so even after a valid login, only *your*
+  account is authorized; everyone else is denied, and the server **refuses to start** with an empty
+  allowlist.
+- **Treat retrieved content as data, not instructions** (prompt-injection), and keep any
+  write/update tools **human-approved**.
+
+Full checklist: **[SECURITY.md](https://github.com/LindaHaviv/second-brain/blob/main/SECURITY.md)**.
 
 ## What you end up with
 
