@@ -46,9 +46,19 @@ Your server is then at `https://my-second-brain.fly.dev` (health: `/health`, MCP
 > a dir, set `DB_WALLET_DIR`/`DB_WALLET_PASSWORD`). `db.py` already supports the wallet path.
 
 ## Connect clients
-- **Claude (web/desktop/mobile) & ChatGPT:** add a custom MCP/connector with URL
-  `https://my-second-brain.fly.dev/mcp` and header `Authorization: Bearer <MCP_AUTH_TOKEN>`.
-- Tools available: `search`, `fetch`, `wiki`, `topics`, `recent`, `ingest_note`.
+- **Claude Code / Claude Desktop / the API:** point them at `https://my-second-brain.fly.dev/mcp`
+  with header `Authorization: Bearer <MCP_AUTH_TOKEN>`. `search`/`fetch` follow the standard
+  connector contract (`{results:[{id,title,url,text}]}`), plus `wiki`, `topics`, `recent`,
+  `ingest_note`.
+- **ChatGPT + claude.ai web/mobile:** these connector UIs require **OAuth** (Dynamic Client
+  Registration), *not* a static bearer header — so they need an OAuth seam (e.g. WorkOS AuthKit)
+  added on top of this server. The tools are already ChatGPT-shaped; only the auth transport is
+  missing. **TODO** before ChatGPT/phone work.
+
+## Keep-warm (built in)
+The server runs a background keep-warm thread (`KEEP_WARM=1`, every `KEEP_WARM_SECONDS`, default
+240s) holding a hot DB session and keeping the in-DB model resident — so the Always-Free
+Autonomous DB doesn't idle out and the first real query skips the cold path.
 
 ## Security
 - **HTTPS enforced** (`force_https`), **bearer token required** on every request (`/health` open).

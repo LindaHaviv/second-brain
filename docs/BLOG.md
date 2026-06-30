@@ -38,6 +38,10 @@ new this week?"* — and watch it get sharper every time you use it.
 > `title`, `text`, `url`, `published_at`; the embedding is generated in-DB on insert. Swap sources
 > for your use case (content, research, work, a personal wiki) without touching anything downstream.
 
+> **🔒 Redact as you ingest.** Some sources — especially AI-chat and coding-session transcripts —
+> can contain API keys or tokens. Scrub secret patterns *before* they land in the database (the
+> repo does this on ingest, and ships a `review.py` that scans for anything that slipped through).
+
 Three layers, **one database**:
 1. **Content** — everything you've made, as rows you can read back as JSON documents.
 2. **A compiled wiki** — synthesized topic pages over that content (self-maintaining).
@@ -152,8 +156,9 @@ or note.
 
 ## 5. Use it from anywhere — MCP
 
-Finally, make the brain a tool any AI client can call. A small **MCP server** exposes
-`search`, `fetch`, `wiki`, `topics`, `recent`, and `ingest_note` — so you can open Claude and ask
+Finally, make the brain a tool any AI client can call. A small **MCP server** exposes the standard
+`search`/`fetch` connector contract — the same shape **Claude *and* ChatGPT** expect — plus
+`wiki`, `topics`, `recent`, and `ingest_note`, so you can open Claude (or ChatGPT) and ask
 *"search my brain for what I've covered on AI inference"* and it answers from your own content.
 Run it locally over stdio, or host it (HTTP + auth) so it's reachable from your phone.
 
