@@ -38,6 +38,7 @@ drop table wiki_meta cascade constraints;
 drop table page_links cascade constraints;
 drop table page_sources cascade constraints;
 drop table wiki_pages cascade constraints;
+drop table analytics cascade constraints;
 @/container-entrypoint-initdb.d/01_content_duality.sql
 @/container-entrypoint-initdb.d/02_agent_memory.sql
 @/container-entrypoint-initdb.d/03_semantic_memory.sql
@@ -45,6 +46,7 @@ drop table wiki_pages cascade constraints;
 @/container-entrypoint-initdb.d/05_conversational_memory.sql
 @/container-entrypoint-initdb.d/06_procedural_memory.sql
 @/container-entrypoint-initdb.d/07_wiki.sql
+@/container-entrypoint-initdb.d/08_analytics.sql
 exit
 SQL
 
