@@ -64,11 +64,14 @@ The code is built in (`mcp_server.py` → `_build_auth`); turn it on with a Work
    fly secrets set \
      AUTHKIT_DOMAIN='https://<slug>.authkit.app' \
      MCP_BASE_URL='https://<your-app>.fly.dev' \
-     ALLOWED_EMAILS='you@example.com'     # ONLY these emails get in; everyone else is denied
+     ALLOWED_SUBS='user_...'     # your WorkOS user id — ONLY this user is authorized
    fly deploy
    ```
+   > WorkOS **AuthKit access tokens carry `sub` (the user id), not email** — so authorize by
+   > **`ALLOWED_SUBS`**. Find your id at **Users → your user → the `user_...` value** (after your
+   > first login). (`ALLOWED_EMAILS` also works for providers that put email in the token.)
 3. In claude.ai / ChatGPT → add a custom connector with URL `https://<your-app>.fly.dev/mcp` (no
-   token) → log in via WorkOS with an allow-listed email.
+   token) → log in via WorkOS. **Only the allow-listed user gets in** — everyone else is denied.
 
 > **Security:** OAuth *authenticates*; the `ALLOWED_EMAILS` allowlist *authorizes* — only your
 > email(s) get in, even though anyone can attempt a WorkOS login. The server **refuses to start**

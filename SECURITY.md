@@ -34,8 +34,9 @@ before you point it at your real content or put it online.
 - **Require auth on every request.** A bearer token works for Claude Code/Desktop/API; for
   **claude.ai web/mobile and ChatGPT** you need **OAuth** (this repo uses WorkOS AuthKit + DCR).
 - **Allowlist who can get in.** OAuth alone lets *anyone* with a valid login authenticate — gate it
-  with an **email allowlist** (`ALLOWED_EMAILS`) so only you get access. The server is
-  **fail-closed**: it refuses to start if the allowlist is empty.
+  with an allowlist so only **you** get access: **`ALLOWED_SUBS`** (your WorkOS user id — AuthKit
+  tokens carry `sub`, not email) and/or **`ALLOWED_EMAILS`**. The server is **fail-closed**: it
+  refuses to start with an empty allowlist.
 - **HTTPS only** (enforced), secrets in your host's secret store (Fly secrets / a vault) — never in
   the image. **Rotate** the MCP token / re-deploy if a secret leaks.
 

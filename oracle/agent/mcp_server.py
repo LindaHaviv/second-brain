@@ -60,14 +60,13 @@ def _build_auth():
     async def _verify_with_allowlist(token):
         at = await _orig_verify(token)
         if not at:
-            print("[allowlist] base token verify failed", flush=True)
             return None
         claims = getattr(at, "claims", None) or {}
         email = str(claims.get("email") or "").lower()
         sub = str(claims.get("sub") or "")
         ok = (email and email in allowed) or (sub and sub in allowed_subs)
-        print(f"[allowlist] email={email!r} sub={sub!r} allowed={ok} claims={sorted(claims.keys())}",
-              flush=True)
+        if not ok:   # log denials only (security signal); allowed requests stay quiet
+            print(f"[allowlist] DENIED email={email!r} sub={sub!r}", flush=True)
         return at if ok else None
 
     verifier.verify_token = _verify_with_allowlist
