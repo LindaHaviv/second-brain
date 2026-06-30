@@ -12,7 +12,7 @@ import json
 import anthropic
 
 from memory import record, recall
-from content import search_content, get_post
+from content import search_content, get_post, get_wiki_page
 from semantic_memory import semantic_recall
 
 MODEL = "claude-opus-4-8"
@@ -20,7 +20,10 @@ MODEL = "claude-opus-4-8"
 SYSTEM = (
     "You are a research assistant for Linda. Research the question using BOTH her OWN content "
     "library (call search_content, optionally get_post) AND the web (web_search) when outside "
-    "context helps. Ground any claim about HER work in her content and cite her video titles; "
+    "context helps. Her library also has compiled WIKI PAGES — synthesized overviews of a topic "
+    "across all her work; when a search result's match level is 'wiki', read the full page with "
+    "get_wiki_page(topic) and prefer it for a synthesized view of what she's covered (it cites the "
+    "underlying posts). Ground any claim about HER work in her content and cite her video titles; "
     "use the web for current or external facts and cite those sources. Be explicit about what "
     "comes from her content vs. the web, and say honestly if something isn't covered. Use the "
     "prior research notes if they're relevant."
@@ -29,9 +32,11 @@ SYSTEM = (
 TOOLS = [
     {
         "name": "search_content",
-        "description": "Search Linda's own content (her posts/videos) by meaning. Returns the "
-                       "most relevant items with post_id, title, snippet, url, and distance "
-                       "(lower = closer).",
+        "description": "Search Linda's own content by meaning across three levels (see each "
+                       "result's 'lvl'): 'wiki' = a synthesized topic page (read it fully with "
+                       "get_wiki_page using its title), 'item' = a post, 'passage' = a chunk. "
+                       "Returns post_id, title, snippet, url, lvl, and distance (lower = closer). "
+                       "For 'wiki' results post_id is null — use get_wiki_page, not get_post.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -43,11 +48,22 @@ TOOLS = [
     },
     {
         "name": "get_post",
-        "description": "Get the full text of one post by its post_id.",
+        "description": "Get the full text of one post by its post_id (for 'item'/'passage' hits).",
         "input_schema": {
             "type": "object",
             "properties": {"post_id": {"type": "integer"}},
             "required": ["post_id"],
+        },
+    },
+    {
+        "name": "get_wiki_page",
+        "description": "Read a compiled WIKI PAGE: a synthesized overview of everything in Linda's "
+                       "content about a topic, with citations back to the source posts. Pass the "
+                       "topic (the title of a 'wiki' search result).",
+        "input_schema": {
+            "type": "object",
+            "properties": {"topic": {"type": "string"}},
+            "required": ["topic"],
         },
     },
     # server-side web search — runs on Anthropic's side; combines external/current info
@@ -60,6 +76,8 @@ def _run_tool(conn, name, inp):
         return search_content(conn, inp["query"], int(inp.get("k", 5)))
     if name == "get_post":
         return get_post(conn, int(inp["post_id"]))
+    if name == "get_wiki_page":
+        return get_wiki_page(conn, inp["topic"])
     return {"error": f"unknown tool {name}"}
 
 
@@ -101,6 +119,10 @@ def run_research(client, conn, question, history=None):
                 if b.name == "search_content" and isinstance(out, list):
                     for r in out:
                         sources.append((r["title"], r["url"]))
+                elif b.name == "get_wiki_page" and isinstance(out, dict) and out.get("topic"):
+                    sources.append((f"wiki: {out['topic']}", None))
+                    for cdict in out.get("citations", []):
+                        sources.append((cdict["title"], cdict["url"]))
                 results.append({
                     "type": "tool_result", "tool_use_id": b.id,
                     "content": json.dumps(out, default=str),
