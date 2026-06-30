@@ -42,14 +42,35 @@ def _build_auth():
                          "(that would let any WorkOS user in).")
     from fastmcp.server.auth.providers.workos import AuthKitProvider, WorkOSTokenVerifier
     base_url = os.environ.get("MCP_BASE_URL", "https://my-second-brain.fly.dev")
+    _cache = {}   # sub -> email, and the discovered userinfo endpoint
+
+    async def _email_for(token, claims):
+        email = str(claims.get("email") or "").lower()
+        if email:
+            return email
+        sub = claims.get("sub")
+        if sub in _cache:
+            return _cache[sub]
+        import httpx
+        try:
+            async with httpx.AsyncClient(timeout=6) as c:
+                if "userinfo" not in _cache:
+                    cfg = (await c.get(f"{domain}/.well-known/openid-configuration")).json()
+                    _cache["userinfo"] = cfg.get("userinfo_endpoint", f"{domain}/oauth2/userinfo")
+                r = await c.get(_cache["userinfo"], headers={"Authorization": f"Bearer {token}"})
+                email = str((r.json() or {}).get("email") or "").lower()
+        except Exception:
+            email = ""
+        if sub:
+            _cache[sub] = email
+        return email
 
     class _AllowlistVerifier(WorkOSTokenVerifier):
         async def verify_token(self, token):
             at = await super().verify_token(token)
             if not at:
                 return None
-            claims = getattr(at, "claims", None) or {}
-            email = str(claims.get("email") or claims.get("preferred_username") or "").lower()
+            email = await _email_for(token, getattr(at, "claims", None) or {})
             return at if email in allowed else None   # authenticated but not allow-listed -> deny
 
     return AuthKitProvider(authkit_domain=domain, base_url=base_url,
