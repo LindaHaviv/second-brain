@@ -34,6 +34,7 @@ drop table semantic_memory cascade constraints;
 drop table conversations cascade constraints;
 drop table procedural_memory cascade constraints;
 drop view wiki_page_dv;
+drop table wiki_meta cascade constraints;
 drop table page_links cascade constraints;
 drop table page_sources cascade constraints;
 drop table wiki_pages cascade constraints;

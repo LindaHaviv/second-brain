@@ -28,6 +28,15 @@ CREATE TABLE page_sources (
   CONSTRAINT page_sources_pk PRIMARY KEY (page_id, post_id)
 );
 
+-- High-water mark so `wiki.py --refresh` is cheap: it recompiles only topics whose top
+-- retrieval now includes posts newer than the last compile (no new content -> no LLM calls).
+CREATE TABLE wiki_meta (
+  id               NUMBER DEFAULT 1 PRIMARY KEY,
+  last_max_post_id NUMBER DEFAULT 0 NOT NULL,
+  refreshed_at     TIMESTAMP DEFAULT SYSTIMESTAMP
+);
+INSERT INTO wiki_meta (id, last_max_post_id) VALUES (1, 0);
+
 -- A page as one JSON document, with its citations (-> your content) nested.
 -- (Cross-links live in page_links and are queried relationally, e.g. "what links to X".)
 CREATE OR REPLACE JSON RELATIONAL DUALITY VIEW wiki_page_dv AS
