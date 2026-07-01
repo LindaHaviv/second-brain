@@ -15,8 +15,9 @@ before you point it at your real content or put it online.
   defaults only** — change them for anything real.
 
 ## Redact before you ingest
-- AI-chat and coding-session transcripts frequently contain **API keys / tokens**. The loaders
-  scrub known secret patterns before inserting; keep that on for every source.
+- AI-chat and coding-session transcripts frequently contain **API keys / tokens**. The ChatGPT and
+  Claude Code loaders scrub known secret patterns before inserting — add the same `redact()` pass
+  to any loader you write, and let `review.py` catch stragglers.
 - Run **`python scripts/review.py`** periodically — it scans the ingested content for leaked-secret
   patterns and exits non-zero if it finds any (wire it to an alert if you schedule it).
 - **Minimize**: ingest summaries/curated data, not raw dumps. Keep financials, contracts, and
@@ -74,7 +75,7 @@ are for you) and keep them separate:
   (Borrowed from Oracle's managed MCP, which bakes the same guard into its Select AI Agent tool
   instructions.)
 - **Separate reads from writes.** The MCP tools are split by capability: the read tools
-  (`search`/`fetch`/`wiki`/`topics`/`recent`) are annotated **`readOnlyHint`** so clients can
+  (`search`/`fetch`/`wiki`/`topics`/`recent`/`by_series`/`overview`) are annotated **`readOnlyHint`** so clients can
   auto-allow them, while the one write tool (`ingest_note`) is annotated as a write so a client can
   **gate/ask before** calling it. Anything destructive or that touches an external system (e.g.
   updating Notion) should stay **human-in-the-loop**.

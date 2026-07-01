@@ -48,7 +48,7 @@ cd oracle/agent && ../../.venv/bin/python -c "import db; print(db.connect().curs
 ```
 
 ## Phase 4 — Apply the schema (one command)
-With the cloud env set (Phase 3), run the applier — it builds all 7 layers over the wallet
+With the cloud env set (Phase 3), run the applier — it builds all 8 schema layers over the wallet
 connection, in the connected user's schema:
 ```bash
 ./.venv/bin/python scripts/apply_schema.py
@@ -75,7 +75,7 @@ on the cloud, so nothing else changes:
 ./.venv/bin/python scripts/claude_chats.py
 ./.venv/bin/python scripts/claude_code.py
 cd oracle/agent && ../../.venv/bin/python wiki.py     # recompile the wiki in the cloud
-../../.venv/bin/python semantic_memory.py             # re-consolidate semantic memory
+cd ../.. && ./.venv/bin/python scripts/consolidate.py  # re-consolidate semantic memory
 ```
 > Alternative: Oracle Data Pump / `DBMS_CLOUD` to move tables directly — heavier; re-ingest is
 > simpler and reproducible (and it's what the tutorial shows).

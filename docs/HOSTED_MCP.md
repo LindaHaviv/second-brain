@@ -7,11 +7,11 @@ cloud Autonomous DB.
 
 > **Build vs. managed.** This doc covers the **custom** self-hosted route — full control, Python
 > tools, the claude.ai/ChatGPT web-connector OAuth flow (reachable from your phone), portable across
-> databases, and it runs on **any tier including Always Free**. That's the right fit for this build.
+> databases, and it works with the local container too. That's the right fit for this build.
 > Oracle also ships a fully **managed** [Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/)
-> (Select AI Agent PL/SQL tools, governed by DB identity, native auditing) — a **paid-instance**
-> feature, worth reaching for once you're on paid infrastructure and want zero-ops + DB-level
-> governance.
+> built into Autonomous AI Database (Select AI Agent PL/SQL tools, governed by DB identity, native
+> auditing) — the zero-ops path when your brain lives in Autonomous AI Database and PL/SQL tools
+> cover your needs.
 
 > Already verified locally: `/health` → 200, no token → 401, valid token → reaches the tools.
 
@@ -21,14 +21,14 @@ to Autonomous (no wallet) once TLS auth is enabled. So the container just needs 
 string + credentials as secrets.
 
 ### 1. Enable TLS + restrict access on the DB (also part of hardening)
-In the console → **second-brain → Network**:
+In the console → **<your-db> → Network**:
 - Set **Mutual TLS (mTLS) authentication: Not required** (allows TLS).
 - Under **Access control list**, add the Fly app's egress IPs (or leave open *only* briefly for
   first deploy, then lock down). With TLS + a strong ADMIN/app password + the ACL, this is secure.
 
 ### 2. Get the TLS connection string
-Console → **second-brain → Database connection → Connection strings → TLS** → copy the
-`secondbrain_high` descriptor (a long `(description=...(protocol=tcps)...)` string).
+Console → **<your-db> → Database connection → Connection strings → TLS** → copy the
+`<your-db>_high` descriptor (a long `(description=...(protocol=tcps)...)` string).
 
 ## Deploy to Fly.io
 ```bash
@@ -37,7 +37,7 @@ brew install flyctl
 fly auth login                      # your Fly account (free allowance covers this)
 
 # from the repo root
-fly launch --no-deploy --copy-config --name my-second-brain   # uses deploy/fly.toml
+fly launch --no-deploy --copy-config --name <your-app>   # uses the root fly.toml
 
 # secrets (never baked into the image)
 fly secrets set \
@@ -50,14 +50,15 @@ fly deploy
 ```
 Your server is then at `https://<your-app>.fly.dev` (health: `/health`, MCP: `/mcp`).
 
-> Prefer mTLS over walletless? Ship the wallet as a Fly secret (base64 the zip, decode at start to
-> a dir, set `DB_WALLET_DIR`/`DB_WALLET_PASSWORD`). `db.py` already supports the wallet path.
+> Prefer mTLS over walletless? Ship the wallet as a Fly secret: tar.gz the **unzipped** wallet dir,
+> base64 it into the `BRAIN_WALLET_B64` secret (the entrypoint decodes it at start), and set
+> `DB_WALLET_DIR`/`DB_WALLET_PASSWORD`. `db.py` already supports the wallet path.
 
 ## Connect clients
 - **Claude Code / Claude Desktop / the API:** point them at `https://<your-app>.fly.dev/mcp`
   with header `Authorization: Bearer <MCP_AUTH_TOKEN>`. `search`/`fetch` follow the standard
   connector contract (`{results:[{id,title,url,text}]}`), plus `wiki`, `topics`, `recent`,
-  `ingest_note`.
+  `by_series`, `overview`, and `ingest_note` (the one write tool).
 - **ChatGPT + claude.ai web/mobile:** these connector UIs require **OAuth** (Dynamic Client
   Registration), not a bearer header. This repo supports it via **WorkOS AuthKit** — see below.
 
@@ -81,9 +82,10 @@ The code is built in (`mcp_server.py` → `_build_auth`); turn it on with a Work
 3. In claude.ai / ChatGPT → add a custom connector with URL `https://<your-app>.fly.dev/mcp` (no
    token) → log in via WorkOS. **Only the allow-listed user gets in** — everyone else is denied.
 
-> **Security:** OAuth *authenticates*; the `ALLOWED_EMAILS` allowlist *authorizes* — only your
-> email(s) get in, even though anyone can attempt a WorkOS login. The server **refuses to start**
-> with an empty allowlist. Full guidance: [SECURITY.md](../SECURITY.md).
+> **Security:** OAuth *authenticates*; the allowlist (`ALLOWED_SUBS` and/or `ALLOWED_EMAILS`)
+> *authorizes* — only your account gets in, even though anyone can attempt a WorkOS login. The
+> server **refuses to start** with an empty allowlist — and refuses to start with **no auth
+> configured at all** (no silent fail-open). Full guidance: [SECURITY.md](../SECURITY.md).
 
 ## Keep-warm + connection pool (built in)
 - **Session pool** — the server reuses DB connections from a per-process pool (`db.py`), so each
@@ -97,10 +99,13 @@ The code is built in (`mcp_server.py` → `_build_auth`); turn it on with a Work
 - `GET /health` — shallow liveness (no DB); the load balancer's fast check. Open in both auth modes.
 - `GET /ready` — **touches the DB** (`SELECT 1`) → `200 {"ready":true}` or `503`. Point external
   uptime monitoring at this so you're alerted when a machine's DB link is wedged (not just when the
-  process is up). Each `/mcp` call is also logged with method + status + latency (no query text).
+  process is up). The result is cached ~10s (the probe is open — caching stops a request loop from
+  holding DB pool slots). Each `/mcp` call is also logged with method + status + latency (no query text).
 
 ## Security
-- **HTTPS enforced** (`force_https`), **bearer token required** on every request (`/health` open).
+- **HTTPS enforced** (`force_https`); **auth required on every request** (`/health`+`/ready` open) —
+  the server refuses to start with neither OAuth nor a bearer token configured, and `/mcp` is
+  rate-limited (token bucket).
 - **Rotate** `MCP_AUTH_TOKEN` periodically (`fly secrets set ...` redeploys).
 - Keep the DB **ACL** tight (Fly egress IPs). Consider a least-privilege DB user (see hardening).
 - Token is the only credential a client needs — treat it like a password.

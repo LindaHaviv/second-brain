@@ -1,4 +1,4 @@
-# Build a Second Brain on Oracle Database 26ai
+# Build a Second Brain on Oracle AI Database 26ai
 
 *A step-by-step build: a self-improving research agent grounded in **your own sources** — the data,
 its embeddings, and the agent's memory all living in one database.*
@@ -18,7 +18,7 @@ work, then point it at your own sources.
 for your use case (content, research, work knowledge, a personal wiki). The build is the same; only
 the sources change.
 
-We'll build it on **Oracle Database 26ai**, and the reason that matters is simple: one engine does
+We'll build it on **Oracle AI Database 26ai**, and the reason that matters is simple: one engine does
 relational data, JSON documents, **AI Vector Search**, and even runs the embedding model **inside
 the database** — so there's far less glue code, and your data, its meaning, and the agent's memory
 all live together.
@@ -81,7 +81,7 @@ docker-compose -f oracle/docker-compose.yml up -d
 ./.venv/bin/python -c "import sys; sys.path.insert(0,'oracle/agent'); import db; \
   print(db.connect().cursor().execute( \
   \"select product from product_component_version where product like 'Oracle%'\").fetchone()[0])"
-# -> Oracle AI Database 26ai Free
+# -> Oracle AI Database 26ai ...   (the edition suffix varies by container image)
 ```
 
 You now have a live database with the content schema, the Duality view, four memory tables, and the
@@ -124,7 +124,9 @@ CREATE OR REPLACE JSON RELATIONAL DUALITY VIEW post_dv AS
   };
 ```
 
-Your app reads `post_dv` as JSON while the database keeps the relational tables consistent underneath.
+Your app reads the view as JSON while the database keeps the relational tables consistent
+underneath. This isn't decorative: in Step 5, every wiki read the agent makes goes through a
+Duality view — one query returns the page *with its citations already nested*.
 
 ---
 
@@ -163,6 +165,12 @@ Two refinements the repo adds: it **chunks** long content (transcripts, chats) i
 vector search with a **keyword** pass via Reciprocal Rank Fusion — so exact names, handles, and error
 codes that pure-vector search can miss still surface.
 
+> **⚡ 26ai also has this natively.** Oracle AI Database ships built-in **hybrid search** — a hybrid
+> vector index (Oracle Text + vectors on one column) queried through `DBMS_HYBRID_VECTOR.SEARCH`.
+> We hand-roll the fusion here because our retrieval spans **three tables** (posts + chunks + wiki
+> pages, ranked together) and because seeing RRF explicitly is half the lesson — but for
+> single-table hybrid search in production, reach for the native feature first.
+
 ---
 
 ## Step 4 — The research agent + four kinds of memory
@@ -186,10 +194,12 @@ the agent-memory literature talks about, each a table in the same database:
 | **Episodic** | `agent_memory` | every past research run (question, outcome, sources, lesson) |
 | **Semantic** | `semantic_memory` | durable facts distilled from those runs |
 | **Conversational** | `conversations` | the current multi-turn context |
-| **Procedural** | `procedural_memory` | the agent's tools, ranked by what works |
+| **Procedural** | `procedural_memory` | the agent's tools, retrieved by relevance per question |
 
-Before answering, the agent **recalls** relevant past runs and learned facts. After answering, it
-**records** the run. Periodically it **consolidates** episodic memory into semantic facts —
+Before answering, the agent **recalls** relevant past runs and learned facts, and **ranks its own
+toolset** against the question (procedural memory — with four tools it's a hint; at forty it's how
+you'd pick which tools to send at all). After answering, it **records** the run. Periodically it
+**consolidates** episodic memory into semantic facts —
 distilling "what happened" into "what I now know about this creator." That's the self-improving loop:
 
 ```
@@ -237,7 +247,10 @@ wiki page is *both* a document *and* a graph:
 - `wiki_page_dv` — a **Duality view** serving a page as one JSON document with its citations nested
 
 So a single page exercises **relational + JSON Relational Duality + AI Vector Search** at once, and
-the agent answers from your *synthesized* knowledge, tracing every claim back to a real video or note.
+the agent answers from your *synthesized* knowledge, tracing every claim back to a real video or
+note. And the Duality view isn't just for show — **every wiki read in the agent and the MCP server
+goes through it**: one query on `wiki_page_dv` returns the page with its citations already nested,
+replacing the two manual joins you'd otherwise write.
 
 ![A compiled wiki page — a synthesized topic overview with its citations back to your posts nested alongside](images/wiki-page.png)
 
@@ -277,14 +290,15 @@ Want it on your phone and in ChatGPT? **Host** the same server over HTTP — but
 on the public internet, so lock it down first (OAuth + an allowlist; see Security below).
 
 > **🔌 Two ways to serve it — and which fits here.** This build uses a **custom MCP server**
-> (Python): you host it, keep full control of the tools, it speaks the OAuth *custom-connector* flow
-> that **claude.ai web/mobile and ChatGPT** use, it's **database-agnostic**, and it runs on **any
-> tier — including Always Free**. That's the right fit here. Oracle *also* offers a fully **managed**
-> MCP server built into **Autonomous AI Database** — no infrastructure to run, tools as **Select AI
-> Agent** (PL/SQL) tools, access **governed by database identity** with native auditing. It's a
-> **paid-instance** feature, so it's the path to reach for once you're on paid infrastructure and want
-> zero-ops + DB-level governance. We studied it and **borrowed its security best-practices** into this
-> custom build — the prompt-injection guard and least-privilege DB user below. Docs:
+> (Python): you keep full control of the tools, it speaks the OAuth *custom-connector* flow that
+> **claude.ai web/mobile and ChatGPT** use, it's **database-agnostic**, and it works with the
+> **local container** — no cloud required. That's the right fit for a portable, teach-the-internals
+> build. Oracle *also* offers a fully **managed** MCP server built into **Autonomous AI Database**
+> (cloud): no infrastructure to run, tools defined as **Select AI Agent** (PL/SQL) tools, access
+> **governed by database identity** with native auditing. If your brain lives in Autonomous AI
+> Database and PL/SQL tools cover your needs, the managed server is the zero-ops path. We studied it
+> and **borrowed its security best-practices** into this custom build — the prompt-injection guard
+> and least-privilege DB user below. Docs:
 > [Oracle Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/).
 
 ![Claude calling the Second Brain connector and answering from your own content, the read tools auto-allowed and the write tool gated](images/mcp-search.png)
@@ -295,8 +309,8 @@ on the public internet, so lock it down first (OAuth + an allowlist; see Securit
 
 You've watched the whole thing work on sample data. Now point it at *your* content — the system is
 **collector-agnostic**, so the only thing it needs is rows in that `posts` table. Map any source's
-fields to `title`, `text`, `url`, `published_at`, and the platform; the embedding is generated in-DB
-on insert. The repo ships loaders for **Notion**, **YouTube** (+ transcripts), **Instagram** (API or
+fields to `title`, `caption` (the text), `url`, `published_at`, and the platform; the embedding is
+generated in-DB on insert. The repo ships loaders for **Notion**, **YouTube** (+ transcripts), **Instagram** (API or
 export — captions *and* reel transcripts), **LinkedIn**, and **AI chats** (Claude/ChatGPT exports),
 and any one is a copyable template.
 
@@ -327,9 +341,10 @@ auto-refresh stays safe. The more you use it, the sharper it gets.
 ## Step 8 — Go always-on (optional cloud)
 
 Everything above runs locally. When you want it always-on and backed up, lift it to **Oracle
-Autonomous Database** — same engine, managed. The app connects over a wallet with **no code
+Autonomous AI Database** — same engine, managed. The app connects over a wallet with **no code
 changes**; you load the same ONNX model, copy the data, and you're running in the cloud. Local stays
-fully private if you'd rather not.
+fully private if you'd rather not — and the copy script ships **only the content scope** by default,
+so your private data stays local even when the brain goes to the cloud.
 
 ---
 

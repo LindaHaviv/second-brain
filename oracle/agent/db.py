@@ -20,9 +20,15 @@ oracledb.defaults.fetch_lobs = False
 
 
 def _params():
+    # No password fallback, ever: a hardcoded default silently "works" against a DB that happens
+    # to use the demo password — fail loudly instead and point at the fix.
+    pwd = os.environ.get("APP_PWD")
+    if not pwd:
+        raise RuntimeError("APP_PWD is not set — copy oracle/.env.example to oracle/.env "
+                           "(local demo) or export APP_PWD for your database user.")
     params = dict(
         user=os.environ.get("DB_USER", "CCC"),
-        password=os.environ.get("APP_PWD", "CHANGE_ME_AppPwd1"),
+        password=pwd,
         dsn=os.environ.get("DB_DSN", "localhost:1521/FREEPDB1"),
     )
     wallet = os.environ.get("DB_WALLET_DIR")

@@ -14,6 +14,7 @@ import anthropic
 
 from memory import record, recall
 from content import search_hybrid, get_post, get_wiki_page
+from procedural import seed_tools, select_tools
 from semantic_memory import semantic_recall, consolidate
 
 MODEL = "claude-opus-4-8"
@@ -74,6 +75,30 @@ TOOLS = [
 ]
 
 
+_TOOLS_SEEDED = False
+
+
+def _procedural_hint(conn, question):
+    """PROCEDURAL memory in the loop: register the toolset once per process (MERGE — idempotent),
+    then semantic-rank the tools against THIS question. With four tools the ranking is a hint in
+    the prompt; the pattern is what matters — at 40+ tools you'd use it to select which tools to
+    send at all. Best-effort: never let it break a research run."""
+    global _TOOLS_SEEDED
+    try:
+        if not _TOOLS_SEEDED:
+            seed_tools(conn, [
+                {"name": t["name"], "description": t.get("description", "server-side web search"),
+                 "schema": t.get("input_schema"),
+                 "kind": "server" if t.get("type") else "client"}
+                for t in TOOLS
+            ])
+            _TOOLS_SEEDED = True
+        ranked = select_tools(conn, question, k=4)
+        return ", ".join(r["name"] for r in ranked)
+    except Exception:
+        return ""
+
+
 def _maybe_consolidate(client, conn, every=None):
     """Auto-improve: once enough new research runs have accumulated since the last
     consolidation, re-distill episodic -> semantic so the agent's learned facts stay current.
@@ -110,12 +135,15 @@ def run_research(client, conn, question, history=None):
     prior_txt = "\n".join(f"- {m.get('detail') or ''}" for m in prior) if prior else "(no prior research yet)"
     facts = semantic_recall(conn, question, k=5)
     facts_txt = "\n".join(f"- [{f['category']}] {f['fact']}" for f in facts) if facts else "(none yet)"
+    tool_hint = _procedural_hint(conn, question)   # procedural memory: tools ranked for THIS question
     messages = list(history or [])   # conversational / working memory (prior turns this session)
     messages.append({
         "role": "user",
         "content": (f"Question about my content: {question}\n\n"
                     f"What I already know about my content (semantic memory):\n{facts_txt}\n\n"
-                    f"Prior research notes (episodic):\n{prior_txt}"),
+                    f"Prior research notes (episodic):\n{prior_txt}"
+                    + (f"\n\nMost relevant tools for this question (procedural memory): {tool_hint}"
+                       if tool_hint else "")),
     })
 
     searched = []   # (title, url) surfaced by search — CANDIDATES, not necessarily used

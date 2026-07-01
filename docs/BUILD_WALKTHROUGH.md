@@ -93,7 +93,8 @@ no words.
 vector back — **no external embedding API, data never leaves the database.**
 
 Where it lives:
-- `VECTOR(384, FLOAT32)` column + `CREATE VECTOR INDEX … DISTANCE COSINE` — `schema/02_agent_memory.sql`
+- `VECTOR(384, FLOAT32)` column — `schema/02_agent_memory.sql` (the optional at-scale
+  `CREATE VECTOR INDEX` lives in `oracle/setup/03_vector_index.sql`)
 - `VECTOR_EMBEDDING(...)` to make vectors, `VECTOR_DISTANCE(...)` to compare — `agent/memory.py`, `setup/02_retrieval_examples.sql`
 - Loading the model once — `setup/01_load_onnx_model.sql`
 

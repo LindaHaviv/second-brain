@@ -1,13 +1,18 @@
-"""Copy the whole brain from the local Oracle container to the cloud Autonomous DB.
+"""Copy the brain from the local Oracle container to the cloud Autonomous DB.
 
-Faithful, fast migration: copies every table (content, chunks, all memory types, the compiled
-wiki) INCLUDING precomputed embeddings — so no re-ingest, no embedding recomputation, no
-re-hitting source APIs. db.connect() is the CLOUD target (oracle/.env); local is explicit.
+Fast migration: copies the content tables (content, chunks, memory types, the compiled wiki)
+INCLUDING precomputed embeddings — so no re-ingest, no embedding recomputation, no re-hitting
+source APIs. db.connect() is the CLOUD target (oracle/.env); local is explicit.
 
   python scripts/copy_local_to_cloud.py
 
+PRIVACY DEFAULT: private scopes stay local. Only visibility='content' rows are copied, and the
+private business tables are skipped entirely — the cloud (internet-reachable) brain never holds
+them. `--include-private` overrides for a fully-private cloud copy you have deliberately chosen.
+
 Idempotent: clears the target tables first. Run after apply_schema.py + load_model_cloud.py.
 """
+import argparse
 import os
 import pathlib
 import sys
@@ -19,9 +24,20 @@ import db          # noqa: E402  (cloud target, from oracle/.env)
 import oracledb    # noqa: E402
 
 # FK-safe order: parents before children.
-TABLES = ["platforms", "brands", "deals", "posts", "media", "content_chunks",
+TABLES = ["platforms", "posts", "media", "content_chunks",
           "agent_memory", "semantic_memory", "conversations", "procedural_memory",
           "wiki_pages", "page_links", "page_sources", "wiki_meta"]
+PRIVATE_TABLES = ["brands", "deals"]   # private business data — local vault only, by default
+
+# content-scope filters (applied unless --include-private): the cloud copy carries ONLY the
+# searchable content scope, so private/business/archived rows never leave the local vault.
+CONTENT_ONLY = {
+    "posts": "WHERE NVL(visibility,'content') = 'content'",
+    "media": ("WHERE post_id IN (SELECT post_id FROM posts "
+              "WHERE NVL(visibility,'content') = 'content')"),
+    "content_chunks": ("WHERE post_id IN (SELECT post_id FROM posts "
+                       "WHERE NVL(visibility,'content') = 'content')"),
+}
 BATCH = 500
 
 
@@ -38,6 +54,17 @@ def vector_cols(cur, table):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--include-private", action="store_true",
+                    help="ALSO copy private scopes + business tables to the cloud "
+                         "(default: content only — private data stays local)")
+    args = ap.parse_args()
+    tables = (["platforms"] + PRIVATE_TABLES + TABLES[1:]) if args.include_private else TABLES
+    preds = {} if args.include_private else CONTENT_ONLY
+    if not args.include_private:
+        print("privacy default ON: copying visibility='content' only; "
+              f"skipping {', '.join(PRIVATE_TABLES)} (use --include-private to override)")
+
     local = oracledb.connect(
         user=os.environ.get("LOCAL_DB_USER", "CCC"),
         password=os.environ.get("LOCAL_APP_PWD", "CHANGE_ME_AppPwd1"),   # local demo default; override via env
@@ -46,11 +73,17 @@ def main():
     lc, cc = local.cursor(), cloud.cursor()
 
     print("clearing target tables...")
-    for t in reversed(TABLES):
+    for t in reversed(tables):
         cc.execute(f"DELETE FROM {t}")
+    if not args.include_private:
+        # actively PURGE private tables from the cloud too (an earlier full copy may have put
+        # them there) — the default run leaves the cloud with zero private business rows.
+        for t in reversed(PRIVATE_TABLES):
+            cc.execute(f"DELETE FROM {t}")
+            print(f"  purged cloud {t}")
     cloud.commit()
 
-    for t in TABLES:
+    for t in tables:
         cols = cols_of(lc, t)
         vcols = vector_cols(lc, t)
         col_list = ", ".join(cols)
@@ -58,7 +91,7 @@ def main():
         insert = f"INSERT INTO {t} ({col_list}) VALUES ({binds})"
         sizes = [oracledb.DB_TYPE_VECTOR if c in vcols else None for c in cols]
 
-        lc.execute(f"SELECT {col_list} FROM {t}")
+        lc.execute(f"SELECT {col_list} FROM {t} {preds.get(t, '')}")
         total = 0
         while True:
             rows = lc.fetchmany(BATCH)

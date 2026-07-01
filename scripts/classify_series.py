@@ -1,10 +1,10 @@
-"""Tag the creator's **Tech Walks** — her signature series where she interviews a guest while
+"""Tag a content series — the demo's example is **Tech Walks**, interviews with a guest while
 walking. Notion episodes are titled "Tech Walks:" (tagged directly); the published video posts
 (Instagram/YouTube/LinkedIn) often DON'T say "Tech Walks", so this classifies them by style and
 sets posts.series='tech_walk'.
 
-  ../.venv/bin/python scripts/classify_series.py            # preview
-  ../.venv/bin/python scripts/classify_series.py --apply    # tag series='tech_walk'
+  ./.venv/bin/python scripts/classify_series.py            # preview
+  ./.venv/bin/python scripts/classify_series.py --apply    # tag series='tech_walk'
 """
 import sys, os, json, argparse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "oracle", "agent"))
@@ -12,17 +12,17 @@ import db
 import anthropic
 
 MODEL = "claude-haiku-4-5"
-RUBRIC = """You label a tech creator's published posts as her "Tech Walks" series or not.
+RUBRIC = """You label a tech creator's published posts as their "Tech Walks" series or not.
 
-The ONE defining criterion: a Tech Walk is her **interviewing or featuring ANOTHER PERSON (a guest)**.
-It is always her IN CONVERSATION WITH / INTERVIEWING someone else — never solo.
+The ONE defining criterion: a Tech Walk is the creator **interviewing or featuring ANOTHER PERSON (a guest)**.
+It is always the creator IN CONVERSATION WITH / INTERVIEWING someone else — never solo.
 
-A TECH WALK (label "tech_walk") = she is interviewing / featuring a **named guest** (founder / CEO /
+A TECH WALK (label "tech_walk") = the creator is interviewing / featuring a **named guest** (founder / CEO /
 exec / engineer / creator). Signs: "with <name>", "<name> explains…", "join us as <name>…",
 "<topic> by <guest>", a specific person + their company (e.g. "<Name> (Company)", "with <Name>",
 "<Name> explains…"). ANY named guest counts — adapt these cues to the guests in your own series.
 
-NOT a tech walk (label "other") = anything that is JUST HER, with no guest — even if she's walking
+NOT a tech walk (label "other") = anything that is JUST THE CREATOR, with no guest — even if they're walking
 or it's a vlog: solo explainers ("AI Engineer vs ML Engineer", "<X> in 60 seconds", "crash course"),
 personal vlogs ("come with me to re:Invent", "exploring the Spheres", "visiting the Summit"),
 motivational one-liners, product-news, promos/CTAs. Being a "walk" or vlog does NOT make it a tech
