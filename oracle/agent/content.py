@@ -86,17 +86,26 @@ def search_hybrid(conn, query, k=8, C=60):
     pool = max(k * 3, 20)
     vec = search_content(conn, query, pool)
     lex = _lexical_posts(conn, _terms(query), pool)
-    scores, meta = {}, {}
+    scores, meta, retr = {}, {}, {}
     for rank, r in enumerate(vec):
         rid = _rid(r)
         scores[rid] = scores.get(rid, 0.0) + 1.0 / (C + rank)
         meta[rid] = r
+        retr.setdefault(rid, set()).add("semantic")
     for rank, r in enumerate(lex):
         rid = _rid(r)
         scores[rid] = scores.get(rid, 0.0) + 1.0 / (C + rank)
         meta.setdefault(rid, r)
+        retr.setdefault(rid, set()).add("keyword")
     ranked = sorted(scores, key=lambda x: scores[x], reverse=True)[:k]
-    return [meta[rid] for rid in ranked]
+    out = []
+    for i, rid in enumerate(ranked, 1):
+        row = dict(meta[rid])          # attach the fusion trace (educational + honest)
+        row["rank"] = i
+        row["rrf_score"] = round(scores[rid], 4)
+        row["retrievers"] = sorted(retr[rid])   # ['semantic'], ['keyword'], or both
+        out.append(row)
+    return out
 
 
 def get_wiki_page(conn, topic):

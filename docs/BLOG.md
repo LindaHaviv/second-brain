@@ -196,6 +196,13 @@ auto-allow them, while the one write tool is marked a write so the client asks f
 `MCP_READONLY` drops it entirely). Hosting puts your brain on the public internet, though — so lock
 it down (OAuth + allowlist; see security, below).
 
+> **🔎 Show your work (great for teaching).** Instead of a black-box list, each `search` result
+> carries **how it was found** — `match` (wiki / post / passage), `rank`, `score`, and `found_by`
+> (`semantic`, `keyword`, or both). Add `explain=true` and you also get a `search_info` block naming
+> the method: *hybrid — in-DB MiniLM semantic vectors (cosine) fused with keyword search via
+> Reciprocal Rank Fusion.* So a demo can *see* a result that matched by **both** semantic meaning and
+> exact keyword — the retrieval isn't hidden, it's on the page.
+
 > **🔌 Two ways to serve it — and which fits here.** This tutorial builds a **custom MCP server**
 > (Python): you host it, keep full control of the tools, it speaks the OAuth *custom-connector* flow
 > that **claude.ai web/mobile and ChatGPT** use (reachable from your phone), it's **database-agnostic**
