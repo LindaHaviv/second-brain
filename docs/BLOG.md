@@ -146,7 +146,8 @@ Your app reads the view as JSON while the database keeps the relational tables c
 underneath. And this matters *more* in the agent era, not less: **agents and MCP tools consume
 JSON**, while governance still wants normalized, consistent truth — Duality serves both from one
 table. It isn't decorative here either: in Step 5, every wiki read the agent makes goes through a
-Duality view — one query returns the page *with its citations already nested*.
+Duality view — one query returns the page *with its citations already nested*. (Deep dive: the
+[JSON-Relational Duality Developer's Guide](https://docs.oracle.com/en/database/oracle/oracle-database/26/jsnvu/).)
 
 ---
 
@@ -162,7 +163,8 @@ EXEC DBMS_VECTOR.LOAD_ONNX_MODEL('DATA_PUMP_DIR', 'all_MiniLM_L12_v2.onnx', 'MIN
 ```
 
 Now semantic search is just SQL — embed the query and rank by cosine distance, no keys, no data
-leaving the database:
+leaving the database (full reference: the
+[AI Vector Search User's Guide](https://docs.oracle.com/en/database/oracle/oracle-database/26/vecse/)):
 
 ```sql
 SELECT title, caption
@@ -185,8 +187,11 @@ Two refinements the repo adds: it **chunks** long content (transcripts, chats) i
 vector search with a **keyword** pass via Reciprocal Rank Fusion — so exact names, handles, and error
 codes that pure-vector search can miss still surface.
 
-> **⚡ 26ai also has this natively.** Oracle AI Database ships built-in **hybrid search** — a hybrid
-> vector index (Oracle Text + vectors on one column) queried through `DBMS_HYBRID_VECTOR.SEARCH`.
+> **⚡ 26ai also has this natively.** Oracle AI Database ships built-in
+> [**hybrid search**](https://docs.oracle.com/en/database/oracle/oracle-database/26/vecse/understand-hybrid-search.html) —
+> a hybrid vector index (Oracle Text + vectors on one column) queried through
+> [`DBMS_HYBRID_VECTOR.SEARCH`](https://docs.oracle.com/en/database/oracle/oracle-database/26/arpls/dbms_hybrid_vector1.html)
+> (it even offers RRF as a fusion mode — the same algorithm we hand-rolled).
 > We hand-roll the fusion here because our retrieval spans **three tables** (posts + chunks + wiki
 > pages, ranked together) and because seeing RRF explicitly is half the lesson — but for
 > single-table hybrid search in production, reach for the native feature first.
@@ -247,10 +252,13 @@ daily scheduled consolidation.)
 > way, the memory lives in your Oracle AI Database. See the
 > [Oracle AI Agent Memory Package](https://docs.oracle.com/en/database/oracle/agent-memory/).
 >
-> **Go deeper on agent memory:** the free **[Oracle × DeepLearning.AI "Agent Memory" course](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**
-> and the **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)**
-> (workshops + notebooks: RAG → agents → memory-augmented agents) are the best places to learn the
-> concepts behind this build.
+> **Go deeper on agent memory:** the free **[Oracle × DeepLearning.AI "Agent Memory" course](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**,
+> the **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)** (workshops +
+> notebooks: RAG → agents → memory-augmented agents) — especially its hands-on
+> **[Agent Memory Workshop](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/workshops/agent_memory_workshop)**
+> (build a research-paper assistant with six memory types and a before/after memory comparison) and
+> the **[agent-memory notebooks](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/notebooks/agent_memory)**
+> for the OAMP package — are the best places to learn the concepts behind this build.
 
 ![The agent answering with citations to your own posts, then building on the previous turn as agent_memory grows](images/agent-answer.png)
 

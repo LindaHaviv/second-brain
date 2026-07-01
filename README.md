@@ -50,7 +50,8 @@ New to the concepts (embeddings, duality, agent memory, the agent loop)? Read
 **[docs/BUILD_WALKTHROUGH.md](docs/BUILD_WALKTHROUGH.md)** first. To go deeper on **agent memory**,
 Oracle has two great resources: the free **[Oracle × DeepLearning.AI "Agent Memory" course](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**
 and the **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)**
-(workshops + notebooks from RAG to memory-augmented agents).
+(workshops + notebooks from RAG to memory-augmented agents — start with its
+[Agent Memory Workshop](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/workshops/agent_memory_workshop)).
 
 ## Why Oracle
 

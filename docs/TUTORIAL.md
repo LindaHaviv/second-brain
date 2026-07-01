@@ -372,5 +372,6 @@ content scope** by default, so private data stays local. See
 - **Concepts** — how embeddings, JSON Relational Duality, and agent memory work:
   **[BUILD_WALKTHROUGH.md](BUILD_WALKTHROUGH.md)**. To go deeper on agent memory, Oracle's free
   **[DeepLearning.AI "Agent Memory" course](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**
-  and the **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)**.
+  and the **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)** — especially
+  its hands-on [Agent Memory Workshop](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/workshops/agent_memory_workshop).
 - **Security** — before you host anything, walk **[SECURITY.md](../SECURITY.md)**.
