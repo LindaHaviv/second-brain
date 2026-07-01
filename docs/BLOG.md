@@ -258,6 +258,9 @@ daily scheduled consolidation.)
 
 ## Step 5 — Compile a self-improving knowledge wiki
 
+> Already loaded **your own** data instead of the sample? Do the privacy scoping in Step 7 first —
+> the compiler (and memory consolidation) should only ever read your `content` scope.
+
 RAG re-synthesizes your knowledge on every question. We add a layer that **compiles it once**:
 
 ```bash
@@ -316,7 +319,8 @@ client can auto-allow them, while the one write tool is marked a write so the cl
 > keyword — the retrieval isn't hidden, it's on the page.
 
 Want it on your phone and in ChatGPT? **Host** the same server over HTTP — but that puts your brain
-on the public internet, so lock it down first (OAuth + an allowlist; see Security below).
+on the public internet, so lock it down first (OAuth + an allowlist; see Security below) — and if
+you've loaded your own data, do Step 7's privacy scoping **before** you host.
 
 > **🔌 Two ways to serve it — and which fits here.** This build uses a **custom MCP server**
 > (Python): you keep full control of the tools, it speaks the OAuth *custom-connector* flow that
