@@ -92,6 +92,9 @@ mkdir -p exports/youtube
    content.search_content(db.connect(),'using AI in my workflow',k=3)]"
 ```
 
+> The query is deliberately broad so it matches *whatever* channel you loaded — swap in a phrase
+> that fits your sample data. (Once your own content is in, **specific beats broad**: see Lab 3.)
+
 Then the research agent (add `ANTHROPIC_API_KEY=...` to `oracle/.env` first):
 
 ```bash
@@ -141,6 +144,13 @@ and the platform, then insert into `posts`. The embedding is generated in-DB aut
 any loader above as a template — search and the agent work over the new content immediately.
 
 ✅ **Checkpoint** — re-run the Lab 2 search; you should now see *your* titles come back.
+
+> **🎯 Ask it what only YOUR brain would know.** Broad queries ("AI", "productivity") return
+> broad results and make any search look the same. The brain shines on **specific** questions:
+> an exact person or company you've talked about (this exercises the keyword side of hybrid
+> search), a niche topic you've covered from three angles, *"what did I say about X in that long
+> chat last spring?"*. When you demo it, lead with a question a generic assistant would have to
+> guess at — that's the whole point of the brain.
 
 > **🏷️ Optional — tag your own content *series*.** `posts.series` lets you group content into a
 > named series you care about — an interview series, a tutorial series, a product line, whatever fits
@@ -256,8 +266,27 @@ launchctl list | grep secondbrain     # confirm it's registered
 
 (A LaunchAgent only fires while your Mac is awake; a missed run fires on next wake.) Consolidation
 distills your research runs into durable **semantic facts**, so the agent stops re-deriving your
-themes every time — it gets sharper the more you use it. Export-only sources (ChatGPT/LinkedIn) are
-a two-step manual flow: drop the export, run `classify_private.py`, then `sync.py` folds it in.
+themes every time — it gets sharper the more you use it.
+
+### The freshness playbook — every source type, continuously current
+
+Different sources update different ways; here's the strategy per type:
+
+| Source type | How it stays current | Cadence |
+|---|---|---|
+| **API sources** (Instagram, Notion) | `sync.py` pulls them automatically | daily, hands-off |
+| **Public metadata** (YouTube) | re-run the yt-dlp collect + loader | whenever you publish |
+| **Export-only** (ChatGPT / Claude / LinkedIn) | download a fresh export → run its loader → `sync.py` | set a monthly reminder — no push API exists |
+| **In-the-moment ideas** | the MCP `ingest_note` tool — say *"save this idea to my brain"* from any AI client | as they happen |
+
+> **⚠️ The one rule for chat re-imports:** re-importing a chat export **resets visibility tags** —
+> your private chats would be searchable again until reclassified. Run `classify_private.py --apply`
+> right after any chat import. `sync.py` also has a **safety net**: it detects the reset state
+> (chat posts present, zero tagged) and reruns the classifier automatically before rebuilding the
+> wiki/memory — but don't rely on it; classify at import time.
+
+Whatever the source, the order is always the same — **ingest → classify → wiki refresh →
+consolidate** — and `sync.py` enforces it, so the derived layers never lag the data.
 
 ---
 
