@@ -164,10 +164,18 @@ pull configured API sources  →  wiki refresh  →  consolidate memory
 ./.venv/bin/python scripts/sync.py
 ```
 
-Schedule it (a macOS **LaunchAgent**, daily) and updates are hands-off. Consolidation distills your
-research runs into durable **semantic facts**, so the agent stops re-deriving your themes every time
-— it gets sharper the more you use it. (Export-only sources like ChatGPT/LinkedIn are a two-step
-manual flow: drop the export, run `classify_private.py`, then `sync.py` folds it in.)
+**Schedule it (macOS LaunchAgent)** — a `~/Library/LaunchAgents/com.you.secondbrain.sync.plist`
+that runs `scripts/sync.py` daily, then load it:
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.you.secondbrain.sync.plist
+launchctl list | grep secondbrain     # confirm it's registered
+```
+
+(A LaunchAgent only fires while your Mac is awake; a missed run fires on next wake.) Consolidation
+distills your research runs into durable **semantic facts**, so the agent stops re-deriving your
+themes every time — it gets sharper the more you use it. Export-only sources (ChatGPT/LinkedIn) are
+a two-step manual flow: drop the export, run `classify_private.py`, then `sync.py` folds it in.
 
 ---
 

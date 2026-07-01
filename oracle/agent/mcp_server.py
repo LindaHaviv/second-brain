@@ -87,6 +87,24 @@ _WRITE = {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": Fal
           "openWorldHint": False}
 
 
+def _clampk(k, default, hi=50):
+    """Bound k — a hosted endpoint takes input from an LLM; a huge k is a cheap DoS on a shared DB."""
+    try:
+        return max(1, min(int(k), hi))
+    except (TypeError, ValueError):
+        return default
+
+
+def _parse_id(rid):
+    """Accept 'wiki:<topic>', '<lvl>:<post_id>' (item/passage), or a bare post_id. Raises on junk."""
+    s = str(rid)
+    if s.startswith("wiki:"):
+        return ("wiki", s[5:])
+    if ":" in s:
+        s = s.split(":", 1)[1]
+    return ("post", int(s))
+
+
 @mcp.tool(annotations=_READ)
 def search(query: str, k: int = 8) -> dict:
     """Search Linda's second brain (her videos, Shorts, AI chats, Notion ideas/scripts, and code
@@ -94,39 +112,62 @@ def search(query: str, k: int = 8) -> dict:
     contract Claude and ChatGPT expect. Each result also carries `match` ("wiki" = a synthesized
     topic page, "item" = a post, "passage" = a chunk). Pass a result's `id` to fetch() for the
     full text."""
-    conn = db.connect()
+    if not query or not str(query).strip():
+        return {"results": []}
+    conn = None
     try:
-        results = []
-        for r in content.search_hybrid(conn, query, k):
-            rid = f"wiki:{r['title']}" if r["lvl"] == "wiki" else str(r["post_id"])
+        conn = db.connect()
+        results, seen = [], set()
+        for r in content.search_hybrid(conn, query, _clampk(k, 8)):
+            if r["lvl"] == "wiki":
+                rid = f"wiki:{r['title']}"
+            else:
+                pid = r["post_id"]
+                if pid in seen:   # same post can hit as item AND passage — keep the best-ranked one
+                    continue
+                seen.add(pid)
+                rid = str(pid)
             results.append({"id": rid, "title": r["title"] or "", "url": r["url"] or "",
                             "text": r["snippet"] or "", "source": r["platform_id"],
                             "match": r["lvl"]})
         return {"results": results}
+    except Exception as e:
+        print(f"[tool:search] {e}", flush=True)
+        return {"results": []}
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 @mcp.tool(annotations=_READ)
 def fetch(id: str) -> dict:
     """Fetch the full content of one search result by its `id`. Returns {id, title, text, url,
-    metadata}. Handles both posts and wiki pages (ids like "wiki:<topic>")."""
-    conn = db.connect()
+    metadata}. Handles posts and wiki pages — accepts "wiki:<topic>", a post id, or "item:<id>"."""
+    _nf = {"id": str(id), "title": "", "text": "not found", "url": "", "metadata": {}}
+    conn = None
     try:
-        if isinstance(id, str) and id.startswith("wiki:"):
-            page = content.get_wiki_page(conn, id[5:])
+        kind, key = _parse_id(id)
+        conn = db.connect()
+        if kind == "wiki":
+            page = content.get_wiki_page(conn, key)
             if not page:
-                return {"id": id, "title": "", "text": "not found", "url": "", "metadata": {}}
-            return {"id": id, "title": page["topic"], "text": page["body"], "url": "",
+                return _nf
+            return {"id": str(id), "title": page["topic"], "text": page["body"], "url": "",
                     "metadata": {"type": "wiki", "citations": len(page["citations"])}}
-        post = content.get_post(conn, int(id))
+        post = content.get_post(conn, key)
         if not post:
-            return {"id": str(id), "title": "", "text": "not found", "url": "", "metadata": {}}
+            return _nf
         return {"id": str(id), "title": post.get("title") or "", "text": post.get("caption") or "",
                 "url": post.get("url") or "",
                 "metadata": {"type": post.get("kind"), "source": post.get("platform_id")}}
+    except (ValueError, TypeError):
+        return _nf   # unparseable id
+    except Exception as e:
+        print(f"[tool:fetch] {e}", flush=True)
+        return _nf
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 @mcp.tool(annotations=_READ)
@@ -134,36 +175,51 @@ def wiki(topic: str) -> dict:
     """Fetch a compiled WIKI PAGE — a synthesized overview of everything in the brain about a
     topic, with citations back to the source content. Call this for a "wiki" search hit (its
     title is the topic), or to get Linda's synthesized take on a subject. topics() lists them."""
-    conn = db.connect()
+    conn = None
     try:
+        conn = db.connect()
         return content.get_wiki_page(conn, topic) or {"error": "no page; try topics()"}
+    except Exception as e:
+        print(f"[tool:wiki] {e}", flush=True)
+        return {"error": "unavailable"}
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 @mcp.tool(annotations=_READ)
 def topics() -> list:
     """List the compiled wiki topics — Linda's synthesized knowledge pages over her content."""
-    conn = db.connect()
+    conn = None
     try:
+        conn = db.connect()
         return content.list_topics(conn)
+    except Exception as e:
+        print(f"[tool:topics] {e}", flush=True)
+        return []
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 @mcp.tool(annotations=_READ)
 def recent(k: int = 10) -> list:
     """The k most recently published items in the brain."""
-    conn = db.connect()
+    conn = None
     try:
+        conn = db.connect()
         with conn.cursor() as cur:
             cur.execute("SELECT post_id, platform_id, kind, title, url FROM posts "
-                        "WHERE published_at IS NOT NULL ORDER BY published_at DESC "
-                        "FETCH FIRST :k ROWS ONLY", k=k)
+                        "WHERE published_at IS NOT NULL AND NVL(visibility,'content')='content' "
+                        "ORDER BY published_at DESC FETCH FIRST :k ROWS ONLY", k=_clampk(k, 10))
             cols = [c[0].lower() for c in cur.description]
             return [dict(zip(cols, row)) for row in cur.fetchall()]
+    except Exception as e:
+        print(f"[tool:recent] {e}", flush=True)
+        return []
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 # The one WRITE tool. It's marked non-read-only (clients should gate it / ask before calling),
@@ -173,8 +229,11 @@ if not READONLY:
     @mcp.tool(annotations=_WRITE)
     def ingest_note(title: str, text: str) -> str:
         """Add a quick note/idea to the brain (embedded for future semantic search)."""
-        conn = db.connect()
+        if not title or not str(title).strip():
+            return "failed: a title is required"
+        conn = None
         try:
+            conn = db.connect()
             with conn.cursor() as cur:
                 cur.execute("MERGE INTO platforms p USING (SELECT 'note' id FROM dual) s "
                             "ON (p.platform_id=s.id) WHEN NOT MATCHED THEN "
@@ -182,11 +241,20 @@ if not READONLY:
                 cur.execute(
                     "INSERT INTO posts (platform_id, kind, title, caption, content_embedding) "
                     "VALUES ('note','note', :t, :c, VECTOR_EMBEDDING(MINILM USING :e AS DATA))",
-                    t=title[:1000], c=text, e=f"{title}. {text}"[:3000])
+                    t=title[:1000], c=(text or "")[:8000], e=f"{title}. {text}"[:3000])
             conn.commit()
             return f"saved note: {title}"
+        except Exception as e:
+            if conn is not None:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+            print(f"[tool:ingest_note] {e}", flush=True)
+            return f"failed to save note: {e}"
         finally:
-            conn.close()
+            if conn is not None:
+                conn.close()
 
 
 if __name__ == "__main__":

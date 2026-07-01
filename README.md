@@ -109,14 +109,31 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 The agent searches your content, answers grounded in it (citing your videos), and records
 each research run to `agent_memory`.
 
+## Beyond the quickstart
+
+Once the basics work, this scales into a real second brain — the full path is in
+**[docs/TUTORIAL.md](docs/TUTORIAL.md)**:
+
+- **Bring all your content** — Instagram, LinkedIn, ChatGPT/Claude exports, Notion, all into the
+  same `posts` model ([docs/EXPORT_GUIDE.md](docs/EXPORT_GUIDE.md)). For video, pull **transcripts**
+  so what you *said* is searchable, not just the caption.
+- **Keep private data private** — a `visibility` scope + `classify_private.py` keep financials and
+  private items out of search **and** the self-improving loop ([SECURITY.md](SECURITY.md)).
+- **Keep it current** — `sync.py` (pull → wiki refresh → consolidate) on a daily schedule.
+- **Use it everywhere** — host the MCP (OAuth + allowlist) and reach your brain from **claude.ai,
+  ChatGPT, and your phone** ([docs/HOSTED_MCP.md](docs/HOSTED_MCP.md)).
+
+![Asking Claude to search your Second Brain — it calls the connector and answers from your own content, read tools auto-allowed and the write tool gated](docs/images/mcp-search.png)
+
 ## Repo layout
 
 ```
 oracle/            the database: docker-compose, schema (Duality + 4 memory types + wiki),
                    setup SQL; the agents (db / content / memory / research_agent / idea_agent /
                    wiki) + the MCP server (mcp_server stdio, mcp_http hosted)
-scripts/           collectors (youtube, notion, …) + ops (apply_schema, load_model_cloud,
-                   copy_local_to_cloud, consolidate, lint_wiki, review)
+scripts/           loaders (youtube, notion, instagram, instagram_export, chatgpt, claude_chats,
+                   linkedin) + pipeline (classify_private, sync, consolidate, wiki) + ops
+                   (apply_schema, load_model_cloud, copy_local_to_cloud, lint_wiki, review)
 deploy/            hosted-MCP container (Dockerfile + fly.toml)
 sources/           canonical content as Markdown + frontmatter (source of truth)
 docs/              TUTORIAL (start here) · BLOG · BUILD_WALKTHROUGH · EXPORT_GUIDE ·
@@ -128,17 +145,24 @@ docs/              TUTORIAL (start here) · BLOG · BUILD_WALKTHROUGH · EXPORT_
 ## What's included
 
 - [x] Collect → Store → Search → Converse — self-improving research agent over your content
-- [x] **All four agent-memory types** — episodic, semantic (auto-consolidated, on a cadence + a
-  daily job), conversational, procedural
+- [x] **Many sources, one model** — YouTube (+ transcripts), Notion, **Instagram** (API *or*
+  export — captions + reel transcripts), **LinkedIn**, **ChatGPT/Claude** exports — all into one
+  `posts` table (`scripts/`)
+- [x] **All four agent-memory types** — episodic, semantic (auto-consolidated), conversational, procedural
 - [x] **Knowledge wiki layer** — LLM-compiled, self-improving topic pages (`wiki.py`) + a Duality
   view; the strongest relational + JSON + vector showcase
 - [x] **Hybrid search** — vector + keyword (Reciprocal Rank Fusion)
+- [x] **Private by scope** — a `visibility` flag keeps financials/private items out of search **and**
+  the self-improving loop; `classify_private.py` tags private + off-topic items on ingest
+- [x] **Self-improving sync** — `sync.py` (pull → wiki refresh → consolidate) on a daily schedule,
+  so the derived layers never go stale
 - [x] **Idea & repurposing agent** — grounded next-content suggestions (`idea_agent.py`)
-- [x] **MCP server** — use the brain from Claude or any client (`mcp_server.py`); hosted HTTP
-  variant + Fly config in `deploy/` (see [docs/HOSTED_MCP.md](docs/HOSTED_MCP.md))
+- [x] **MCP server, everywhere** — local (stdio) **+ hosted** (HTTP + WorkOS OAuth + allowlist),
+  reachable from **claude.ai, ChatGPT, and your phone**; read tools annotated read-only, the write
+  tool gated (`MCP_READONLY`) — see [docs/HOSTED_MCP.md](docs/HOSTED_MCP.md)
 - [x] **Cloud** — lift to Oracle Autonomous Database ([docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md))
 - [x] **Maintenance** — `lint_wiki.py` (review candidates) + `review.py` (leaked-secret scan)
-- [ ] More sources (Instagram/LinkedIn/TikTok/X exports) · hosted-MCP OAuth for ChatGPT/mobile · a UI
+- [ ] Roadmap — live Instagram performance metrics via API sync · a lightweight UI
 
 ## Notes
 

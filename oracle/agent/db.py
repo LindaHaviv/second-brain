@@ -19,7 +19,7 @@ load_dotenv()
 oracledb.defaults.fetch_lobs = False
 
 
-def connect():
+def _params():
     params = dict(
         user=os.environ.get("DB_USER", "CCC"),
         password=os.environ.get("APP_PWD", "CHANGE_ME_AppPwd1"),
@@ -32,4 +32,27 @@ def connect():
             wallet_location=wallet,
             wallet_password=os.environ.get("DB_WALLET_PASSWORD"),
         )
-    return oracledb.connect(**params)
+    return params
+
+
+# A per-process session POOL. The hosted MCP opens a connection per tool call; against a cloud
+# Autonomous DB each fresh connect pays TLS + wallet + auth (hundreds of ms) and eats one of the
+# Always-Free session slots. A pool amortizes that to ~0, caps concurrent sessions, and keeps a
+# session hot (min=1). Every caller keeps the same `connect()` / `.close()` contract — closing a
+# pooled connection just returns it to the pool. Set DB_POOL=0 to fall back to direct connects.
+_pool = None
+
+
+def _get_pool():
+    global _pool
+    if _pool is None:
+        _pool = oracledb.create_pool(
+            min=1, max=int(os.environ.get("DB_POOL_MAX", "4")), increment=1,
+            getmode=oracledb.POOL_GETMODE_WAIT, timeout=300, **_params())
+    return _pool
+
+
+def connect():
+    if os.environ.get("DB_POOL", "1") == "0":
+        return oracledb.connect(**_params())
+    return _get_pool().acquire()
