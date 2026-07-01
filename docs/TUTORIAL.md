@@ -360,6 +360,12 @@ content scope** by default, so private data stays local. See
   `idea_agent.py` (~90 lines) reads the consolidated facts and proposes what to make next. Copy its
   shape for your own: a meeting-prep briefer, a weekly digest, whatever your work needs. Each agent's
   runs enrich the shared memory for the rest.
+- **Split public from personal (the two-repo pattern).** If you fork this to publish your own
+  version, keep *personal* agents — anything encoding your workflow, contacts, or private data —
+  out of the public repo. The clean setup: make the (already-gitignored) `private/` directory its
+  **own private git repo**. Your personal agents live there and simply `import` the public engine
+  (`sys.path` → `oracle/agent`) — one codebase, two repos, and nothing personal can leak into the
+  public one even by accident. Publish the *pattern*; keep the *personalization* private.
 - **More sources** — repeat Lab 3 for each platform; everything lands in one `posts` model.
 - **Concepts** — how embeddings, JSON Relational Duality, and agent memory work:
   **[BUILD_WALKTHROUGH.md](BUILD_WALKTHROUGH.md)**. To go deeper on agent memory, Oracle's free

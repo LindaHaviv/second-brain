@@ -207,6 +207,9 @@ you do:
    it that way, and run `scripts/review.py` before sharing anything derived from your data.
 5. **Customize the personal bits** — your sources, your `series` labels, your wiki topics. The code
    is generic; everything "you" lives in env vars and your data.
+6. **Personal agents go in a private companion repo** — make the gitignored `private/` dir its own
+   private git repo for agents that encode *your* workflow (they can import the public engine
+   directly). Publish patterns; keep personalization private.
 
 ## Notes
 
