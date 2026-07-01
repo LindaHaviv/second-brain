@@ -5,10 +5,11 @@ per topic, citing the posts it used and linking to related topics. Pages are emb
 stored in Oracle (wiki_pages + page_sources + page_links).
 
   python wiki.py            # full (re)build: propose topics + compile every page
-  python wiki.py --refresh  # SELF-IMPROVING: recompile only topics with new content (cheap)
+  python wiki.py --refresh  # SELF-IMPROVING: update touched pages + GROW new ones (cheap)
 
-The refresh is what makes the layer self-improving: as you ingest more content, it updates
-just the affected pages — no new content means no LLM calls at all.
+The refresh is what makes the layer self-improving, in both directions: it recompiles the
+pages your new content touches, AND proposes new topic pages when new content clusters
+outside every existing topic. No new content means no LLM calls at all.
 """
 import json
 import sys
@@ -157,9 +158,37 @@ def build_wiki(client, conn, n=10):
     print(f"built {len(topics)} wiki pages")
 
 
+def propose_new_topics(client, conn, existing_topics, uncovered_ids, max_new=3):
+    """GROW the wiki: when new content lands that no existing topic's retrieval reaches,
+    ask whether it clusters into genuinely NEW topics. Strict: returns [] unless the
+    uncovered posts clearly form a coherent theme not already covered."""
+    if not uncovered_ids:
+        return []
+    binds = {f"i{j}": v for j, v in enumerate(list(uncovered_ids)[:400])}
+    inl = ",".join(f":i{j}" for j in range(len(binds)))
+    with conn.cursor() as cur:
+        cur.execute(f"SELECT title FROM posts WHERE post_id IN ({inl}) AND title IS NOT NULL "
+                    f"FETCH FIRST 40 ROWS ONLY", **binds)
+        titles = [r[0] for r in cur.fetchall()]
+    if len(titles) < 8:
+        return []
+    prompt = ("EXISTING WIKI TOPICS:\n" + "\n".join(f"- {t}" for t in existing_topics) +
+              "\n\nNEW CONTENT not reached by any existing topic:\n" +
+              "\n".join(f"- {t}" for t in titles) +
+              f"\n\nDo these cluster into up to {max_new} coherent NEW wiki topics that are "
+              "clearly NOT covered by the existing ones? Only propose a topic when a real "
+              "cluster exists — return an empty list if the new content is scattered or "
+              "already covered.")
+    got = _json(client, "You decide when a creator's new content deserves NEW wiki topic pages. "
+                        "Be conservative — most refreshes should propose nothing.",
+                prompt, TOPICS_SCHEMA, 1024)["topics"]
+    return [t["topic"] for t in got][:max_new]
+
+
 def refresh_wiki(client, conn):
-    """Recompile only topics whose top retrieval now includes posts newer than the last
-    compile. No new content -> no LLM calls."""
+    """SELF-IMPROVING, both directions: recompile topics whose top retrieval now includes
+    posts newer than the last compile, AND propose new topic pages when new content clusters
+    outside every existing topic. No new content -> no LLM calls."""
     cur = conn.cursor()
     hwm = _get_hwm(cur)
     cur_max = _max_post_id(cur)
@@ -176,10 +205,11 @@ def refresh_wiki(client, conn):
     existing = cur.fetchall()
     name2id = {t.lower(): pid for pid, t in existing}
     topics = [t for _, t in existing]
-    link_plan, refreshed, skipped = {}, [], []
+    link_plan, refreshed, skipped, covered = {}, [], [], set()
     for pid, topic in existing:
         hits = search_content(conn, topic, k=12)
         touched = {h["post_id"] for h in hits if h["post_id"]} & new_ids
+        covered |= touched
         if not touched:
             skipped.append(topic)
             continue
@@ -190,11 +220,27 @@ def refresh_wiki(client, conn):
         refreshed.append(topic)
         conn.commit()
         print(f"  refreshed '{topic}'  ({len(cites)} citations)")
+
+    # growth: new content that NO existing topic reaches may deserve its own page(s)
+    uncovered = new_ids - covered
+    added = []
+    if len(uncovered) >= int(__import__("os").environ.get("WIKI_NEW_TOPIC_MIN", "15")):
+        for topic in propose_new_topics(client, conn, topics, uncovered):
+            body, cites, links = compile_page(client, conn, topic, topics + added)
+            pid = _insert_page(cur, topic, body)
+            name2id[topic.lower()] = pid
+            link_plan[pid] = links
+            _set_citations(cur, pid, cites)
+            added.append(topic)
+            conn.commit()
+            print(f"  NEW page '{topic}'  ({len(cites)} citations)")
+
     for pid, links in link_plan.items():
         _set_links(cur, pid, links, name2id)
     _set_hwm(cur, cur_max)
     conn.commit()
-    print(f"refresh done: {len(refreshed)} refreshed, {len(skipped)} unchanged")
+    print(f"refresh done: {len(refreshed)} refreshed, {len(added)} new pages, "
+          f"{len(skipped)} unchanged")
 
 
 def main():

@@ -207,14 +207,16 @@ Two mechanisms keep them apart:
 👤 **Who needs this:** anyone building a research base or personal knowledge layer — it turns loose
 posts into synthesized, cross-linked topic pages.
 
-An LLM **compiles** your content into linked **topic pages** — a knowledge layer that improves as you
-add content. It's the strongest Duality showcase here: a page is *both* a JSON **document** *and* a
+An LLM **compiles** your content into linked **topic pages** — a knowledge layer that improves as
+you add content: refreshes update the pages your new content touches, and when new content clusters
+outside every existing topic, the refresh **proposes and compiles new pages** — the wiki grows on
+its own. It's the strongest Duality showcase here: a page is *both* a JSON **document** *and* a
 **graph** of relationships (links + citations).
 
 ```bash
 cd oracle/agent
 ../../.venv/bin/python wiki.py            # compile topic pages (needs ANTHROPIC_API_KEY)
-../../.venv/bin/python wiki.py --refresh  # incremental: only recompile what new content changed
+../../.venv/bin/python wiki.py --refresh  # incremental: update touched pages + grow new topics
 ../../.venv/bin/python demo_wiki.py       # a page as a Duality JSON doc + the link/citation graph
 ```
 

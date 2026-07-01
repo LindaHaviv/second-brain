@@ -265,7 +265,9 @@ cd oracle/agent && ../../.venv/bin/python wiki.py        # needs ANTHROPIC_API_K
 ```
 
 An LLM reads your content and writes synthesized **topic pages** — cross-linked, citing the source
-posts — that improve as you add content. It's the strongest Oracle showcase in the build, because a
+posts — that improve as you add content. And the refresh works in both directions: it recompiles
+the pages your new content touches, and when new content clusters outside every existing topic it
+**proposes and compiles new pages** — the knowledge base grows on its own. It's the strongest Oracle showcase in the build, because a
 wiki page is *both* a document *and* a graph:
 
 - `wiki_pages` — the page (a JSON document **+** a vector embedding)
