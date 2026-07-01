@@ -1,14 +1,16 @@
 """Keep the brain current — and never let the derived layers go stale.
 
 The rule: whenever new content lands, the *synthesized* layers must be rebuilt too. So this always
-runs in order:  pull configured API sources  ->  refresh the wiki  ->  consolidate memory.
-(The wiki + consolidation read only visibility='content', so private/off-topic never seep in.)
+runs in order:  pull configured API sources  ->  classify if needed  ->  refresh the wiki  ->
+consolidate memory. (The wiki + consolidation read only visibility='content', so private/off-topic
+never seep in.)
 
   ./.venv/bin/python scripts/sync.py
 
 Schedule it (daily/weekly) as a macOS LaunchAgent for hands-off updates. Export-only sources
-(ChatGPT/LinkedIn) and their one-time classify pass (scripts/classify_private.py) are separate —
-run those when you drop a new export, then this folds the new content into the wiki + memory.
+(ChatGPT/LinkedIn) are separate — drop a new export, run its loader, and this folds the new
+content in. SAFETY NET: re-importing a chat export RESETS visibility tags (private chats would
+be searchable again) — sync detects that state and reruns the classifier automatically.
 """
 import os
 import pathlib
@@ -19,6 +21,7 @@ from dotenv import load_dotenv
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / "oracle" / ".env")   # so cred checks + child processes see the config
+sys.path.insert(0, str(ROOT / "oracle" / "agent"))
 PY = sys.executable
 
 # (label, argv, required_env) — a loader is skipped when its credential isn't configured.
@@ -30,9 +33,37 @@ STEPS = [
 ]
 
 
+def _tags_look_reset():
+    """True when chat posts exist but NONE are tagged business/archived — the signature of a
+    fresh chat re-import (loaders reset visibility to the default). In that state private chats
+    are searchable again, so classification must run BEFORE the wiki/memory rebuild."""
+    try:
+        import db
+        conn = db.connect()
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM posts WHERE platform_id IN "
+                        "('chatgpt','claude','claude_code')")
+            chats = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM posts WHERE platform_id IN "
+                        "('chatgpt','claude','claude_code') AND visibility IN "
+                        "('business','archived')")
+            tagged = cur.fetchone()[0]
+        conn.close()
+        return chats > 50 and tagged == 0
+    except Exception as e:
+        print(f"  (classify guard check failed: {e})")
+        return False
+
+
 def main():
+    steps = list(STEPS)
+    if _tags_look_reset():
+        print("!! chat visibility tags look RESET (fresh import?) — classifying before rebuild")
+        steps.insert(2, ("Classify (safety net)",
+                         [str(ROOT / "scripts" / "classify_private.py"), "--apply"],
+                         "ANTHROPIC_API_KEY"))
     failed = []
-    for label, argv, need in STEPS:
+    for label, argv, need in steps:
         if need and not os.environ.get(need):
             print(f"— skip {label} (no {need})")
             continue

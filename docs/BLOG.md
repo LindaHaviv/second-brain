@@ -354,9 +354,15 @@ which means the brain can't quietly re-derive it into "durable memory" after you
 classify-on-ingest pass tags private and off-topic items automatically.
 
 **Current by loop.** New content is only useful if the *derived* layers keep up. One scheduled job
-enforces the order **pull sources → refresh the wiki → consolidate memory**, so your synthesized
-pages and learned facts never go stale — and because they only ever read the `content` scope, the
-auto-refresh stays safe. The more you use it, the sharper it gets.
+enforces the order **pull sources → classify → refresh the wiki → consolidate memory**, so your
+synthesized pages and learned facts never go stale — and because they only ever read the `content`
+scope, the auto-refresh stays safe. Each source type has its freshness path: **API sources**
+(Instagram, Notion) are pulled automatically by the daily job; **public metadata** (YouTube) is a
+loader re-run whenever you publish; **export-only sources** (ChatGPT/Claude/LinkedIn) have no push
+API — set a monthly reminder to drop a fresh export; and **in-the-moment ideas** go in through the
+MCP's `ingest_note` from any AI client. One rule to respect: re-importing a chat export resets
+visibility tags, so classification must rerun before anything rebuilds — the sync job detects that
+state and does it automatically as a safety net.
 
 > **🏷️ Optional — group content into a *series*.** A `series` field lets you tag content into a
 > named group you care about (an interview series, a tutorial series, a product line). Once tagged,
