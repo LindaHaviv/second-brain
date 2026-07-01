@@ -326,6 +326,11 @@ content scope** by default, so private data stays local. See
 
 ## Where to go next
 
+- **Build more agents** — the brain is a *platform*: every agent shares the same retrieval, memory,
+  and privacy scope, so new agents are small. The repo ships a second one as the template —
+  `idea_agent.py` (~90 lines) reads the consolidated facts and proposes what to make next. Copy its
+  shape for your own: a meeting-prep briefer, a weekly digest, whatever your work needs. Each agent's
+  runs enrich the shared memory for the rest.
 - **More sources** — repeat Lab 3 for each platform; everything lands in one `posts` model.
 - **Concepts** — how embeddings, JSON Relational Duality, and agent memory work:
   **[BUILD_WALKTHROUGH.md](BUILD_WALKTHROUGH.md)**. To go deeper on agent memory, Oracle's free

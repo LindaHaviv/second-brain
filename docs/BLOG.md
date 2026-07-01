@@ -23,8 +23,11 @@ relational data, JSON documents, **AI Vector Search**, and even runs the embeddi
 the database** — so there's far less glue code, and your data, its meaning, and the agent's memory
 all live together.
 
-By the end you'll have a working research agent you can ask *"what do I know about X, and what's new
-this week?"* — and watch it get sharper every time you use it.
+By the end you'll have more than an agent — you'll have a **foundation**: a research agent you can
+ask *"what do I know about X, and what's new this week?"* that gets sharper every time you use it,
+an **MCP server** that plugs that same brain into Claude, ChatGPT, and whatever comes next, and a
+memory layer that every *future* agent you build gets to share. The research agent is just the
+first thing you put on top of it.
 
 ![Second Brain architecture: your chosen sources → one Oracle 26ai database (content + wiki + memory) → a research agent + an MCP server any AI client can call](images/architecture.svg)
 
@@ -398,11 +401,31 @@ Replicating this as *your* second brain is the point — five steps keep yours p
 5. **Customize the personal bits** — your sources, your series labels, your wiki topics. The code
    is generic; everything "you" lives in configuration and your data.
 
+## This is just the beginning — you built a platform
+
+Step back and look at what's actually here. It isn't one agent; it's **three layers that compound**:
+
+- **The brain** — your content, its meaning, a synthesized wiki, and four kinds of memory, in one
+  database. Every new source you add makes everything downstream smarter.
+- **The MCP socket** — the brain as a *tool*, pluggable into Claude, ChatGPT, your phone, and any
+  MCP client that ships next. Build the brain once; every AI surface you use can reach it.
+- **The agents** — and here's the part that scales: **they share the brain.** The research agent is
+  agent #1, and its self-improving loop (record → recall → consolidate) enriches the same memory
+  every future agent reads. The repo ships agent #2 to prove the pattern: an **idea agent** that
+  reads the consolidated facts (your themes, formats, *gaps*) and proposes what to make next —
+  grounded in what you've actually made, about ~90 lines because the brain does the heavy lifting.
+
+Your third agent is whatever your work needs — a meeting-prep briefer, a weekly digest writer, a
+research assistant tuned to your domain. Each one is small, because the hard parts (retrieval,
+memory, grounding, privacy scope) are already the platform's job. And each one makes the memory
+richer for the rest.
+
 ## What you end up with
 
-One database that holds your content, its meaning, your synthesized knowledge, and an agent's growing
-memory — and an assistant that researches over all of it and improves with use. Not a pile of notes
-you have to re-read, but a brain that gets better the more you make.
+One database that holds your content, its meaning, your synthesized knowledge, and a growing memory
+that every agent shares — with an MCP server that plugs it into any AI client, and a research agent
+that improves with use as the first of many. Not a pile of notes you have to re-read: a foundation
+that gets better the more you make *and* the more you build on it.
 
 Clone it, point it at your own content, and ask it something only *you* would know the answer to.
 
