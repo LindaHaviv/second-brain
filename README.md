@@ -1,5 +1,9 @@
 # Second Brain
 
+> *A **self-improving** second brain on a single Oracle database — it searches your content by
+> meaning, answers grounded in your own work, remembers what it learns, and gets sharper every
+> time you use it.*
+
 Build a **self-improving research agent grounded in your own content**, on a single
 Oracle database. Your content + its embeddings + the agent's memory all live in one engine;
 the agent searches your content by meaning, answers grounded in it, and remembers what it
