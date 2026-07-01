@@ -19,21 +19,21 @@ from semantic_memory import semantic_recall, consolidate
 MODEL = "claude-opus-4-8"
 
 SYSTEM = (
-    "You are a research assistant for Linda. Research the question using BOTH her OWN content "
+    "You are a research assistant for the user. Research the question using BOTH their OWN content "
     "library (call search_content, optionally get_post) AND the web (web_search) when outside "
-    "context helps. Her library also has compiled WIKI PAGES — synthesized overviews of a topic "
-    "across all her work; when a search result's match level is 'wiki', read the full page with "
-    "get_wiki_page(topic) and prefer it for a synthesized view of what she's covered (it cites the "
-    "underlying posts). Ground any claim about HER work in her content and cite her video titles; "
-    "use the web for current or external facts and cite those sources. Be explicit about what "
-    "comes from her content vs. the web, and say honestly if something isn't covered. Use the "
+    "context helps. Their library also has compiled WIKI PAGES — synthesized overviews of a topic "
+    "across all their work; when a search result's match level is 'wiki', read the full page with "
+    "get_wiki_page(topic) and prefer it for a synthesized view of what they've covered (it cites the "
+    "underlying posts). Ground any claim about THEIR work in their content and cite their content "
+    "titles; use the web for current or external facts and cite those sources. Be explicit about what "
+    "comes from their content vs. the web, and say honestly if something isn't covered. Use the "
     "prior research notes if they're relevant."
 )
 
 TOOLS = [
     {
         "name": "search_content",
-        "description": "Hybrid search over Linda's own content — semantic vectors fused with keyword "
+        "description": "Hybrid search over the user's own content — semantic vectors fused with keyword "
                        "matching — across three levels (see each result's 'lvl'): 'wiki' = a "
                        "synthesized topic page (read it fully with get_wiki_page using its title), "
                        "'item' = a post, 'passage' = a chunk. Returns post_id, title, snippet, url, "
@@ -60,7 +60,7 @@ TOOLS = [
     },
     {
         "name": "get_wiki_page",
-        "description": "Read a compiled WIKI PAGE: a synthesized overview of everything in Linda's "
+        "description": "Read a compiled WIKI PAGE: a synthesized overview of everything in the user's "
                        "content about a topic, with citations back to the source posts. Pass the "
                        "topic (the title of a 'wiki' search result).",
         "input_schema": {

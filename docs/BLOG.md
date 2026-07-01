@@ -95,8 +95,9 @@ Load a public YouTube channel as **sample data**, so you can watch the pipeline 
 
 ```bash
 mkdir -p exports/youtube
+# any public channel works — pick one to see it run, then swap in your own
 ./.venv/bin/yt-dlp --skip-download --dump-json \
-  "https://www.youtube.com/@LindaVivah/videos" > exports/youtube/videos.jsonl
+  "https://www.youtube.com/@YOURHANDLE/videos" > exports/youtube/videos.jsonl
 ./.venv/bin/python scripts/youtube.py
 ```
 

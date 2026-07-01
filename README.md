@@ -102,9 +102,9 @@ That gives you a live Oracle 26ai with the content schema, the Duality view, the
 ## Collect + search your content
 
 ```bash
-# Collect: pull a channel's public metadata -> sources/youtube/*.md + Oracle
+# Collect: pull a public channel's metadata (any public channel works — swap in yours later)
 ./.venv/bin/yt-dlp --skip-download --dump-json \
-  "https://www.youtube.com/@LindaVivah/videos" > exports/youtube/videos.jsonl
+  "https://www.youtube.com/@YOURHANDLE/videos" > exports/youtube/videos.jsonl
 ./.venv/bin/python scripts/youtube.py
 
 # Search: semantic search over what you just loaded (no API key needed)

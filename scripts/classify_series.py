@@ -19,9 +19,8 @@ It is always her IN CONVERSATION WITH / INTERVIEWING someone else — never solo
 
 A TECH WALK (label "tech_walk") = she is interviewing / featuring a **named guest** (founder / CEO /
 exec / engineer / creator). Signs: "with <name>", "<name> explains…", "join us as <name>…",
-"<topic> by <guest>", a specific person + their company. Her guests include Robert Nishihara
-(Anyscale), Richmond Alake & Nacho Martínez (Oracle), Simba Khadder (Redis), Olivier Pomel & Alexis
-Lê-Quôc (Datadog), Leah McGowen-Hare, Viktoria Semaan, Brandon Metcalf — but ANY named guest counts.
+"<topic> by <guest>", a specific person + their company (e.g. "<Name> (Company)", "with <Name>",
+"<Name> explains…"). ANY named guest counts — adapt these cues to the guests in your own series.
 
 NOT a tech walk (label "other") = anything that is JUST HER, with no guest — even if she's walking
 or it's a vlog: solo explainers ("AI Engineer vs ML Engineer", "<X> in 60 seconds", "crash course"),

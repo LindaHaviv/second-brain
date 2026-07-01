@@ -56,11 +56,28 @@ def test_vector_search():
 
 
 def test_hybrid_rescues_exact_name():
+    """Hybrid search must rescue an exact keyword that vector-only ranking can bury.
+    Self-contained + data-independent: seed a post with a unique token, confirm hybrid
+    surfaces it by that exact token, then clean up."""
     c = db.connect()
-    res = content.search_hybrid(c, "Simba Khadder Redis", 8)
-    titles = " ".join((r.get("title") or "") for r in res).lower()
-    assert "simba" in titles, "hybrid search missed an exact-name lexical hit"
-    c.close()
+    token = "zqxwvlemma"   # distinctive — won't collide with real content
+    cur = c.cursor()
+    cur.execute("alter session disable parallel dml")   # Autonomous DB: delete+insert in one txn
+    cur.execute("merge into platforms p using (select 'test' id from dual) s "
+                "on (p.platform_id=s.id) when not matched then "
+                "insert (platform_id, display_name) values ('test','Test')")
+    cur.execute("insert into posts (platform_id, kind, title, caption, content_embedding) "
+                "values ('test','note', :t, 'probe', vector_embedding(MINILM using :e as data))",
+                t=f"{token} exact-match probe", e=token)
+    c.commit()
+    try:
+        res = content.search_hybrid(c, token, 8)
+        titles = " ".join((r.get("title") or "") for r in res).lower()
+        assert token in titles, "hybrid search missed an exact-token lexical hit"
+    finally:
+        cur.execute("delete from posts where platform_id = 'test'")
+        c.commit()
+        c.close()
 
 
 def test_get_wiki_page():

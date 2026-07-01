@@ -1,5 +1,5 @@
 -- ANALYTICS: per-deliverable, per-platform performance for brand collabs, collected from the
--- screenshots Linda stores in Google Drive (*Tech Brand Collabs / <brand> / analytics / <platform>).
+-- screenshots you keep for each collaboration (adapt the source to wherever you store them).
 -- One row per (brand, deliverable, platform). Numbers only — no contracts/financials.
 
 ALTER SESSION SET CURRENT_SCHEMA = CCC;

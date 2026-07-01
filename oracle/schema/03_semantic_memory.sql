@@ -1,6 +1,6 @@
 -- SEMANTIC MEMORY: durable, consolidated facts the agent has learned.
 -- Built by an LLM pipeline that distills EPISODIC memory (past research runs) into
--- reusable facts ("Linda's content centers on cloud certs, Claude Code, SRE..."), so the
+-- reusable facts ("the creator's content centers on their core themes..."), so the
 -- agent carries knowledge forward instead of re-deriving it every time.
 -- (DeepLearning.AI "memory-aware agents": consolidate episodic -> semantic.)
 

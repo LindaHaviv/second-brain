@@ -22,7 +22,7 @@ def main():
         print(f"   [{r['lvl']:7}] {(r['title'] or '')[:54]}")
 
     print("\n=== 3. hybrid (RRF) rescues an exact name pure-vector buries ===")
-    q = "Simba Khadder Redis"
+    q = "vector database"   # an exact term/name pure-vector can bury — swap for one in your content
     vec = {(_t(r)) for r in content.search_content(c, q, 5)}
     hyb = content.search_hybrid(c, q, 5)
     for r in hyb:
