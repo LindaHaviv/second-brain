@@ -12,15 +12,31 @@ normalizer scripts will read from there into `sources/`.
 
 ## 1. Instagram  *(primary — you crosspost from here)*
 
-1. Open Instagram → **Profile → ☰ menu → Accounts Center**.
-2. **Your information and permissions → Download your information → Download or transfer information**.
-3. Select your **Instagram** account → **Some of your information** (pick *Posts, Reels, Stories,
-   Comments, Profile*) or **All available information**.
-4. Destination: **Download to device**.
-5. **Date range: All time** · **Format: JSON** · **Media quality: High**.
-6. Submit. You'll get an email with a download link when it's ready (often a few hours).
+**Recommended: the API (auto-syncs new posts + performance).** For a **Creator/Business** account,
+the *Instagram API with Instagram Login* pulls your media and engagement/reach on a schedule — **no
+Facebook Page required, no scraping**. One-time setup:
 
-➡ Bundle is a `.zip` of JSON + media folders. Save to `exports/instagram/`.
+1. **developers.facebook.com → Create app → type "Business".**
+2. In the app: **Add product → Instagram → "API setup with Instagram login".**
+3. **Generate access token →** connect your Creator account, grant **`instagram_business_basic`** +
+   **`instagram_business_manage_insights`**. Copy the (short-lived) token shown.
+4. In **App settings → Basic**, copy the **App secret**.
+5. Mint a long-lived (~60-day) token:
+   ```bash
+   IG_APP_SECRET=<app secret> ../.venv/bin/python scripts/instagram_token.py <short-lived token>
+   ```
+   Paste the printed `IG_ACCESS_TOKEN=...` into `oracle/.env` (it's a **secret** — keep it out of git).
+6. Load it (incremental — only adds new media each run):
+   ```bash
+   ../.venv/bin/python scripts/instagram.py
+   ```
+   Refresh the token every ~60 days: `scripts/instagram_token.py --refresh`. The scheduled sync
+   (below) does both for you.
+
+**Alternative: one-time export** (good for a full historical backfill):
+Instagram → **Profile → ☰ → Accounts Center → Your information and permissions → Download your
+information**. Pick *Posts, Reels, Stories, Comments, Profile*, **Format: JSON**, **All time**,
+download to device. ➡ Save the `.zip` to `exports/instagram/`.
 
 ## 2. LinkedIn
 
