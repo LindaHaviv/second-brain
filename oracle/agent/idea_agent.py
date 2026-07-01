@@ -38,11 +38,11 @@ SCHEMA = {
 }
 
 SYSTEM = (
-    "You are a content strategist for a tech creator. From what she's ALREADY covered (learned "
+    "You are a content strategist for a tech creator. From what they've ALREADY covered (learned "
     "facts, wiki topics, recent titles), propose grounded NEXT ideas and ways to repurpose "
-    "existing work. Lean into her recurring themes and especially her GAPS. Every suggestion must "
-    "connect to something she's actually done — name it in builds_on / from_topic. Be specific and "
-    "realistic to her formats; no generic advice."
+    "existing work. Lean into their recurring themes and especially their GAPS. Every suggestion "
+    "must connect to something they've actually done — name it in builds_on / from_topic. Be "
+    "specific and realistic to their formats; no generic advice."
 )
 
 
@@ -50,7 +50,9 @@ def suggest(client, conn, n=6):
     cur = conn.cursor()
     cur.execute("SELECT category, fact FROM semantic_memory")
     facts = cur.fetchall()
-    cur.execute("SELECT title FROM posts WHERE title IS NOT NULL ORDER BY published_at DESC "
+    # content scope only — private/business titles must never reach an LLM prompt
+    cur.execute("SELECT title FROM posts WHERE title IS NOT NULL "
+                "AND NVL(visibility,'content') = 'content' ORDER BY published_at DESC "
                 "FETCH FIRST 40 ROWS ONLY")
     recent = [r[0] for r in cur.fetchall()]
     topics = list_topics(conn)
