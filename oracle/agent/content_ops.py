@@ -84,8 +84,10 @@ def fetch_tracker(notion, ds):
 
 def published(conn):
     with conn.cursor() as cur:
+        # content scope only (defense in depth — YouTube rows are content, but keep the pattern)
         cur.execute("SELECT title, url FROM posts WHERE platform_id = 'youtube' "
-                    "AND title IS NOT NULL ORDER BY published_at DESC FETCH FIRST 150 ROWS ONLY")
+                    "AND title IS NOT NULL AND NVL(visibility,'content') = 'content' "
+                    "ORDER BY published_at DESC FETCH FIRST 150 ROWS ONLY")
         return [{"title": t, "url": u} for t, u in cur.fetchall()]
 
 
@@ -103,7 +105,7 @@ def reconcile(client, items, pub):
     )
     r = client.messages.create(
         model=MODEL, max_tokens=4096,
-        system=("You reconcile a creator's Notion content tracker against what she actually "
+        system=("You reconcile a creator's Notion content tracker against what they actually "
                 "published. Be conservative — only propose changes you're confident about."),
         messages=[{"role": "user", "content": prompt}],
         output_config={"format": {"type": "json_schema", "schema": SCHEMA}})
