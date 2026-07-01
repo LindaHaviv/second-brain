@@ -37,15 +37,22 @@ you watch the whole thing work *before* pointing it at your own data.
 ## The shape of it
 
 > **📌 Pick your sources.** The system is *collector-agnostic* — it only needs your stuff as rows
-> in one `posts` table. This build ships loaders for **Notion** (pages/databases), **YouTube**
-> (videos + transcripts), **AI chats** (Claude/ChatGPT exports), and **Claude Code** sessions —
-> but a docs folder, bookmarks, or an email export work the same way. Map each source's fields to
-> `title`, `text`, `url`, `published_at`; the embedding is generated in-DB on insert. Swap sources
-> for your use case (content, research, work, a personal wiki) without touching anything downstream.
+> in one `posts` table. This build ships loaders for **Notion**, **YouTube** (videos + transcripts),
+> **Instagram** (API or export — captions *and* reel transcripts), **LinkedIn**, and **AI chats**
+> (Claude/ChatGPT exports) — but a docs folder, bookmarks, or an email export work the same way. Map
+> each source's fields to `title`, `text`, `url`, `published_at`; the embedding is generated in-DB on
+> insert. Swap sources for your use case without touching anything downstream.
 
-> **🔒 Redact as you ingest.** Some sources — especially AI-chat and coding-session transcripts —
-> can contain API keys or tokens. Scrub secret patterns *before* they land in the database (the
-> repo does this on ingest, and ships a `review.py` that scans for anything that slipped through).
+> **🎙️ Capture what you *said*, not just what you posted.** The brain searches text, so for video,
+> pull **transcripts** (YouTube captions; the `.srt` files in an Instagram export) — that makes the
+> *content of a video* findable, not just its caption. **And don't scrape** the social platforms
+> (logins + anti-bot + ToS = account risk); use each one's **official API or data export**.
+
+> **🔒 Redact as you ingest — and scope what's private.** AI-chat and coding transcripts can leak
+> API keys: scrub secret patterns *before* they hit the database (`review.py` scans for stragglers).
+> And your sources mix public content with things you *don't* want surfaced (financials, contracts) —
+> so every item carries a **`visibility` scope**, and only `content` is ever searched, compiled into
+> the wiki, or consolidated into memory. More in [§6](#6-keep-private-data-private--and-current).
 
 Three layers, **one database**:
 1. **Content** — everything you've made, as rows you can read back as JSON documents.
@@ -139,8 +146,7 @@ The more you use it, the more it knows your themes, your recurring questions, yo
 your gaps — and it stops re-deriving them every time. (In the repo this runs automatically every
 few research runs, plus a daily scheduled consolidation.)
 
-> **📸 Screenshot:** the agent answering a question with citations to your own sources, then a
-> follow-up where it visibly builds on the previous turn — and the `agent_memory` count ticking up.
+![The agent answering with citations to your own posts, then building on the previous turn as agent_memory grows](images/agent-answer.png)
 
 ## 4. A self-improving knowledge wiki (the Duality + relational showcase)
 
@@ -159,6 +165,8 @@ So a single page exercises **relational + JSON Relational Duality + AI Vector Se
 and the agent answers from your *synthesized* knowledge, tracing every claim back to a real video
 or note.
 
+![A compiled wiki page — a synthesized topic overview with its citations back to your posts nested alongside](images/wiki-page.png)
+
 ## 5. Use it from anywhere — MCP
 
 Finally, make the brain a tool any AI client can call. A small **MCP server** exposes the standard
@@ -166,11 +174,30 @@ Finally, make the brain a tool any AI client can call. A small **MCP server** ex
 `wiki`, `topics`, `recent`, and `ingest_note`, so you can open Claude (or ChatGPT) and ask
 *"search my brain for what I've covered on AI inference"* and it answers from your own content.
 Run it **locally over stdio** (Claude Desktop / Claude Code), or **host it** (HTTP) so it's
-reachable from **claude.ai on your phone and ChatGPT** too. Hosting puts your brain on the public
-internet, though — so lock it down (see security, below).
+reachable from **claude.ai on your phone and ChatGPT** too.
 
-> **📸 Screenshot:** asking Claude *"search my brain for …"* — on your phone — and it answering
-> from your own sources, the brain showing up as a connector.
+The tools are **capability-scoped**: the read tools are annotated `readOnlyHint` so a client can
+auto-allow them, while the one write tool is marked a write so the client asks first (and
+`MCP_READONLY` drops it entirely). Hosting puts your brain on the public internet, though — so lock
+it down (OAuth + allowlist; see security, below).
+
+![Claude calling the Second Brain connector and answering from your own content, the read tools auto-allowed and the write tool gated](images/mcp-search.png)
+
+## 6. Keep private data private — and current
+
+Two things separate a real second brain from a search box: it **guards what's private**, and it
+**stays current on its own**.
+
+**Private by scope.** Every item has a `visibility` — `content` or a private value — and *every*
+read path filters to `content`: search, the wiki compiler, and memory consolidation. So private
+material (financials, contracts, whatever *you* decide) is excluded from retrieval **and** from the
+self-improving loop, which means the brain can't quietly re-derive it into "durable memory" after
+you've set it aside. A classify-on-ingest pass tags private and off-topic items automatically.
+
+**Current by loop.** New content is only useful if the *derived* layers keep up. One scheduled job
+enforces the order **pull sources → refresh the wiki → consolidate memory**, so your synthesized
+pages and learned facts never go stale — and, because they only ever read the `content` scope, the
+auto-refresh stays safe. The more you use it, the sharper it gets.
 
 ## Going to the cloud (optional)
 
