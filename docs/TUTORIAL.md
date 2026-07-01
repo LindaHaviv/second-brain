@@ -1,30 +1,30 @@
-# Build your own Second Brain — a mini-course
+# Build your own Second Brain — a hands-on workshop
 
-A hands-on course, in chapters. You'll build **one private database** for everything you've made and
+A self-paced workshop, in labs. You'll build **one private database** for everything you've made and
 thought, **search it by meaning**, add a **Claude agent** that answers grounded in *your* content and
 remembers what it finds, then layer on the pieces that fit *your* use case — a compiled knowledge
 wiki, private-data scoping, a self-improving sync, and access from any AI client. Everything runs
-**locally on your machine**; cloud is an optional final chapter.
+**locally on your machine**; cloud is an optional final lab.
 
 A second brain isn't only for content creators. The core is use-case-agnostic — it just needs your
-stuff in one searchable place. So this course is split in two:
+stuff in one searchable place. So this workshop is split in two:
 
-- **Part I — The Core (everyone does these).** Chapters 1–3: stand up the database, watch the whole
+- **Part I — The Core (everyone does these).** Labs 1–3: stand up the database, watch the whole
   pipeline on sample data, then load your own content. At the end you have search + an agent over
   *your* data.
-- **Part II — Enhancements (pick what fits your use case).** Chapters 4–8 are modular. Add only the
+- **Part II — Enhancements (pick what fits your use case).** Labs 4–8 are modular. Add only the
   ones you need; skip the rest.
 
 ### Which enhancements for which use case?
 
-| If you're building… | Add these chapters |
+| If you're building… | Add these labs |
 |---|---|
 | **A research / knowledge base** | 5 (wiki) · 6 (keep current) — synthesized, self-updating knowledge |
 | **A team / work-knowledge brain** | 4 (privacy) · 7 (hosted MCP) · 8 (cloud) — shared, governed, always-on |
 | **A creator brain** (the demo) | all of them — many sources, series, MCP everywhere |
 | **A personal wiki / notebook** | 5 (wiki) · 7 (local MCP) — synthesize + query, nothing hosted |
 
-> One hard rule threaded through Part II: **do Chapter 4 (privacy) before you compile (5), sync (6),
+> One hard rule threaded through Part II: **do Lab 4 (privacy) before you compile (5), sync (6),
 > or host (7)** — so private items never get baked into the wiki, the memory, or a server. Everything
 > else you can take in any order.
 
@@ -32,7 +32,7 @@ stuff in one searchable place. So this course is split in two:
 
 # Part I — The Core (everyone)
 
-## Chapter 1 — Set up your database (~15 min)
+## Lab 1 — Set up your database (~15 min)
 
 🎯 **Goal:** a live Oracle AI Database 26ai running locally — no Docker Desktop, no cloud account.
 
@@ -71,7 +71,7 @@ docker-compose -f oracle/docker-compose.yml up -d
 
 ---
 
-## Chapter 2 — See it work (with sample content)
+## Lab 2 — See it work (with sample content)
 
 🎯 **Goal:** watch the whole pipeline — collect → search → an agent that answers — before pointing it
 at your own data. Load a public YouTube channel as a stand-in dataset:
@@ -101,7 +101,7 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 
 ---
 
-## Chapter 3 — Bring your own content
+## Lab 3 — Bring your own content
 
 🎯 **Goal:** *your* content in *your* database, searchable. This is the point of the whole thing.
 
@@ -129,7 +129,7 @@ See **[EXPORT_GUIDE.md](EXPORT_GUIDE.md)** for exactly where to click for each o
 and the platform, then insert into `posts`. The embedding is generated in-DB automatically. Copy
 any loader above as a template — search and the agent work over the new content immediately.
 
-✅ **Checkpoint** — re-run the Chapter 2 search; you should now see *your* titles come back.
+✅ **Checkpoint** — re-run the Lab 2 search; you should now see *your* titles come back.
 
 > **🏷️ Optional — tag your own content *series*.** `posts.series` lets you group content into a
 > named series you care about — an interview series, a tutorial series, a product line, whatever fits
@@ -150,10 +150,10 @@ any loader above as a template — search and the agent work over the new conten
 
 # Part II — Enhancements (pick what fits your use case)
 
-## Chapter 4 — Keep private data private
+## Lab 4 — Keep private data private
 
 👤 **Who needs this:** anyone whose sources mix things to surface with things to keep back
-(financials, contracts, private notes). **Do this before Chapters 5–7** so private items never get
+(financials, contracts, private notes). **Do this before Labs 5–7** so private items never get
 compiled, consolidated, or hosted.
 
 Two mechanisms keep them apart:
@@ -176,7 +176,7 @@ Two mechanisms keep them apart:
 
 ---
 
-## Chapter 5 — Compile a knowledge wiki (JSON Relational Duality)
+## Lab 5 — Compile a knowledge wiki (JSON Relational Duality)
 
 👤 **Who needs this:** anyone building a research base or personal knowledge layer — it turns loose
 posts into synthesized, cross-linked topic pages.
@@ -201,7 +201,7 @@ Duality + AI Vector Search** at once.
 
 ---
 
-## Chapter 6 — Keep it current (the self-improving loop)
+## Lab 6 — Keep it current (the self-improving loop)
 
 👤 **Who needs this:** anyone whose content grows over time — so the derived layers never go stale.
 
@@ -231,10 +231,10 @@ a two-step manual flow: drop the export, run `classify_private.py`, then `sync.p
 
 ---
 
-## Chapter 7 — Use your brain everywhere (MCP)
+## Lab 7 — Use your brain everywhere (MCP)
 
 👤 **Who needs this:** anyone who wants to query the brain from Claude, ChatGPT, or their phone.
-**Local is safe to add anytime** (nothing leaves your machine); **host it only after Chapter 4.**
+**Local is safe to add anytime** (nothing leaves your machine); **host it only after Lab 4.**
 
 An **MCP server** exposes the brain to any MCP client. Start local (stdio — everything stays on your
 machine); register it in Claude Desktop (**Settings → Developer → Edit Config**), then restart Claude:
@@ -281,7 +281,7 @@ first (auth on every request, allowlist, `MCP_READONLY` if it shouldn't accept w
 
 ---
 
-## Chapter 8 — Go always-on (cloud)
+## Lab 8 — Go always-on (cloud)
 
 👤 **Who needs this:** anyone who wants the brain backed up and running 24/7 (and reachable when your
 Mac is asleep). Optional — local stays fully private if you'd rather not.
@@ -293,7 +293,7 @@ code changes (the app connects over a wallet). See **[CLOUD_MIGRATION.md](CLOUD_
 
 ## Where to go next
 
-- **More sources** — repeat Chapter 3 for each platform; everything lands in one `posts` model.
+- **More sources** — repeat Lab 3 for each platform; everything lands in one `posts` model.
 - **Concepts** — how embeddings, JSON Relational Duality, and agent memory work:
   **[BUILD_WALKTHROUGH.md](BUILD_WALKTHROUGH.md)**. To go deeper on agent memory, Oracle's free
   **[DeepLearning.AI "Agent Memory" course](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**
