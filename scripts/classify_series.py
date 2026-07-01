@@ -14,21 +14,20 @@ import anthropic
 MODEL = "claude-haiku-4-5"
 RUBRIC = """You label a tech creator's published posts as her "Tech Walks" series or not.
 
-A TECH WALK (label "tech_walk") = a post that EITHER:
-  (a) features a **named tech guest** — a founder / CEO / exec / engineer / creator she is
-      interviewing, featuring, or in conversation with. Signs: "with <name>", "<name> explains…",
-      "join us as <name>…", "<topic> by <name>", a specific person + a company. Her known guests
-      include Robert Nishihara (Anyscale), Richmond Alake (Oracle), Nacho Martínez (Oracle),
-      Simba Khadder (Redis), Olivier Pomel & Alexis Lê-Quôc (Datadog), Leah McGowen-Hare,
-      Viktoria Semaan, Michael Armbrust (Databricks) — but ANY named tech guest counts; OR
-  (b) it's a **walk** — mentions "walk" / "tech walk" / "walk with" in any form (this is her walking
-      series; casual/personal walk posts count too).
+The ONE defining criterion: a Tech Walk is her **interviewing or featuring ANOTHER PERSON (a guest)**.
+It is always her IN CONVERSATION WITH / INTERVIEWING someone else — never solo.
 
-NOT a tech walk (label "other") = SOLO content with NO guest and NO walk: her own explainers or
-crash courses where no specific person is featured, promos/CTAs ("comment LEARN & I'll DM you",
-"free AI hub"), motivational one-liners, and pure product-news roundups. If a named tech guest is
-featured OR it mentions a walk, choose "tech_walk". When a specific person's name appears in tech
-context, lean "tech_walk".
+A TECH WALK (label "tech_walk") = she is interviewing / featuring a **named guest** (founder / CEO /
+exec / engineer / creator). Signs: "with <name>", "<name> explains…", "join us as <name>…",
+"<topic> by <guest>", a specific person + their company. Her guests include Robert Nishihara
+(Anyscale), Richmond Alake & Nacho Martínez (Oracle), Simba Khadder (Redis), Olivier Pomel & Alexis
+Lê-Quôc (Datadog), Leah McGowen-Hare, Viktoria Semaan, Brandon Metcalf — but ANY named guest counts.
+
+NOT a tech walk (label "other") = anything that is JUST HER, with no guest — even if she's walking
+or it's a vlog: solo explainers ("AI Engineer vs ML Engineer", "<X> in 60 seconds", "crash course"),
+personal vlogs ("come with me to re:Invent", "exploring the Spheres", "visiting the Summit"),
+motivational one-liners, product-news, promos/CTAs. Being a "walk" or vlog does NOT make it a tech
+walk — only a GUEST does. If no other person is clearly being interviewed/featured, choose "other".
 
 Return STRICT JSON list of {"id":<int>,"label":"tech_walk"|"other"}."""
 
