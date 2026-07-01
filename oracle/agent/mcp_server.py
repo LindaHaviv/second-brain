@@ -14,6 +14,8 @@ Register in Claude Desktop (Settings -> Developer -> Edit Config), then restart 
   }
 }
 """
+import base64
+import json
 import os
 import pathlib
 import sys
@@ -105,35 +107,59 @@ def _parse_id(rid):
     return ("post", int(s))
 
 
+def _encode_cursor(query, offset):
+    """An opaque token that remembers the query + how far in we are — the client's 'bookmark'."""
+    return base64.urlsafe_b64encode(json.dumps({"q": query, "o": offset}).encode()).decode()
+
+
+def _decode_cursor(cursor, query):
+    """Return the saved offset, but only if the cursor belongs to THIS query (else start over)."""
+    try:
+        d = json.loads(base64.urlsafe_b64decode(str(cursor).encode()).decode())
+        if d.get("q") == query:
+            return max(0, int(d.get("o", 0)))
+    except Exception:
+        pass
+    return 0
+
+
 @mcp.tool(annotations=_READ)
-def search(query: str, k: int = 8) -> dict:
+def search(query: str, k: int = 8, cursor: str = None) -> dict:
     """Search Linda's second brain (her videos, Shorts, AI chats, Notion ideas/scripts, and code
-    sessions) by MEANING. Returns {"results": [{id, title, url, text}]} — the standard connector
-    contract Claude and ChatGPT expect. Each result also carries `match` ("wiki" = a synthesized
-    topic page, "item" = a post, "passage" = a chunk). Pass a result's `id` to fetch() for the
-    full text."""
+    sessions) by MEANING. Returns {"results": [{id, title, url, text}], "next_cursor": <token|null>}
+    — the standard connector contract Claude and ChatGPT expect. Each result also carries `match`
+    ("wiki" = a synthesized topic page, "item" = a post, "passage" = a chunk). Pass a result's `id`
+    to fetch() for the full text. To page deeper, call again with the SAME query and `cursor` set to
+    the previous `next_cursor`; when there are no more results `next_cursor` is null."""
     if not query or not str(query).strip():
-        return {"results": []}
+        return {"results": [], "next_cursor": None}
+    k = _clampk(k, 8)
+    offset = _decode_cursor(cursor, query) if cursor else 0
     conn = None
     try:
         conn = db.connect()
-        results, seen = [], set()
-        for r in content.search_hybrid(conn, query, _clampk(k, 8)):
+        # fetch a pool deep enough for this page (+ buffer for item/passage dedup), then slice
+        pool_n = min((offset + k) * 2 + 4, 100)
+        deduped, seen = [], set()
+        for r in content.search_hybrid(conn, query, pool_n):
             if r["lvl"] == "wiki":
-                rid = f"wiki:{r['title']}"
+                deduped.append((f"wiki:{r['title']}", r))
             else:
                 pid = r["post_id"]
                 if pid in seen:   # same post can hit as item AND passage — keep the best-ranked one
                     continue
                 seen.add(pid)
-                rid = str(pid)
-            results.append({"id": rid, "title": r["title"] or "", "url": r["url"] or "",
-                            "text": r["snippet"] or "", "source": r["platform_id"],
-                            "match": r["lvl"]})
-        return {"results": results}
+                deduped.append((str(pid), r))
+        page = deduped[offset:offset + k]
+        results = [{"id": rid, "title": r["title"] or "", "url": r["url"] or "",
+                    "text": r["snippet"] or "", "source": r["platform_id"], "match": r["lvl"]}
+                   for rid, r in page]
+        has_more = len(deduped) > offset + k
+        nxt = _encode_cursor(query, offset + k) if has_more else None
+        return {"results": results, "next_cursor": nxt}
     except Exception as e:
         print(f"[tool:search] {e}", flush=True)
-        return {"results": []}
+        return {"results": [], "next_cursor": None}
     finally:
         if conn is not None:
             conn.close()
