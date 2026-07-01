@@ -23,21 +23,21 @@ def search_content(conn, query, k=5):
             f"""
             SELECT * FROM (
               SELECT post_id, platform_id, kind, title, SUBSTR(caption, 1, 400) AS snippet, url,
-                     'item' AS lvl,
+                     series, 'item' AS lvl,
                      VECTOR_DISTANCE(content_embedding,
                                      VECTOR_EMBEDDING({EMBED_MODEL} USING :q AS DATA), COSINE) AS dist
               FROM   posts
               WHERE  content_embedding IS NOT NULL AND NVL(visibility,'content') = 'content'
               UNION ALL
               SELECT p.post_id, p.platform_id, p.kind, p.title, SUBSTR(ch.chunk, 1, 400) AS snippet,
-                     p.url, 'passage' AS lvl,
+                     p.url, p.series, 'passage' AS lvl,
                      VECTOR_DISTANCE(ch.embedding,
                                      VECTOR_EMBEDDING({EMBED_MODEL} USING :q AS DATA), COSINE) AS dist
               FROM   content_chunks ch JOIN posts p ON p.post_id = ch.post_id
               WHERE  NVL(p.visibility,'content') = 'content'
               UNION ALL
               SELECT NULL AS post_id, 'wiki' AS platform_id, 'page' AS kind, topic AS title,
-                     SUBSTR(body, 1, 400) AS snippet, NULL AS url, 'wiki' AS lvl,
+                     SUBSTR(body, 1, 400) AS snippet, NULL AS url, NULL AS series, 'wiki' AS lvl,
                      VECTOR_DISTANCE(embedding,
                                      VECTOR_EMBEDDING({EMBED_MODEL} USING :q AS DATA), COSINE) AS dist
               FROM   wiki_pages
@@ -65,7 +65,7 @@ def _lexical_posts(conn, terms, k):
                        f"THEN 1 ELSE 0 END)" for i in range(len(terms)))
     where = " OR ".join(f"UPPER(NVL(title,' ')||' '||caption) LIKE :t{i}" for i in range(len(terms)))
     sql = (f"SELECT post_id, platform_id, kind, title, SUBSTR(caption,1,400) AS snippet, url, "
-           f"'item' AS lvl FROM posts WHERE caption IS NOT NULL "
+           f"series, 'item' AS lvl FROM posts WHERE caption IS NOT NULL "
            f"AND NVL(visibility,'content') = 'content' AND ({where}) "
            f"ORDER BY ({score}) DESC, post_id FETCH FIRST {int(k)} ROWS ONLY")
     binds = {f"t{i}": f"%{terms[i].upper()}%" for i in range(len(terms))}
@@ -122,6 +122,26 @@ def list_topics(conn):
     with conn.cursor() as cur:
         cur.execute("SELECT topic FROM wiki_pages ORDER BY topic")
         return [r[0] for r in cur.fetchall()]
+
+
+def list_series(conn):
+    """The content series present in the brain (e.g. 'tech_walk') with a count each."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT series, COUNT(*) AS n FROM posts WHERE series IS NOT NULL "
+                    "AND NVL(visibility,'content')='content' GROUP BY series ORDER BY n DESC")
+        return [{"series": r[0], "count": int(r[1])} for r in cur.fetchall()]
+
+
+def list_by_series(conn, series, k=25):
+    """List items in a content series (e.g. 'tech_walk'), most recent first."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT post_id, platform_id, kind, title, url, "
+                    "TO_CHAR(published_at,'YYYY-MM-DD') AS published FROM posts "
+                    "WHERE series = :s AND NVL(visibility,'content')='content' "
+                    "ORDER BY published_at DESC NULLS LAST FETCH FIRST :k ROWS ONLY",
+                    s=series, k=int(k))
+        cols = [c[0].lower() for c in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
 def get_post(conn, post_id):
