@@ -164,6 +164,10 @@ docs/              TUTORIAL (start here) · BLOG · BUILD_WALKTHROUGH · EXPORT_
 - [x] **Knowledge wiki layer** — LLM-compiled, self-improving topic pages (`wiki.py`) + a Duality
   view; the strongest relational + JSON + vector showcase
 - [x] **Hybrid search** — vector + keyword (Reciprocal Rank Fusion)
+- [x] **Content series (your own)** — group posts into a named `series` (interview series, tutorial
+  series, product line…) via a Notion `Series` label or `classify_series.py`; surfaced by a
+  `by_series` tool + flagged in search. The demo uses `tech_walk` as an example — **customize for
+  your content**
 - [x] **Private by scope** — a `visibility` flag keeps financials/private items out of search **and**
   the self-improving loop; `classify_private.py` tags private + off-topic items on ingest
 - [x] **Self-improving sync** — `sync.py` (pull → wiki refresh → consolidate) on a daily schedule,

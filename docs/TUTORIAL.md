@@ -104,6 +104,19 @@ See **[EXPORT_GUIDE.md](EXPORT_GUIDE.md)** for exactly where to click for each o
 and the platform, then insert into `posts`. The embedding is generated in-DB automatically. Copy
 any loader above as a template — search and the agent work over the new content immediately.
 
+> **🏷️ Optional — tag your own content *series*.** `posts.series` lets you group content into a
+> named series you care about — an interview series, a tutorial series, a product line, whatever fits
+> *your* content. The demo tags a `tech_walk` series (walking interviews with a guest), but **that's
+> just an example — define your own.** Two ways to set it, pick either:
+> 1. **Label it at the source (most reliable):** add a `Series` select (or a `Tech Walk`-style
+>    checkbox) to your Notion tracker; the Notion loader reads it into `posts.series`. *You* decide,
+>    no guessing.
+> 2. **Classify it:** adapt `scripts/classify_series.py` — rewrite its rubric for *your* series and
+>    run it over your posts.
+>
+> Once tagged, the `search` tool flags each result's `series`, and the **`by_series`** tool lists a
+> series (or shows all series + counts) — so an assistant can answer *"list my interview episodes."*
+
 ---
 
 ## Part 4 — Keep private data private (do this before you host it)
