@@ -153,6 +153,24 @@ def list_by_series(conn, series, k=25):
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
+def stats(conn):
+    """A high-level map of the brain (content scope only): total items, per-platform counts,
+    per-series counts, wiki topic count, and the published date range. Cheap orientation for a
+    demo or for the agent to size up what's here before searching."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*), TO_CHAR(MIN(published_at),'YYYY-MM-DD'), "
+                    "TO_CHAR(MAX(published_at),'YYYY-MM-DD') FROM posts "
+                    "WHERE NVL(visibility,'content')='content'")
+        total, first, last = cur.fetchone()
+        cur.execute("SELECT platform_id, COUNT(*) AS n FROM posts "
+                    "WHERE NVL(visibility,'content')='content' "
+                    "GROUP BY platform_id ORDER BY n DESC")
+        by_platform = [{"platform": r[0], "count": int(r[1])} for r in cur.fetchall()]
+    return {"total_items": int(total or 0), "by_platform": by_platform,
+            "series": list_series(conn), "wiki_topics": len(list_topics(conn)),
+            "published_range": {"from": first, "to": last}}
+
+
 def get_post(conn, post_id):
     """Full content of one post (for the agent to read in detail)."""
     with conn.cursor() as cur:

@@ -242,7 +242,7 @@ the agent answers from your *synthesized* knowledge, tracing every claim back to
 
 Finally, make the brain a tool any AI client can call. A small **MCP server** exposes the standard
 `search`/`fetch` connector contract — the same shape **Claude *and* ChatGPT** expect — plus `wiki`,
-`topics`, `recent`, `by_series`, and `ingest_note`. Run it **locally over stdio** (Claude Desktop /
+`topics`, `recent`, `by_series`, `overview`, and `ingest_note`. Run it **locally over stdio** (Claude Desktop /
 Claude Code) by registering it in your client config:
 
 ```json

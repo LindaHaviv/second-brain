@@ -251,9 +251,9 @@ machine); register it in Claude Desktop (**Settings → Developer → Edit Confi
 ```
 
 Now ask Claude *"search my brain for what I've covered on AI inference"* or *"show my wiki topics."*
-Tools: `search`, `fetch`, `wiki`, `topics`, `recent`, `by_series`, `ingest_note` — with the read
-tools annotated `readOnlyHint` and the one write tool gated, so clients can auto-allow reads and ask
-before writes.
+Tools: `search`, `fetch`, `wiki`, `topics`, `recent`, `by_series`, `overview`, `ingest_note` — with
+the read tools annotated `readOnlyHint` and the one write tool gated, so clients can auto-allow reads
+and ask before writes.
 
 ![Asking Claude to search your brain — it calls the connector and answers from your own content](images/mcp-search.png)
 

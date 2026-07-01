@@ -11,10 +11,14 @@ MODEL = "claude-opus-4-8"
 EMBED_MODEL = "MINILM"
 
 _SYS = (
-    "You distill durable, reusable FACTS about a creator's content library from (a) the list "
-    "of their content and (b) a log of past research over it. Output concise, standalone facts "
-    "an assistant could reuse later — themes, recurring audience questions, formats, tools, and "
-    "notable gaps. Deduplicate. Categories: theme | audience | format | tool | gap.\n"
+    "You maintain a durable, reusable set of FACTS about a creator's content library. You are given "
+    "(a) the facts you already distilled last time, (b) a sample of their content, and (c) a log of "
+    "recent research over it. UPDATE the fact set: KEEP the existing facts that still hold, REVISE "
+    "any that are now more precise, ADD genuinely new ones from the recent runs, and DROP duplicates "
+    "or anything contradicted. This is cumulative — do NOT discard prior knowledge just because it "
+    "isn't in the recent runs. Return the FULL updated set (concise, standalone facts an assistant "
+    "could reuse) — themes, recurring audience questions, formats, tools, notable gaps — deduplicated "
+    "and capped at the ~40 most useful. Categories: theme | audience | format | tool | gap.\n"
     "PRIVACY GUARD: never record financial or private business facts — no earnings, rates, fees, "
     "pricing, invoices, payments, banking, budgets, taxes, contracts, or deal terms. Knowing a "
     "post is a brand collaboration (and its reach/engagement) is fine; the money and terms are not."
@@ -31,23 +35,37 @@ _SCHEMA = {
 }
 
 
-def consolidate(client, conn, limit=30):
-    """Read episodic memory + content, extract facts, (re)build semantic_memory. Returns facts."""
+def consolidate(client, conn, limit=30, title_sample=80):
+    """Cumulatively update semantic_memory from episodic memory + content. Feeds the EXISTING facts
+    back in so prior knowledge is preserved (merge, not rolling-window rebuild), and samples titles
+    instead of dumping the whole library so it scales to thousands of posts. Returns the facts."""
     cur = conn.cursor()
     # self-improving guard: consolidate ONLY from content, never from private/business items,
     # so financials can't be distilled into durable semantic memory.
+    cur.execute("select count(*) from posts where nvl(visibility,'content') = 'content'")
+    total = cur.fetchone()[0]
+    # a representative SAMPLE (most recent), not every title — keeps the prompt bounded as the
+    # library grows into the thousands.
     cur.execute("select title from posts where title is not null "
-                "and nvl(visibility,'content') = 'content'")
+                "and nvl(visibility,'content') = 'content' "
+                f"order by published_at desc nulls last fetch first {int(title_sample)} rows only")
     titles = [r[0] for r in cur.fetchall()]
+    # the facts distilled last time — fed back so consolidation ACCUMULATES instead of forgetting.
+    cur.execute("select category, fact from semantic_memory where source = 'consolidation' "
+                "order by category")
+    prior = cur.fetchall()
     cur.execute("select task, action, detail from agent_memory order by created_at desc "
                 f"fetch first {int(limit)} rows only")
     runs = cur.fetchall()
 
     prompt = (
-        "CONTENT LIBRARY (titles):\n" + "\n".join(f"- {t}" for t in titles) +
-        "\n\nPAST RESEARCH RUNS (question | answer-summary | notes):\n" +
+        "EXISTING FACTS (from last consolidation — keep/revise/dedupe these):\n" +
+        ("\n".join(f"- [{c}] {f}" for c, f in prior) if prior else "(none yet)") +
+        f"\n\nCONTENT LIBRARY — sample of {len(titles)} most-recent titles (of {total} total):\n" +
+        "\n".join(f"- {t}" for t in titles) +
+        "\n\nRECENT RESEARCH RUNS (question | answer-summary | notes):\n" +
         "\n".join(f"- {q} | {(a or '')[:160]} | {d or ''}" for q, a, d in runs) +
-        "\n\nExtract the durable facts."
+        "\n\nReturn the full updated fact set."
     )
     resp = client.messages.create(
         model=MODEL, max_tokens=8192, system=_SYS,
