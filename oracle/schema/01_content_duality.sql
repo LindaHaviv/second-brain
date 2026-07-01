@@ -39,7 +39,7 @@ CREATE TABLE posts (
   views         NUMBER DEFAULT 0,
   sponsored     NUMBER(1) DEFAULT 0,                     -- paid partnership? (authoritative from Notion)
   brand         VARCHAR2(200),                            -- brand, for sponsored items
-  visibility    VARCHAR2(12) DEFAULT 'content' NOT NULL,  -- 'content' | 'business' (private; excluded from search + self-improving loop)
+  visibility    VARCHAR2(12) DEFAULT 'content' NOT NULL,  -- 'content' (searched) | 'business' (private) | 'archived' (off-topic); only 'content' is searched/wiki'd/consolidated
   content_embedding VECTOR(384, FLOAT32)                 -- semantic search over the content (in-DB MiniLM)
 );
 
