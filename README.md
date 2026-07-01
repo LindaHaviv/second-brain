@@ -17,8 +17,10 @@ This repo is meant to be **followed step by step.** Everything runs locally and 
 no Docker Desktop, no cloud account required. (Lifting it to Oracle Cloud is an optional
 later step.)
 
-> **New here? Start with the guided walkthrough → [docs/TUTORIAL.md](docs/TUTORIAL.md)**
-> (set it up → see it work → make it yours). The sections below are the reference version.
+> **New here? Take the guided mini-course → [docs/TUTORIAL.md](docs/TUTORIAL.md)** — Part I is the
+> core (set up → see it work → your content); Part II is modular enhancements you pick for *your* use
+> case (research base, team knowledge, creator brain, personal wiki). The sections below are the
+> reference version.
 
 > 🔒 **Using your real data, or putting it online? Read [SECURITY.md](SECURITY.md) first** —
 > redaction, secrets handling, least-privilege DB users, and OAuth + an email allowlist for the
