@@ -5,6 +5,13 @@ The local MCP server (`mcp_server.py`, stdio) only works on this machine. To use
 deploys `mcp_http.py` (the same tools, over HTTP + a bearer token) to Fly.io, pointing at the
 cloud Autonomous DB.
 
+> **Build vs. managed.** This doc covers the **custom** self-hosted route (full control, Python
+> tools, and the claude.ai/ChatGPT web-connector OAuth flow — reachable from your phone). Oracle
+> also ships a fully **managed** [Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/)
+> — no infrastructure to run, tools defined as Select AI Agent (PL/SQL) tools, governed by database
+> identity with native auditing. Choose **custom** for Python tools + web/mobile connector reach +
+> portability across databases; **managed** for zero-ops + DB-level governance.
+
 > Already verified locally: `/health` → 200, no token → 401, valid token → reaches the tools.
 
 ## Connection model: walletless TLS (simplest for a server)
