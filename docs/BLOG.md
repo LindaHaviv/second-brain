@@ -191,15 +191,15 @@ auto-allow them, while the one write tool is marked a write so the client asks f
 `MCP_READONLY` drops it entirely). Hosting puts your brain on the public internet, though — so lock
 it down (OAuth + allowlist; see security, below).
 
-> **🔌 Two ways to serve it — build or managed.** This tutorial builds a **custom MCP server**
-> (Python): you host it, keep full control of the tools, and it speaks the OAuth *custom-connector*
-> flow that **claude.ai web/mobile and ChatGPT** use — so it's reachable from your phone. It's also
-> **database-agnostic** (point the same server at any database). Oracle *also* offers a fully
-> **managed MCP server** built into **Autonomous AI Database**: **no infrastructure to run**, tools
-> registered as **Select AI Agent** (PL/SQL) tools, access **governed by database identity** with
-> native auditing, reachable from MCP clients like **Claude Desktop** and IDEs. Pick by use case:
-> **custom** for Python tools, web/mobile connector reach, and portability across databases;
-> **managed** for zero-ops and database-level governance. Both keep your data in Oracle. See
+> **🔌 Two ways to serve it — and which fits here.** This tutorial builds a **custom MCP server**
+> (Python): you host it, keep full control of the tools, it speaks the OAuth *custom-connector* flow
+> that **claude.ai web/mobile and ChatGPT** use (reachable from your phone), it's **database-agnostic**
+> (point it at any database), and it runs on **any tier — including Always Free**. That's the right
+> fit for this build. Oracle *also* offers a fully **managed** MCP server built into **Autonomous AI
+> Database** — no infrastructure to run, tools as **Select AI Agent** (PL/SQL) tools, access
+> **governed by database identity** with native auditing. It's a **paid-instance** feature (not
+> Always Free), so it's the path to reach for once you're on paid infrastructure and want zero-ops +
+> DB-level governance. Official docs:
 > [Oracle Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/).
 
 ![Claude calling the Second Brain connector and answering from your own content, the read tools auto-allowed and the write tool gated](images/mcp-search.png)

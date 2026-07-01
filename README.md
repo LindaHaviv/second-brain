@@ -169,8 +169,9 @@ docs/              TUTORIAL (start here) · BLOG · BUILD_WALKTHROUGH · EXPORT_
 - [x] **MCP server, everywhere** — local (stdio) **+ hosted** (HTTP + WorkOS OAuth + allowlist),
   reachable from **claude.ai, ChatGPT, and your phone**; read tools annotated read-only, the write
   tool gated (`MCP_READONLY`) — see [docs/HOSTED_MCP.md](docs/HOSTED_MCP.md).
-  (Or use Oracle's fully-managed [Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/)
-  — zero-ops + DB-identity governance; this build is the custom, portable, Python route.)
+  (This build uses the **custom, portable, Python** route — works on any tier incl. Always Free.
+  Oracle's fully-managed [Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/)
+  — zero-ops + DB-identity governance — is the official **paid-instance** alternative.)
 - [x] **Cloud** — lift to Oracle Autonomous Database ([docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md))
 - [x] **Maintenance** — `lint_wiki.py` (review candidates) + `review.py` (leaked-secret scan)
 - [ ] Roadmap — live Instagram performance metrics via API sync · a lightweight UI

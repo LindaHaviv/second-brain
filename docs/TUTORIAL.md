@@ -206,10 +206,11 @@ it's reachable from claude.ai and ChatGPT — see **[HOSTED_MCP.md](HOSTED_MCP.m
 first (auth on every request, allowlist, `MCP_READONLY` if it shouldn't accept writes).
 
 > **Build or managed.** This is the **custom** route (Python tools, full control, web/mobile
-> connector reach, and portable to any database). Oracle also offers a fully **managed**
-> [Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/) — no
-> infra to run, tools as Select AI Agent (PL/SQL) tools, governed by DB identity. Pick **custom**
-> for flexibility/portability, **managed** for zero-ops + database-level governance.
+> connector reach, portable to any database, runs on **any tier including Always Free**) — the fit
+> for this build. Oracle also offers a fully **managed**
+> [Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/) (Select
+> AI Agent PL/SQL tools, DB-identity governance) — a **paid-instance** feature for zero-ops + DB-level
+> governance once you're on paid infrastructure.
 
 ---
 
