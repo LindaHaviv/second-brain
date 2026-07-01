@@ -157,6 +157,7 @@ docs/              TUTORIAL (start here) · BLOG · BUILD_WALKTHROUGH · EXPORT_
   export — captions + reel transcripts), **LinkedIn**, **ChatGPT/Claude** exports — all into one
   `posts` table (`scripts/`)
 - [x] **All four agent-memory types** — episodic, semantic (auto-consolidated), conversational, procedural
+  (built from scratch to show the model; Oracle's official [OAMP package](https://docs.oracle.com/en/database/oracle/agent-memory/) is a drop-in alternative)
 - [x] **Knowledge wiki layer** — LLM-compiled, self-improving topic pages (`wiki.py`) + a Duality
   view; the strongest relational + JSON + vector showcase
 - [x] **Hybrid search** — vector + keyword (Reciprocal Rank Fusion)

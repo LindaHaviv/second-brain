@@ -146,6 +146,16 @@ The more you use it, the more it knows your themes, your recurring questions, yo
 your gaps — and it stops re-deriving them every time. (In the repo this runs automatically every
 few research runs, plus a daily scheduled consolidation.)
 
+> **📦 Build it, or use Oracle's package — your choice.** This tutorial builds the memory layer from
+> scratch (four purpose-built tables) so you *see* how agent memory works, and get first-class
+> **procedural** memory plus a scheduled consolidation loop. If you'd rather not hand-roll it, Oracle
+> ships an official Python package — the **Oracle AI Agent Memory Package** (`oracleagentmemory`) —
+> that turns the same database into a memory core, with framework adapters (OpenAI / Claude Agent SDK
+> / LangGraph), multi-actor scoping, and a published LongMemEval benchmark. Pick by use case: **build**
+> for full control and to learn the model; **the package** for a maintained, drop-in layer. Either
+> way, the memory lives in your Oracle AI Database. See
+> [Oracle AI Agent Memory Package](https://docs.oracle.com/en/database/oracle/agent-memory/).
+
 ![The agent answering with citations to your own posts, then building on the previous turn as agent_memory grows](images/agent-answer.png)
 
 ## 4. A self-improving knowledge wiki (the Duality + relational showcase)
