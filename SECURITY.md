@@ -22,6 +22,24 @@ before you point it at your real content or put it online.
 - **Minimize**: ingest summaries/curated data, not raw dumps. Keep financials, contracts, and
   contacts **out** of the brain. The most sensitive data can stay local and never go to the cloud.
 
+## Keep private data out of the brain (and out of the self-improving loop)
+Your brain will end up mixing things you're happy for an assistant to surface with things you are
+**not** — and only *you* know which is which. Decide your private categories up front (whatever they
+are for you) and keep them separate:
+- **Classify at ingest.** Give each item a scope — `content` (default) vs a **private** scope — and
+  keep private items **out of the searchable content brain entirely**. This repo does this with a
+  `posts.visibility` flag; every content query filters to `visibility='content'`.
+- **Guard the self-improving loop.** A brain that consolidates memory and compiles a wiki can
+  quietly *re-derive* private facts back into "durable memory" even after you remove the source. So
+  the consolidation and wiki steps must read **only** the content scope, and the memory-distiller is
+  told never to record private facts. Otherwise separation leaks right back in.
+- **Keep the private store local and unadvertised.** Don't ship a hosted tool that announces private
+  data exists — the most private data can stay on your machine and never reach the cloud/MCP at all.
+- **Re-check after each import.** New chat/exports can carry private material; re-run your classifier
+  (here: `scripts/classify_private.py`) after importing, and `review.py` for leaked secrets.
+- **Don't document your specifics.** When you write this up, teach the *pattern* — don't spell out
+  exactly what you keep private or where. Naming it is a map for anyone trying to reach it.
+
 ## Database
 - Use a **least-privilege app user** (the cloud setup creates `CCC`) — don't run the app or the MCP
   server as `ADMIN`.
@@ -55,6 +73,7 @@ before you point it at your real content or put it online.
 ## Quick checklist before going public or online
 - [ ] `git status` clean of `.env`, wallet, `private/`, real content
 - [ ] demo passwords changed; real secrets only in `.env` (gitignored) + a password manager
-- [ ] `scripts/review.py` reports no leaked secrets
+- [ ] `scripts/review.py` reports no leaked secrets; private categories kept in a separate scope
+      (out of search **and** the consolidation/wiki loop), not in the hosted brain
 - [ ] app/MCP run as a least-privilege user, DB not publicly reachable
 - [ ] hosted MCP: OAuth + email allowlist on, HTTPS, secrets in a vault

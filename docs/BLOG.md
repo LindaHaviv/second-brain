@@ -185,6 +185,13 @@ them on:
 
 - **Redact before you ingest.** AI-chat and coding transcripts leak API keys — scrub secret
   patterns *before* they hit the database. A `review.py` scans for anything that slipped through.
+- **Keep your private data separate — and out of the self-improving loop.** Your sources mix things
+  you want an assistant to surface with things you don't (only you know which). Give each item a
+  scope, keep the private one **out of the searchable brain**, and make sure the parts that
+  *self-improve* — the memory consolidation and the wiki compiler — read **only** the content scope.
+  Otherwise the brain can quietly re-derive private facts back into "durable memory" after you
+  thought you'd removed them. Keep the most private data local and unadvertised, classify at ingest,
+  and re-check after each import. (Teach the pattern; don't publish exactly what *you* keep private.)
 - **Never commit secrets.** `.env`, the cloud wallet, and your raw content are gitignored — keep
   them that way; keep the real copies in a password manager, and rotate anything that's exposed.
 - **Least privilege, no public database.** The app runs as a limited DB user (not admin), and the

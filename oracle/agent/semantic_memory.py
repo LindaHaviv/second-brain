@@ -14,7 +14,10 @@ _SYS = (
     "You distill durable, reusable FACTS about a creator's content library from (a) the list "
     "of their content and (b) a log of past research over it. Output concise, standalone facts "
     "an assistant could reuse later — themes, recurring audience questions, formats, tools, and "
-    "notable gaps. Deduplicate. Categories: theme | audience | format | tool | gap."
+    "notable gaps. Deduplicate. Categories: theme | audience | format | tool | gap.\n"
+    "PRIVACY GUARD: never record financial or private business facts — no earnings, rates, fees, "
+    "pricing, invoices, payments, banking, budgets, taxes, contracts, or deal terms. Knowing a "
+    "post is a brand collaboration (and its reach/engagement) is fine; the money and terms are not."
 )
 
 _SCHEMA = {
@@ -31,7 +34,10 @@ _SCHEMA = {
 def consolidate(client, conn, limit=30):
     """Read episodic memory + content, extract facts, (re)build semantic_memory. Returns facts."""
     cur = conn.cursor()
-    cur.execute("select title from posts where title is not null")
+    # self-improving guard: consolidate ONLY from content, never from private/business items,
+    # so financials can't be distilled into durable semantic memory.
+    cur.execute("select title from posts where title is not null "
+                "and nvl(visibility,'content') = 'content'")
     titles = [r[0] for r in cur.fetchall()]
     cur.execute("select task, action, detail from agent_memory order by created_at desc "
                 f"fetch first {int(limit)} rows only")

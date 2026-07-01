@@ -49,6 +49,7 @@ def _json(client, system, prompt, schema, max_tokens=2048):
 def propose_topics(client, conn, n=10):
     cur = conn.cursor()
     cur.execute("SELECT title FROM posts WHERE title IS NOT NULL "
+                "AND NVL(visibility,'content') = 'content' "
                 "AND platform_id IN ('youtube','notion') FETCH FIRST 200 ROWS ONLY")
     titles = [r[0] for r in cur.fetchall()]
     cur.execute("SELECT fact FROM semantic_memory FETCH FIRST 30 ROWS ONLY")
@@ -166,7 +167,8 @@ def refresh_wiki(client, conn):
         print(f"no new content since last compile (max post_id {cur_max}); nothing to refresh")
         return
     new_ids = set()
-    cur.execute("SELECT post_id FROM posts WHERE post_id > :h", h=hwm)
+    cur.execute("SELECT post_id FROM posts WHERE post_id > :h "
+                "AND NVL(visibility,'content') = 'content'", h=hwm)
     new_ids = {int(r[0]) for r in cur.fetchall()}
     print(f"{len(new_ids)} new posts since last compile — checking which topics they touch")
 

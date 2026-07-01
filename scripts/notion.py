@@ -20,6 +20,10 @@ load_dotenv(ROOT / "oracle" / ".env")
 oracledb.defaults.fetch_lobs = False
 notion = Client(auth=os.environ["NOTION_TOKEN"])
 
+# Private brand-deal financials stay OUT of the content brain by default; opt in only for a
+# full LOCAL vault (never point this at the hosted/cloud content brain).
+INCLUDE_BUSINESS = os.environ.get("BRAIN_INCLUDE_BUSINESS") == "1"
+
 
 def connect():
     return oracledb.connect(
@@ -106,7 +110,7 @@ def main():
                 "insert (platform_id, display_name) values ('notion','Notion')")
     cur.execute("delete from posts where platform_id='notion'")
 
-    n, total_chunks, cursor = 0, 0, None
+    n, total_chunks, skipped_business, cursor = 0, 0, 0, None
     while True:
         r = notion.search(page_size=100, start_cursor=cursor,
                           filter={"property": "object", "value": "page"})
@@ -116,17 +120,22 @@ def main():
             props = x.get("properties", {})
             title = title_of(props) or "(untitled)"
             link = url_of(props, "Link") or x.get("url")
-            # Brand-deals DB carries financials/PII -> flag sponsored, keep only brand+status
-            # (rates, contacts, emails, and the page body deliberately stay OUT of the brain).
+            # Brand-deals DB carries financials/PII. By default it is PRIVATE (business) and stays
+            # OUT of the content brain entirely — set BRAIN_INCLUDE_BUSINESS=1 only to load it into
+            # a full LOCAL vault (never into the hosted/cloud content brain).
             is_deal = len({"Payment Status", "Rate", "Fee", "Deliverables", "Contract"}
                           & set(props.keys())) >= 2
+            if is_deal and not INCLUDE_BUSINESS:
+                skipped_business += 1
+                continue
             if is_deal:
-                kind, sponsored, brand = "deal", 1, title
+                kind, sponsored, brand, visibility = "deal", 1, title, "business"
                 stage, pay = sel(props, "Stage"), sel(props, "Payment Status")
                 pub = date_of(props, "Published Date", "Deadline")
                 caption = f"Brand deal | brand: {title} | stage: {stage} | payment: {pay}"
                 body = ""
             else:
+                visibility = "content"
                 typ, status, cat = sel(props, "Type"), sel(props, "Status"), sel(props, "Category")
                 sponsored = 1 if ((typ and "Sponsor" in typ) or (cat and "Brand" in cat)) else 0
                 brand = title if sponsored else None
@@ -140,13 +149,14 @@ def main():
             cur.execute(
                 """
                 insert into posts (platform_id, kind, title, caption, url, published_at,
-                                   sponsored, brand, content_embedding)
-                values ('notion', :kind, :title, :caption, :url, :pub, :sp, :brand,
+                                   sponsored, brand, visibility, content_embedding)
+                values ('notion', :kind, :title, :caption, :url, :pub, :sp, :brand, :viz,
                         vector_embedding(MINILM using :emb as data))
                 returning post_id into :outid
                 """,
                 kind=kind, title=title[:1000], caption=caption, url=link, pub=iso(pub),
-                sp=sponsored, brand=(brand[:200] if brand else None), emb=emb, outid=outid,
+                sp=sponsored, brand=(brand[:200] if brand else None), viz=visibility,
+                emb=emb, outid=outid,
             )
             post_id = int(outid.getvalue()[0])
             for i, ch in enumerate(chunks_of(body)):
@@ -166,7 +176,8 @@ def main():
     conn.commit()
     cur.execute("select count(*) from posts where platform_id='notion' and sponsored=1")
     sp = cur.fetchone()[0]
-    print(f"loaded {n} Notion pages ({sp} sponsored) + {total_chunks} chunks into the brain")
+    print(f"loaded {n} Notion pages ({sp} sponsored) + {total_chunks} chunks into the brain"
+          + (f"; skipped {skipped_business} private brand-deal rows (business)" if skipped_business else ""))
     conn.close()
 
 
