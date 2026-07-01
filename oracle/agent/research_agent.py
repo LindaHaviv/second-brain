@@ -33,11 +33,13 @@ SYSTEM = (
 TOOLS = [
     {
         "name": "search_content",
-        "description": "Search Linda's own content by meaning across three levels (see each "
-                       "result's 'lvl'): 'wiki' = a synthesized topic page (read it fully with "
-                       "get_wiki_page using its title), 'item' = a post, 'passage' = a chunk. "
-                       "Returns post_id, title, snippet, url, lvl, and distance (lower = closer). "
-                       "For 'wiki' results post_id is null — use get_wiki_page, not get_post.",
+        "description": "Hybrid search over Linda's own content — semantic vectors fused with keyword "
+                       "matching — across three levels (see each result's 'lvl'): 'wiki' = a "
+                       "synthesized topic page (read it fully with get_wiki_page using its title), "
+                       "'item' = a post, 'passage' = a chunk. Returns post_id, title, snippet, url, "
+                       "lvl, plus how it ranked: 'rank' (1 = most relevant), 'rrf_score' (higher = "
+                       "better), and 'retrievers' (['semantic'], ['keyword'], or both — 'both' is a "
+                       "strong signal). For 'wiki' results post_id is null — use get_wiki_page.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -116,7 +118,8 @@ def run_research(client, conn, question, history=None):
                     f"Prior research notes (episodic):\n{prior_txt}"),
     })
 
-    sources = []   # (title, url) from HER content
+    searched = []   # (title, url) surfaced by search — CANDIDATES, not necessarily used
+    read = []       # (title, url) the agent actually opened (get_post / get_wiki_page) — used
     answer = ""
     while True:
         resp = client.messages.create(
@@ -138,22 +141,32 @@ def run_research(client, conn, question, history=None):
                 out = _run_tool(conn, b.name, b.input)
                 if b.name == "search_content" and isinstance(out, list):
                     for r in out:
-                        sources.append((r["title"], r["url"]))
+                        searched.append((r["title"], r["url"]))
+                elif b.name == "get_post" and isinstance(out, dict) and out.get("title"):
+                    read.append((out["title"], out.get("url")))
                 elif b.name == "get_wiki_page" and isinstance(out, dict) and out.get("topic"):
-                    sources.append((f"wiki: {out['topic']}", None))
+                    read.append((f"wiki: {out['topic']}", None))
                     for cdict in out.get("citations", []):
-                        sources.append((cdict["title"], cdict["url"]))
+                        read.append((cdict["title"], cdict["url"]))
                 results.append({
                     "type": "tool_result", "tool_use_id": b.id,
                     "content": json.dumps(out, default=str),
                 })
         messages.append({"role": "user", "content": results})
 
-    # record this research run to episodic memory (so future questions build on it)
-    uniq = list(dict.fromkeys(t for t, _ in sources))
+    # Sources = what the answer actually USED, not everything surfaced: items the agent opened
+    # (get_post/get_wiki_page), plus any searched item whose title the answer names. This keeps the
+    # citation list and the recorded reward honest (grounding), instead of listing every search hit.
+    alow = (answer or "").lower()
+    cited = [(t, u) for (t, u) in searched if t and t.lower() in alow]
+    uniq = list(dict.fromkeys(t for t, _ in read + cited if t))
     found = len(uniq) > 0
-    detail = ("researched '" + question + "' -> sources: " + "; ".join(uniq[:5])) if found \
-             else f"researched '{question}' -> no relevant content found"
+    if found:
+        detail = "researched '" + question + "' -> sources: " + "; ".join(uniq[:5])
+    elif searched:
+        detail = f"researched '{question}' -> answered without citing specific content"
+    else:
+        detail = f"researched '{question}' -> no relevant content found"
     record(conn, "research", question, (answer[:500] or "(no answer)"),
            "research", "success" if found else "failure",
            reward=1.0 if found else 0.0, detail=detail)
