@@ -11,7 +11,7 @@ before you point it at your real content or put it online.
   in a **password manager**, not just in `.env`.
 - **Rotate** anything that's ever been exposed (pasted in chat, screenshared, committed by
   accident): the Anthropic key, Notion token, DB passwords, the MCP token, and the wallet.
-- The passwords shipped in `.env.example` (`CHANGE_ME_SysPwd1`, `CHANGE_ME_AppPwd1`) are **local demo
+- The passwords shipped in `.env.example` (`CHANGE_ME_*`) are working **local-sandbox
   defaults only** — change them for anything real.
 
 ## Redact before you ingest

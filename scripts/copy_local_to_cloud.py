@@ -67,7 +67,7 @@ def main():
 
     local = oracledb.connect(
         user=os.environ.get("LOCAL_DB_USER", "CCC"),
-        password=os.environ.get("LOCAL_APP_PWD", "CHANGE_ME_AppPwd1"),   # local demo default; override via env
+        password=os.environ.get("LOCAL_APP_PWD", "CHANGE_ME_AppPwd1"),   # local sandbox placeholder; override via env
         dsn=os.environ.get("LOCAL_DB_DSN", "localhost:1521/FREEPDB1"))
     cloud = db.connect()
     lc, cc = local.cursor(), cloud.cursor()

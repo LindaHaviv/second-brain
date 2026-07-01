@@ -1,4 +1,4 @@
-# Cloud migration — local Oracle 26ai → Oracle Autonomous Database
+# Cloud migration — local Oracle 26ai → Oracle Autonomous AI Database
 
 Move the brain to a managed, always-on cloud database (encrypted, auto-backed-up, reachable from
 a hosted MCP server). The app code is already cloud-ready — `db.py` connects to Autonomous over an
@@ -10,7 +10,8 @@ mTLS wallet when wallet env vars are set, with **no other code changes.** You do
 ---
 
 ## Phase 1 — Provision the database (OCI console)
-1. Sign in to **cloud.oracle.com**. (Always Free tier is enough to start.)
+1. Sign in to **cloud.oracle.com** — or **create a free account** there if you don't have one
+   (the **Always Free** tier is enough for everything in this guide; no paid upgrade needed).
 2. **Autonomous Database → Create Autonomous Database.**
    - Workload type: **Transaction Processing** (or "AI").
    - **Always Free**: on.

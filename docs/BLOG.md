@@ -67,7 +67,7 @@ brew install python@3.12
 python3.12 -m venv .venv
 ./.venv/bin/pip install -r oracle/agent/requirements.txt yt-dlp
 
-# config (local demo passwords are fine)
+# config (the CHANGE_ME_* placeholders work for the local sandbox)
 cp oracle/.env.example oracle/.env
 
 # start Oracle AI Database 26ai, then apply schema + load the embedding model
@@ -210,6 +210,13 @@ distilling "what happened" into "what I now know about this creator." That's the
 The more you use it, the more it knows your themes, recurring questions, and gaps — and stops
 re-deriving them every time. (In the repo this runs automatically every few research runs, plus a
 daily scheduled consolidation.)
+
+> **🔧 The LLM is a choice, not a dependency.** This build uses **Claude**, but only three pieces
+> talk to an LLM at all — the agent loop, the wiki compiler, and memory consolidation — and each is
+> a plain API call you can point at **OpenAI** or a **local open-source model** (e.g. Llama via
+> [Ollama](https://ollama.com)). Everything else — the database, the schema, semantic search, the
+> MCP server — is LLM-free: the embeddings are an **open-source MiniLM running inside Oracle**, so
+> search needs **no API key at all** (you already proved that at the Step 3 checkpoint).
 
 > **📦 Build it, or use Oracle's package — your choice.** This build makes the memory layer from
 > scratch (four purpose-built tables) so you *see* how agent memory works, and get first-class

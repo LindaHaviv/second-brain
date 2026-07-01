@@ -18,7 +18,7 @@ services:
     platform: linux/arm64        # remove on Intel; gvenzl publishes amd64 + arm64
     container_name: ccc-oracle
     ports:
-      # loopback only — your brain DB (with documented demo passwords) must not be
+      # loopback only — your brain DB (with published placeholder passwords) must not be
       # reachable from the LAN / a coffee-shop network. Widen deliberately if you must.
       - "127.0.0.1:1521:1521"
     environment:

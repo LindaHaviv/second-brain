@@ -79,7 +79,7 @@ brew install python@3.12
 python3.12 -m venv .venv
 ./.venv/bin/pip install -r oracle/agent/requirements.txt yt-dlp
 
-# 3. Config (demo passwords are fine for local; change for anything real)
+# 3. Config (the CHANGE_ME_* placeholders work for the local sandbox; set your own for anything real)
 cp oracle/.env.example oracle/.env
 
 # 4. Start Oracle AI Database 26ai (Free container image) locally
