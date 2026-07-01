@@ -294,6 +294,24 @@ replacing the two manual joins you'd otherwise write.
 
 ![A compiled wiki page — a synthesized topic overview with its citations back to your posts nested alongside](images/wiki-page.png)
 
+### Zoom out — where the self-improvement actually lives
+
+"Self-improving" isn't one feature — it's **several loops at different speeds**, and now that you've
+built both the memory (Step 4) and the wiki (Step 5), you can see the whole system:
+
+| Loop | Runs | What gets smarter |
+|---|---|---|
+| **Ingest** | every new post | embeddings generated in-DB on insert — everything downstream sees it |
+| **Episodic record** | every answer | the agent's experience; the next recall is richer |
+| **Consolidation** (episodic → semantic) | every few runs + daily | durable facts — the agent stops re-deriving your themes |
+| **Procedural ranking** | every question | tool selection — a hint at four tools, essential at forty |
+| **Wiki refresh + growth** | daily | touched pages recompile; new content clusters earn **new** pages |
+
+And the loops **feed each other**: research runs become consolidated facts; consolidated facts inform
+which wiki topics exist; wiki pages ground the next research answer; every answer becomes a new run.
+The *database* is what makes this compounding rather than chaotic — all five loops read and write
+the same governed tables, with the privacy scope enforced at every entry point.
+
 ---
 
 ## Step 6 — Use it from anywhere (MCP)
