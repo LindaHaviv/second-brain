@@ -153,8 +153,13 @@ few research runs, plus a daily scheduled consolidation.)
 > that turns the same database into a memory core, with framework adapters (OpenAI / Claude Agent SDK
 > / LangGraph), multi-actor scoping, and a published LongMemEval benchmark. Pick by use case: **build**
 > for full control and to learn the model; **the package** for a maintained, drop-in layer. Either
-> way, the memory lives in your Oracle AI Database. See
+> way, the memory lives in your Oracle AI Database. See the
 > [Oracle AI Agent Memory Package](https://docs.oracle.com/en/database/oracle/agent-memory/).
+>
+> **Go deeper on agent memory:** the free **[Oracle × DeepLearning.AI "Agent Memory" course](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**
+> (memory engineering on Oracle AI Database) and the **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)**
+> (workshops + notebooks: RAG → agents → memory-augmented agents) are the best places to learn the
+> concepts behind this build.
 
 ![The agent answering with citations to your own posts, then building on the previous turn as agent_memory grows](images/agent-answer.png)
 
