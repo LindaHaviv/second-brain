@@ -152,9 +152,13 @@ def search(query: str, k: int = 8, cursor: str = None) -> dict:
                 seen.add(pid)
                 deduped.append((str(pid), r))
         page = deduped[offset:offset + k]
-        results = [{"id": rid, "title": r["title"] or "", "url": r["url"] or "",
+        results = []
+        for rid, r in page:
+            item = {"id": rid, "title": r["title"] or "", "url": r["url"] or "",
                     "text": r["snippet"] or "", "source": r["platform_id"], "match": r["lvl"]}
-                   for rid, r in page]
+            if r.get("series"):
+                item["series"] = r["series"]   # e.g. 'tech_walk' — flags a content series
+            results.append(item)
         has_more = len(deduped) > offset + k
         nxt = _encode_cursor(query, offset + k) if has_more else None
         return {"results": results, "next_cursor": nxt}
@@ -245,6 +249,25 @@ def recent(k: int = 10) -> list:
     except Exception as e:
         print(f"[tool:recent] {e}", flush=True)
         return []
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+@mcp.tool(annotations=_READ)
+def by_series(series: str = None, k: int = 25) -> dict:
+    """List items in a content SERIES. Call with NO series to see the available series + counts;
+    call with a series name (e.g. "tech_walk" — Linda's walking interviews with a guest) to list
+    that series' items, most recent first."""
+    conn = None
+    try:
+        conn = db.connect()
+        if not series or not str(series).strip():
+            return {"available": content.list_series(conn)}
+        return {"series": series, "items": content.list_by_series(conn, series, _clampk(k, 25))}
+    except Exception as e:
+        print(f"[tool:by_series] {e}", flush=True)
+        return {"series": series, "items": []}
     finally:
         if conn is not None:
             conn.close()
