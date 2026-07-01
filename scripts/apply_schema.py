@@ -8,7 +8,8 @@ oracle/.env. Idempotent: "already exists" errors are tolerated, so it's safe to 
 
 Used for the cloud migration: set the wallet env (DB_WALLET_DIR, DB_DSN, ...) and run this to
 build the whole schema in Autonomous in one shot — no manual SQL pasting. (The ONNX model load
-still happens via Object Storage; see docs/CLOUD_MIGRATION.md.)
+happens separately via scripts/load_model_cloud.py — direct BLOB, no Object Storage;
+see docs/CLOUD_MIGRATION.md.)
 """
 import pathlib
 import sys

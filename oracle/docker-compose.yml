@@ -18,7 +18,9 @@ services:
     platform: linux/arm64        # remove on Intel; gvenzl publishes amd64 + arm64
     container_name: ccc-oracle
     ports:
-      - "1521:1521"
+      # loopback only — your brain DB (with documented demo passwords) must not be
+      # reachable from the LAN / a coffee-shop network. Widen deliberately if you must.
+      - "127.0.0.1:1521:1521"
     environment:
       ORACLE_PASSWORD: ${ORACLE_PWD:-DemoPwd_2026}  # SYS/SYSTEM password (gvenzl var name)
       APP_USER: ccc                                 # creates the CCC app schema for us

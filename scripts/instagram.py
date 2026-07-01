@@ -8,7 +8,7 @@ Setup (one-time, in your Meta app — see docs/EXPORT_GUIDE.md):
 Then set in oracle/.env:
   IG_ACCESS_TOKEN=<long-lived token>     (refresh ~every 60 days: scripts/instagram_token.py --refresh)
 
-Run:  ../.venv/bin/python scripts/instagram.py         # incremental: only adds new media
+Run:  ./.venv/bin/python scripts/instagram.py         # incremental: only adds new media
 Instagram content is CONTENT (visibility='content'); engagement/reach are kept as a content signal.
 """
 import json

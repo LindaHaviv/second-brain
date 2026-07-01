@@ -5,7 +5,7 @@ posts.json for your CAPTIONS and dates, and enriches each reel with its auto-cap
 (the matching .srt) — so your hooks AND what you said land in the brain (content scope). Ongoing
 performance metrics come from the API loader (scripts/instagram.py).
 
-  ../.venv/bin/python scripts/instagram_export.py /path/to/extracted-export-root
+  ./.venv/bin/python scripts/instagram_export.py /path/to/extracted-export-root
 Idempotent per item (dedups on reel URL). Non-English auto-translations are dropped from the
 transcript but the caption is still kept.
 """

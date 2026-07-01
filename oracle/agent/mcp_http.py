@@ -11,6 +11,7 @@ Run locally:
   MCP_AUTH_TOKEN=dev-secret ../../.venv/bin/uvicorn mcp_http:app --host 0.0.0.0 --port 8000
 Deploy: see docs/HOSTED_MCP.md (Dockerfile + Fly.io).
 """
+import hmac
 import os
 import threading
 import time
@@ -20,9 +21,18 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 import db                       # noqa: E402
-from mcp_server import mcp   # same FastMCP server + tools (search/fetch/wiki/topics/recent/ingest_note)
+from mcp_server import mcp   # same FastMCP server + all tools (search/fetch/wiki/topics/recent/by_series/overview/ingest_note)
 
 TOKEN = os.environ.get("MCP_AUTH_TOKEN")
+
+# FAIL CLOSED: a hosted brain must never start without auth. OAuth (AUTHKIT_DOMAIN) or a bearer
+# token (MCP_AUTH_TOKEN) — one of them is required. MCP_ALLOW_ANON=1 is an explicit, deliberate
+# escape hatch for local experiments only (never set it on a public deployment).
+if (not os.environ.get("AUTHKIT_DOMAIN") and not TOKEN
+        and os.environ.get("MCP_ALLOW_ANON") != "1"):
+    raise SystemExit(
+        "refusing to start with NO auth configured — set AUTHKIT_DOMAIN (OAuth) or "
+        "MCP_AUTH_TOKEN (bearer), or MCP_ALLOW_ANON=1 for a local-only experiment.")
 
 
 def _keep_warm():
@@ -51,16 +61,27 @@ if os.environ.get("KEEP_WARM", "1") == "1":
     threading.Thread(target=_keep_warm, daemon=True).start()
 
 
+_READY_CACHE = {"at": 0.0, "ok": False}   # /ready is unauthenticated — cache so it can't be
+_READY_TTL = 10.0                          # hammered to hold DB pool slots (cheap DoS guard)
+
+
 def _readiness():
     """Deep health: prove the DB link actually works so the platform can route away from a wedged
-    machine. Kept minimal — no error detail in the body (don't leak internals to an open probe)."""
+    machine. Result cached ~10s (the probe is open to the internet; uncached, a request loop could
+    monopolize the small connection pool). No error detail in the body — don't leak internals."""
+    now = time.monotonic()
+    if now - _READY_CACHE["at"] < _READY_TTL:
+        return JSONResponse({"ready": _READY_CACHE["ok"]},
+                            status_code=200 if _READY_CACHE["ok"] else 503)
     conn = None
     try:
         conn = db.connect()
         conn.cursor().execute("SELECT 1 FROM dual").fetchone()
+        _READY_CACHE.update(at=now, ok=True)
         return JSONResponse({"ready": True})
     except Exception as e:
         print(f"[ready] DB check failed: {e}", flush=True)
+        _READY_CACHE.update(at=now, ok=False)
         return JSONResponse({"ready": False}, status_code=503)
     finally:
         if conn is not None:
@@ -70,9 +91,33 @@ def _readiness():
                 pass
 
 
+class _Bucket:
+    """Tiny token-bucket rate limiter (MCP spec: servers MUST rate-limit tool invocations).
+    Single-tenant server, so one global bucket is enough — burst of RATE_BURST, refills
+    RATE_PER_SEC/s. Not distributed (per-machine), which is fine at this scale."""
+
+    def __init__(self, burst=30, per_sec=5.0):
+        self.capacity = float(os.environ.get("RATE_BURST", burst))
+        self.rate = float(os.environ.get("RATE_PER_SEC", per_sec))
+        self.tokens, self.at, self.lock = self.capacity, time.monotonic(), threading.Lock()
+
+    def allow(self):
+        with self.lock:
+            now = time.monotonic()
+            self.tokens = min(self.capacity, self.tokens + (now - self.at) * self.rate)
+            self.at = now
+            if self.tokens >= 1.0:
+                self.tokens -= 1.0
+                return True
+            return False
+
+
+_bucket = _Bucket()
+
+
 class Gateway(BaseHTTPMiddleware):
-    """Outermost middleware: serve the open probes and time/log tool traffic.
-      /health -> shallow 200 (no DB)      /ready -> deep DB check
+    """Outermost middleware: serve the open probes, rate-limit, and time/log tool traffic.
+      /health -> shallow 200 (no DB)      /ready -> deep DB check (cached ~10s)
     Because this runs before auth, /health and /ready stay open in BOTH auth modes; everything
     else falls through to the auth layer. /mcp calls are timed and logged (path + status + latency,
     never query text / note bodies — no PII)."""
@@ -83,6 +128,8 @@ class Gateway(BaseHTTPMiddleware):
             return JSONResponse({"ok": True})
         if path == "/ready":
             return _readiness()
+        if path.startswith("/mcp") and not _bucket.allow():
+            return JSONResponse({"error": "rate limited — slow down"}, status_code=429)
         start = time.monotonic()
         resp = await call_next(request)
         if path.startswith("/mcp"):
@@ -93,11 +140,14 @@ class Gateway(BaseHTTPMiddleware):
 
 class BearerAuth(BaseHTTPMiddleware):
     """Require `Authorization: Bearer <MCP_AUTH_TOKEN>`. Only mounted when WorkOS OAuth is off;
-    open probes are already handled by Gateway (outer), so this only ever sees protected paths."""
+    open probes are already handled by Gateway (outer), so this only ever sees protected paths.
+    compare_digest = constant-time comparison (no timing oracle on the token)."""
 
     async def dispatch(self, request, call_next):
-        if TOKEN and request.headers.get("authorization") != f"Bearer {TOKEN}":
-            return JSONResponse({"error": "unauthorized"}, status_code=401)
+        if TOKEN:
+            supplied = request.headers.get("authorization") or ""
+            if not hmac.compare_digest(supplied, f"Bearer {TOKEN}"):
+                return JSONResponse({"error": "unauthorized"}, status_code=401)
         return await call_next(request)
 
 

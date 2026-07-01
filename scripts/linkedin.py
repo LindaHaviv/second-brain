@@ -4,7 +4,7 @@ LinkedIn has no clean API for your own posts, so this takes posts captured from 
 page (relative times like '2w', '1mo') or a future export, converts the times to approximate
 dates, and loads them as content. Idempotent per post (dedups on a content hash).
 
-  ../.venv/bin/python scripts/linkedin.py ~/Downloads/linkedin_posts.json
+  ./.venv/bin/python scripts/linkedin.py ~/Downloads/linkedin_posts.json
 """
 import datetime
 import hashlib

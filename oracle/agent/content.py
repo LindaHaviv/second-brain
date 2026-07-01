@@ -110,20 +110,22 @@ def search_hybrid(conn, query, k=8, C=60):
 
 def get_wiki_page(conn, topic):
     """Full compiled wiki page for a topic, with its citations back to your content.
+    Reads the JSON Relational Duality view — ONE query returns the page as a single JSON
+    document with the citations already nested (wiki_pages + page_sources + posts, no manual
+    joins; the Duality view does the assembly).
     Returns {topic, body, citations:[{post_id,title,platform,url}]} or None."""
+    import json as _json
     with conn.cursor() as cur:
-        cur.execute("SELECT page_id, topic, body FROM wiki_pages WHERE topic = :t", t=topic)
+        cur.execute("SELECT data FROM wiki_page_dv WHERE JSON_VALUE(data, '$.topic') = :t",
+                    t=topic)
         row = cur.fetchone()
         if not row:
             return None
-        page_id, topic, body = row
-        cur.execute(
-            "SELECT p.post_id, p.title, p.platform_id, p.url "
-            "FROM page_sources ps JOIN posts p ON p.post_id = ps.post_id "
-            "WHERE ps.page_id = :p", p=page_id)
-        cites = [{"post_id": r[0], "title": r[1], "platform": r[2], "url": r[3]}
-                 for r in cur.fetchall()]
-        return {"topic": topic, "body": body, "citations": cites}
+        doc = _json.loads(row[0]) if isinstance(row[0], (str, bytes)) else row[0]
+        cites = [{"post_id": s["post"]["postId"], "title": s["post"]["title"],
+                  "platform": s["post"]["platform"], "url": s["post"]["url"]}
+                 for s in doc.get("sources", [])]
+        return {"topic": doc["topic"], "body": doc["body"], "citations": cites}
 
 
 def list_topics(conn):

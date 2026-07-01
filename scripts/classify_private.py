@@ -1,16 +1,19 @@
 """Clean up imported chats: separate PRIVATE material and prune OFF-TOPIC noise, so the content
 brain only holds (and only ever surfaces) chats relevant to the creator's work.
 
-Chat exports (Claude, ChatGPT, code sessions) are a mixed bag — content work, the business side of
-brand deals, and a lot of random one-off questions. This does one LLM pass and tags posts.visibility:
+Chat exports (Claude, ChatGPT, code sessions) are a mixed bag — content work, private material,
+and a lot of random one-off questions. This does one LLM pass and tags posts.visibility:
   content   -> kept (creator/tech work: content, learning, interview prep, career/brand)
-  business  -> private financial/deal side (rates, earnings, contracts, invoices, negotiations)
-  archived  -> off-topic personal one-offs unrelated to her work
+  business  -> the private scope (this demo uses the deal/financial side as the example)
+  archived  -> off-topic personal one-offs unrelated to the creator's work
+
+The RUBRIC below is an EXAMPLE — rewrite its categories for whatever *you* consider private
+(client work, health, family, legal…). Teach the pattern, don't copy the categories verbatim.
 
 Only visibility='content' is searched / wiki'd / consolidated, so business + archived are hidden
 everywhere automatically (no other plumbing). Run AFTER importing any chat export:
-    ../.venv/bin/python scripts/classify_private.py            # preview counts
-    ../.venv/bin/python scripts/classify_private.py --apply    # tag business + archived
+    ./.venv/bin/python scripts/classify_private.py            # preview counts
+    ./.venv/bin/python scripts/classify_private.py --apply    # tag business + archived
 """
 import sys, os, json, argparse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "oracle", "agent"))
@@ -24,21 +27,21 @@ RUBRIC = """Classify each AI chat from a TECH CONTENT CREATOR / developer advoca
   rates, fees, pricing, quotes, earnings, income, invoices, payments, budgets, expenses; contracts,
   SOW, NDAs, exclusivity terms; negotiating/closing a paid deal; maintaining a deal/financial tracker.
 
-"archived" — an OFF-TOPIC personal one-off with nothing to do with her work OR her story:
+"archived" — an OFF-TOPIC personal one-off with nothing to do with their work OR their story:
   e.g. cooking, travel/logistics bookings, shopping, random trivia, unrelated errands, throwaway
-  tests ("hi", "test"). Prune these — they're noise. (NOTE: her personal *background/story* is NOT
+  tests ("hi", "test"). Prune these — they're noise. (NOTE: their personal *background/story* is NOT
   noise — see content.)
 
-"content" — ANYTHING related to her professional/creator domain OR her personal narrative (keep):
+"content" — ANYTHING related to their professional/creator domain OR their personal narrative (keep):
   content creation (scripts, captions, hooks, video ideas, edits); technical/learning topics (AI,
   ML, LLMs, cloud, dev tools, MCP, agents, coding); interview prep or researching a person/company;
-  industry and product topics she covers; tools she uses for content; career, personal-brand and
-  positioning; AND her personal BACKGROUND / life story / career journey / values / bio / origin
+  industry and product topics they cover; tools they use for content; career, personal-brand and
+  positioning; AND their personal BACKGROUND / life story / career journey / values / bio / origin
   story / non-traditional path — a creator's own story is core content material (bios, "about me",
   personal-brand posts, interview intros). Being for a paid/sponsored campaign does NOT make it
   business — only the money/terms do.
 
-Bias: if it plausibly relates to her tech/creator work OR her personal story/brand, choose "content"
+Bias: if it plausibly relates to their tech/creator work OR their personal story/brand, choose "content"
 (don't over-prune). Only mark "archived" when it's clearly an unrelated personal one-off. Only
 "business" when it's clearly the deal money/terms.
 Return STRICT JSON list of {"id":<int>,"label":"content"|"business"|"archived"}."""

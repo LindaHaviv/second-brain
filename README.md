@@ -103,6 +103,7 @@ That gives you a live Oracle 26ai with the content schema, the Duality view, the
 
 ```bash
 # Collect: pull a public channel's metadata (any public channel works — swap in yours later)
+mkdir -p exports/youtube
 ./.venv/bin/yt-dlp --skip-download --dump-json \
   "https://www.youtube.com/@YOURHANDLE/videos" > exports/youtube/videos.jsonl
 ./.venv/bin/python scripts/youtube.py
@@ -152,7 +153,7 @@ oracle/            the database: docker-compose, schema (Duality + 4 memory type
 scripts/           loaders (youtube, notion, instagram, instagram_export, chatgpt, claude_chats,
                    linkedin) + pipeline (classify_private, sync, consolidate, wiki) + ops
                    (apply_schema, load_model_cloud, copy_local_to_cloud, lint_wiki, review)
-deploy/            hosted-MCP container (Dockerfile + fly.toml)
+deploy/            hosted-MCP container (Dockerfile; fly.toml lives at repo root)
 sources/           canonical content as Markdown + frontmatter (source of truth)
 docs/              TUTORIAL (start here) · BLOG · BUILD_WALKTHROUGH · EXPORT_GUIDE ·
                    ARCHITECTURE · CLOUD_MIGRATION · HOSTED_MCP
@@ -183,10 +184,12 @@ docs/              TUTORIAL (start here) · BLOG · BUILD_WALKTHROUGH · EXPORT_
 - [x] **MCP server, everywhere** — local (stdio) **+ hosted** (HTTP + WorkOS OAuth + allowlist),
   reachable from **claude.ai, ChatGPT, and your phone**; read tools annotated read-only, the write
   tool gated (`MCP_READONLY`) — see [docs/HOSTED_MCP.md](docs/HOSTED_MCP.md).
-  (This build uses the **custom, portable, Python** route — works on any tier incl. Always Free.
-  Oracle's fully-managed [Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/)
-  — zero-ops + DB-identity governance — is the official **paid-instance** alternative.)
-- [x] **Cloud** — lift to Oracle Autonomous Database ([docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md))
+  (This build uses the **custom, portable, Python** route — full control, works with the local
+  container, portable to any database. Oracle's fully-managed
+  [Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/)
+  — zero-ops + DB-identity governance, built into Autonomous AI Database — is the official
+  managed alternative when your brain lives there.)
+- [x] **Cloud** — lift to Oracle Autonomous AI Database ([docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md))
 - [x] **Maintenance** — `lint_wiki.py` (review candidates) + `review.py` (leaked-secret scan)
 - [ ] Roadmap — live Instagram performance metrics via API sync · a lightweight UI
 

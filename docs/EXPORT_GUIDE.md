@@ -23,15 +23,15 @@ Facebook Page required, no scraping**. One-time setup:
 4. In **App settings → Basic**, copy the **App secret**.
 5. Mint a long-lived (~60-day) token:
    ```bash
-   IG_APP_SECRET=<app secret> ../.venv/bin/python scripts/instagram_token.py <short-lived token>
+   IG_APP_SECRET=<app secret> ./.venv/bin/python scripts/instagram_token.py <short-lived token>
    ```
    Paste the printed `IG_ACCESS_TOKEN=...` into `oracle/.env` (it's a **secret** — keep it out of git).
 6. Load it (incremental — only adds new media each run):
    ```bash
-   ../.venv/bin/python scripts/instagram.py
+   ./.venv/bin/python scripts/instagram.py
    ```
-   Refresh the token every ~60 days: `scripts/instagram_token.py --refresh`. The scheduled sync
-   (below) does both for you.
+   Refresh the token every ~60 days with `scripts/instagram_token.py --refresh` (set a reminder —
+   the scheduled sync pulls new posts but does **not** refresh the token).
 
 **Alternative: one-time export** (good for a full historical backfill):
 Instagram → **Profile → ☰ → Accounts Center → Your information and permissions → Download your
@@ -44,7 +44,8 @@ download to device. ➡ Save the `.zip` to `exports/instagram/`.
 2. Choose **"Download larger data archive…"** (includes posts/articles/media) — *not* just the fast one.
 3. Request. Larger archive can take up to **24 hours**; you'll get an email.
 
-➡ Save to `exports/linkedin/`. (CSV + media.)
+➡ Save to `exports/linkedin/`. (CSV + media.) `scripts/linkedin.py` currently reads a captured-posts
+JSON — use it as the template for the official archive's CSVs.
 
 ## 3. TikTok
 
@@ -52,7 +53,8 @@ download to device. ➡ Save the `.zip` to `exports/instagram/`.
 2. **Request data** · **File format: JSON** (not TXT).
 3. When ready (under *Download data* tab), download the `.zip`.
 
-➡ Save to `exports/tiktok/`.
+➡ Save to `exports/tiktok/`. *(No loader ships for TikTok yet — copy any `scripts/` loader as a
+template; the target is always the same `posts` contract.)*
 
 ## 4. YouTube
 
@@ -61,7 +63,8 @@ download to device. ➡ Save the `.zip` to `exports/instagram/`.
 3. **All YouTube data included** → keep *videos* + *metadata* (history optional).
 4. Export → choose `.zip`, one-time. Email when ready.
 
-➡ Save to `exports/youtube/`. (Also have a YouTube Data API key ready if you want live metrics.)
+➡ Save to `exports/youtube/`. *(Note: `scripts/youtube.py` reads **yt-dlp** `.jsonl` output — see the
+tutorial — not the Takeout format. Takeout is still worth keeping as your own full backup.)*
 
 ## 5. X / Twitter
 
@@ -69,18 +72,19 @@ download to device. ➡ Save the `.zip` to `exports/instagram/`.
 2. Verify identity → **Request archive**. Can take up to **24 hours**.
 3. Download when the email arrives.
 
-➡ Save to `exports/twitter/`. (Archive is HTML/JS + a `data/` folder of JSON — we parse the JSON.)
+➡ Save to `exports/twitter/`. (Archive is HTML/JS + a `data/` folder of JSON.) *(No loader ships for
+X yet — copy any `scripts/` loader as a template.)*
 
 ---
 
 ## After exports land
 
-Tell me which bundles are in `exports/` and I'll write the per-platform normalizer
-(`scripts/<platform>.{py,js}`) that converts each into `sources/<platform>/*.md` using the
-frontmatter schema in the README. Instagram first.
+Run the matching loader (`scripts/<platform>.py`) for each bundle — and for platforms without one,
+**copy an existing loader as a template**: they all end at the same contract (map the export's
+fields to `title`, `caption`, `url`, `published_at`, insert into `posts`; the embedding is
+generated in-DB). Then run `classify_private.py` and `sync.py` to fold the new content in.
 
 ## What about content you can't export?
 
-If something only exists live (e.g. a repost you don't own, or older deleted-export content),
-that's the fallback case for scraping with the connected Puppeteer browser — but we only reach
-for it when an export genuinely can't cover it.
+If something only exists live (e.g. a repost you don't own), prefer each platform's **official API**
+over scraping — logins + anti-bot + terms of service make scraping an account risk.
