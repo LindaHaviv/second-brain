@@ -17,8 +17,8 @@ This repo is meant to be **followed step by step.** Everything runs locally and 
 no Docker Desktop, no cloud account required. (Lifting it to Oracle Cloud is an optional
 later step.)
 
-> **New here? Take the guided mini-course → [docs/TUTORIAL.md](docs/TUTORIAL.md)** — Part I is the
-> core (set up → see it work → your content); Part II is modular enhancements you pick for *your* use
+> **New here? Take the hands-on workshop → [docs/TUTORIAL.md](docs/TUTORIAL.md)** — Part I is the
+> core labs (set up → see it work → your content); Part II is modular labs you pick for *your* use
 > case (research base, team knowledge, creator brain, personal wiki). The sections below are the
 > reference version.
 
