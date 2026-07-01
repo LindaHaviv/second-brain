@@ -82,7 +82,7 @@ python3.12 -m venv .venv
 # 3. Config (demo passwords are fine for local; change for anything real)
 cp oracle/.env.example oracle/.env
 
-# 4. Start Oracle (Oracle Database Free 23.26.2, branded "26ai") in a container
+# 4. Start Oracle AI Database 26ai (Free container image) locally
 docker-compose -f oracle/docker-compose.yml up -d
 
 # 5. Download the in-DB embedding model, then bootstrap the database
@@ -193,9 +193,25 @@ docs/              TUTORIAL (start here) · BLOG · BUILD_WALKTHROUGH · EXPORT_
 - [x] **Maintenance** — `lint_wiki.py` (review candidates) + `review.py` (leaked-secret scan)
 - [ ] Roadmap — live Instagram performance metrics via API sync · a lightweight UI
 
+## Make it yours (safely)
+
+Forking this into *your* second brain is the point — these five steps keep yours private while
+you do:
+
+1. **Change every demo password** (`oracle/.env`) — the defaults are public in this repo.
+2. **Decide your private categories first**, then ingest — adapt `classify_private.py`'s rubric to
+   *your* private material (don't publish what those categories are), and run it after every import.
+3. **Your own auth, before hosting** — your own WorkOS allowlist (`ALLOWED_SUBS`) or bearer token.
+   The server refuses to start unconfigured, so there's no accidental open door.
+4. **Never commit** `.env`, the cloud wallet, `exports/`, or `sources/` — already gitignored; keep
+   it that way, and run `scripts/review.py` before sharing anything derived from your data.
+5. **Customize the personal bits** — your sources, your `series` labels, your wiki topics. The code
+   is generic; everything "you" lives in env vars and your data.
+
 ## Notes
 
 - **LLM-agnostic** — Claude here, but the agent talks to any LLM; the database is the constant.
-- **Local-first, cloud-optional** — runs entirely on your machine; your data stays put.
-- Oracle Database Free in Docker is the same engine as the cloud — features used here
+- **Local-first, cloud-optional** — runs entirely on your machine; your data stays put — and the
+  cloud copy script ships **only the content scope** by default.
+- Oracle AI Database Free in Docker is the same engine as the cloud — features used here
   (AI Vector Search, JSON Relational Duality, in-DB ONNX embeddings) work in both.

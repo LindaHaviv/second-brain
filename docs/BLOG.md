@@ -52,8 +52,9 @@ Let's build each, one step at a time.
 
 ## Step 1 — Stand up Oracle 26ai locally (~15 min)
 
-We run **Oracle Database Free** in a container — the *same engine* as the cloud, so AI Vector Search,
-JSON Relational Duality, and in-DB ONNX embeddings all work locally. Clone the repo (it carries the
+We run the free **Oracle AI Database 26ai** container image locally — the *same engine* as the
+cloud, so AI Vector Search, JSON Relational Duality, and in-DB ONNX embeddings all work on your
+machine. Clone the repo (it carries the
 schema and setup scripts), then:
 
 ```bash
@@ -374,6 +375,21 @@ them on:
 Full checklist: **[SECURITY.md](https://github.com/LindaHaviv/second-brain/blob/main/SECURITY.md)**.
 
 ---
+
+## Make it yours (safely)
+
+Replicating this as *your* second brain is the point — five steps keep yours private while you do:
+
+1. **Change every demo password** before anything real touches the database.
+2. **Decide your private categories first, then ingest** — adapt the classifier's rubric to *your*
+   private material, run it after every import, and don't publish what your categories are (teach
+   the pattern, not your specifics).
+3. **Your own auth before hosting** — your own OAuth allowlist or bearer token. The server refuses
+   to start with no auth configured, so there's no accidental open door.
+4. **Never commit** secrets, the cloud wallet, or your raw exports — and scan derived content for
+   leaked keys before sharing it.
+5. **Customize the personal bits** — your sources, your series labels, your wiki topics. The code
+   is generic; everything "you" lives in configuration and your data.
 
 ## What you end up with
 

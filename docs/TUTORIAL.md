@@ -155,6 +155,11 @@ any loader above as a template — search and the agent work over the new conten
 > Once tagged, the `search` tool flags each result's `series`, and the **`by_series`** tool lists a
 > series (or shows all series + counts) — so an assistant can answer *"list my interview episodes."*
 
+> **🔑 One habit to start now:** AI-chat and coding exports often contain **API keys**. The ChatGPT
+> and Claude Code loaders scrub known secret patterns on ingest; after any import, run
+> `./.venv/bin/python scripts/review.py` — it scans the brain for leaked secrets and exits non-zero
+> if it finds any. Cheap insurance before Lab 7 ever exposes a tool to an assistant.
+
 **✋ You now have a working second brain.** Everything below is optional — add what fits your use case.
 
 ---
