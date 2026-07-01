@@ -1,13 +1,17 @@
 # Second Brain
 
-> *A **self-improving** second brain on a single Oracle database — it searches your content by
-> meaning, answers grounded in your own work, remembers what it learns, and gets sharper every
-> time you use it.*
+> *One private place for everything you've made and thought — your posts, videos, notes, and AI
+> chats — unified in a single Oracle database: searchable by meaning, synthesized into a living
+> wiki, reachable from any AI assistant, and yours alone.*
 
-Build a **self-improving research agent grounded in your own content**, on a single
-Oracle database. Your content + its embeddings + the agent's memory all live in one engine;
-the agent searches your content by meaning, answers grounded in it, and remembers what it
-found. The LLM is pluggable (this build uses Claude); the database does the heavy lifting.
+Everything you make and learn scatters across apps that each remember a little and forget the rest.
+This is the fix: a **second brain** — one home for *your* content and thinking that you can **search
+by meaning**, that **compiles itself into a synthesized knowledge layer**, that **keeps your private
+data private**, and that you can **reach from Claude, ChatGPT, or your phone**. On top of it a
+research agent answers grounded in your own work and gets sharper the more you use it.
+
+Your content, its embeddings, and the agent's memory all live in one engine — the LLM is pluggable
+(this build uses Claude); the database does the heavy lifting.
 
 This repo is meant to be **followed step by step.** Everything runs locally and headless —
 no Docker Desktop, no cloud account required. (Lifting it to Oracle Cloud is an optional
