@@ -42,6 +42,10 @@ Oracle Cloud is an optional last step.
 2. **A compiled wiki** — synthesized topic pages over that content (self-maintaining).
 3. **Agent memory** — what the agent has learned, in all four flavors.
 
+Here's the whole system on one page — the map for the steps that follow:
+
+![Full architecture: sources → loaders → one Oracle 26ai database (content + wiki + 4 memory types) with hybrid retrieval and a privacy scope → a research agent and a self-improving daily sync → an MCP server reachable from any AI client; the LLM and embedding model are pluggable](images/architecture-full.svg)
+
 Let's build each, one step at a time.
 
 ---

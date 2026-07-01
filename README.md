@@ -41,6 +41,11 @@ Collect  →  Store  →  Search  →  Converse
 - **Converse** — a Claude agent that researches over your content and writes each run to an
   **agent-memory** table, so it improves over time.
 
+The full picture — every layer, the four memory types, the self-improving loop, the privacy scope,
+and the MCP surface — on one page:
+
+![Full architecture: sources → loaders → one Oracle 26ai database (content + wiki + 4 memory types) with hybrid retrieval and a privacy scope → a research agent and a self-improving daily sync → an MCP server reachable from any AI client; the LLM and embedding model are pluggable](docs/images/architecture-full.svg)
+
 New to the concepts (embeddings, duality, agent memory, the agent loop)? Read
 **[docs/BUILD_WALKTHROUGH.md](docs/BUILD_WALKTHROUGH.md)** first. To go deeper on **agent memory**,
 Oracle has two great resources: the free **[Oracle × DeepLearning.AI "Agent Memory" course](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**
