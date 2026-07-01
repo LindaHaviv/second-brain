@@ -130,6 +130,11 @@ def main():
             if is_deal and not INCLUDE_BUSINESS:
                 skipped_business += 1
                 continue
+            # explicit series label from the tracker — the source of truth for e.g. Tech Walks.
+            # Set a `Series` select (value like "Tech Walk") or a `Tech Walk` checkbox in Notion.
+            sv = sel(props, "Series")
+            series = (sv.strip().lower().replace(" ", "_")[:20] if sv
+                      else ("tech_walk" if (props.get("Tech Walk") or {}).get("checkbox") else None))
             if is_deal:
                 kind, sponsored, brand, visibility = "deal", 1, title, "business"
                 stage, pay = sel(props, "Stage"), sel(props, "Payment Status")
@@ -151,14 +156,14 @@ def main():
             cur.execute(
                 """
                 insert into posts (platform_id, kind, title, caption, url, published_at,
-                                   sponsored, brand, visibility, content_embedding)
-                values ('notion', :kind, :title, :caption, :url, :pub, :sp, :brand, :viz,
+                                   sponsored, brand, visibility, series, content_embedding)
+                values ('notion', :kind, :title, :caption, :url, :pub, :sp, :brand, :viz, :series,
                         vector_embedding(MINILM using :emb as data))
                 returning post_id into :outid
                 """,
                 kind=kind, title=title[:1000], caption=caption, url=link, pub=iso(pub),
                 sp=sponsored, brand=(brand[:200] if brand else None), viz=visibility,
-                emb=emb, outid=outid,
+                series=series, emb=emb, outid=outid,
             )
             post_id = int(outid.getvalue()[0])
             for i, ch in enumerate(chunks_of(body)):
