@@ -17,6 +17,10 @@ from notion_client import Client
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / "oracle" / ".env")
+import sys
+sys.path.insert(0, str(ROOT / "oracle" / "agent"))
+import db  # noqa: E402  (wallet-aware connect — works for local AND cloud)
+
 oracledb.defaults.fetch_lobs = False
 notion = Client(auth=os.environ["NOTION_TOKEN"])
 
@@ -26,11 +30,7 @@ INCLUDE_BUSINESS = os.environ.get("BRAIN_INCLUDE_BUSINESS") == "1"
 
 
 def connect():
-    return oracledb.connect(
-        user=os.environ.get("DB_USER", "CCC"),
-        password=os.environ.get("APP_PWD", "CHANGE_ME_AppPwd1"),
-        dsn=os.environ.get("DB_DSN", "localhost:1521/FREEPDB1"),
-    )
+    return db.connect()
 
 
 def rich(arr):
@@ -105,10 +105,12 @@ def chunks_of(text, size=1500):
 def main():
     conn = connect()
     cur = conn.cursor()
+    cur.execute("alter session disable parallel dml")   # Autonomous DB: allow delete+insert in one txn
     cur.execute("merge into platforms p using (select 'notion' id from dual) s "
                 "on (p.platform_id=s.id) when not matched then "
                 "insert (platform_id, display_name) values ('notion','Notion')")
     cur.execute("delete from posts where platform_id='notion'")
+    conn.commit()
 
     n, total_chunks, skipped_business, cursor = 0, 0, 0, None
     while True:
