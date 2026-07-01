@@ -105,9 +105,23 @@ mkdir -p exports/youtube
 ./.venv/bin/python scripts/youtube.py
 ```
 
-Here's what that data lands in. You store content in clean relational tables, but read and write it
-as a single JSON **document** — no ORM, no dual-writes, no sync code. That's **JSON Relational
-Duality**, the differentiator: governed relational data *and* document ergonomics from one table.
+Here's what that data lands in — and why the storage model is worth a minute of your attention.
+
+**The problem JSON Relational Duality exists to solve** is one of the oldest tensions in building
+apps. Your *application* thinks in documents: a post is one thing — its text, its platform, its
+media — and you want to read and write it as one JSON object, the way your code already models it.
+Your *database* wants normalized rows: platforms stored once (not duplicated into every post),
+media in its own table, consistency enforced by the engine. For decades you had to pick a side —
+a document store (great ergonomics, but data duplicated across documents, updates that fan out,
+weak joins) or relational + an ORM (consistency, but a mapping layer, migration friction, and the
+classic object-relational impedance mismatch). Some teams run *both* and sync them — now you have
+two copies that drift.
+
+**Duality's answer: don't pick.** You declare — once, in SQL — how the relational tables compose
+into a document, and the database serves **both interfaces over the same rows**. Read the view,
+you get one JSON document with everything nested. Write JSON *through* the view (insert, update,
+delete), and the engine updates the underlying normalized tables. Change a row relationally, the
+document reflects it instantly. Same data, two shapes, zero sync code — the "duality" is literal:
 
 ```sql
 CREATE TABLE posts (
@@ -129,7 +143,9 @@ CREATE OR REPLACE JSON RELATIONAL DUALITY VIEW post_dv AS
 ```
 
 Your app reads the view as JSON while the database keeps the relational tables consistent
-underneath. This isn't decorative: in Step 5, every wiki read the agent makes goes through a
+underneath. And this matters *more* in the agent era, not less: **agents and MCP tools consume
+JSON**, while governance still wants normalized, consistent truth — Duality serves both from one
+table. It isn't decorative here either: in Step 5, every wiki read the agent makes goes through a
 Duality view — one query returns the page *with its citations already nested*.
 
 ---
