@@ -77,10 +77,19 @@ The code is built in (`mcp_server.py` → `_build_auth`); turn it on with a Work
 > email(s) get in, even though anyone can attempt a WorkOS login. The server **refuses to start**
 > with an empty allowlist. Full guidance: [SECURITY.md](../SECURITY.md).
 
-## Keep-warm (built in)
-The server runs a background keep-warm thread (`KEEP_WARM=1`, every `KEEP_WARM_SECONDS`, default
-240s) holding a hot DB session and keeping the in-DB model resident — so the Always-Free
-Autonomous DB doesn't idle out and the first real query skips the cold path.
+## Keep-warm + connection pool (built in)
+- **Session pool** — the server reuses DB connections from a per-process pool (`db.py`), so each
+  tool call skips a fresh mTLS connect to the cloud DB (hundreds of ms) and concurrent sessions are
+  capped (`DB_POOL_MAX`, default 4). Set `DB_POOL=0` to fall back to direct connects.
+- **Keep-warm** — a background thread (`KEEP_WARM=1`, every `KEEP_WARM_SECONDS`, default 240s) runs
+  an embedding so the Always-Free Autonomous DB doesn't idle out and the in-DB ONNX model stays
+  resident, so the first real query skips the cold path.
+
+## Health & readiness
+- `GET /health` — shallow liveness (no DB); the load balancer's fast check. Open in both auth modes.
+- `GET /ready` — **touches the DB** (`SELECT 1`) → `200 {"ready":true}` or `503`. Point external
+  uptime monitoring at this so you're alerted when a machine's DB link is wedged (not just when the
+  process is up). Each `/mcp` call is also logged with method + status + latency (no query text).
 
 ## Security
 - **HTTPS enforced** (`force_https`), **bearer token required** on every request (`/health` open).
