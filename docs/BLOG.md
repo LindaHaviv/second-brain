@@ -411,7 +411,7 @@ you've loaded your own data, do Step 7's privacy scoping **before** you host.
 > and least-privilege DB user below. Docs:
 > [Oracle Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/).
 
-![Claude calling the Second Brain connector and answering from your own content, the read tools auto-allowed and the write tool gated](images/mcp-search.png)
+![The same question answered in Claude and in ChatGPT by the same Second Brain connector — same brain, any chat](images/mcp-search.png)
 
 ---
 

@@ -320,7 +320,7 @@ Tools: `search`, `fetch`, `wiki`, `topics`, `recent`, `by_series`, `overview`, `
 the read tools annotated `readOnlyHint` and the one write tool gated, so clients can auto-allow reads
 and ask before writes.
 
-![Asking Claude to search your brain — it calls the connector and answers from your own content](images/mcp-search.png)
+![The same question answered in Claude and in ChatGPT by the same connector — one brain, any chat](images/mcp-search.png)
 
 > **🔎 Show your work (great for teaching).** Each `search` result carries *how* it was found —
 > `match` (wiki / post / passage), `rank`, `score`, and **`found_by`** (`semantic`, `keyword`, or
