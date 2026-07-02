@@ -44,7 +44,7 @@ Collect  →  Store  →  Search  →  Converse
 The full picture — every layer, the four memory types, the self-improving loop, the privacy scope,
 and the MCP surface — on one page:
 
-![Full architecture: sources → loaders → one Oracle 26ai database (content + wiki + 4 memory types) with hybrid retrieval and a privacy scope → a research agent and a self-improving daily sync → an MCP server reachable from any AI client; the LLM and embedding model are pluggable](docs/images/architecture-full.svg)
+![Full architecture: sources → loaders → one Oracle 26ai database (content + wiki + 4 memory types) with hybrid retrieval and a privacy scope → a research agent and a self-improving daily sync → an MCP server reachable from any AI client; the LLM and embedding model are pluggable](docs/images/architecture-full-hand.svg)
 
 New to the concepts (embeddings, duality, agent memory, the agent loop)? Read
 **[docs/BUILD_WALKTHROUGH.md](docs/BUILD_WALKTHROUGH.md)** first. To go deeper on **agent memory**,

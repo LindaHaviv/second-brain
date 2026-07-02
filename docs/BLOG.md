@@ -29,7 +29,7 @@ an **MCP server** that plugs that same brain into Claude, ChatGPT, and whatever 
 memory layer that every *future* agent you build gets to share. The research agent is just the
 first thing you put on top of it.
 
-![Second Brain architecture: your chosen sources → one Oracle 26ai database (content + wiki + memory) → a research agent + an MCP server any AI client can call](images/architecture.svg)
+![Second Brain architecture: your chosen sources → one Oracle 26ai database (content + wiki + memory) → a research agent + an MCP server any AI client can call](images/architecture-hero-hand.svg)
 
 **Who this is for / what you need:** any developer comfortable with a terminal — **no prior Oracle
 experience required.** You'll need a Mac with [Homebrew](https://brew.sh), Python 3.12, and ~20
@@ -47,7 +47,7 @@ Oracle Cloud is an optional last step.
 
 Here's the whole system on one page — the map for the steps that follow:
 
-![Full architecture: sources → loaders → one Oracle 26ai database (content + wiki + 4 memory types) with hybrid retrieval and a privacy scope → a research agent and a self-improving daily sync → an MCP server reachable from any AI client; the LLM and embedding model are pluggable](images/architecture-full.svg)
+![Full architecture: sources → loaders → one Oracle 26ai database (content + wiki + 4 memory types) with hybrid retrieval and a privacy scope → a research agent and a self-improving daily sync → an MCP server reachable from any AI client; the LLM and embedding model are pluggable](images/architecture-full-hand.svg)
 
 Let's build each, one step at a time.
 
