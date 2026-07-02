@@ -168,9 +168,9 @@ Load a public YouTube channel as **sample data**, so you can watch the pipeline 
 
 ```bash
 mkdir -p exports/youtube
-# any public channel works; pick one to see it run, then swap in your own
-./.venv/bin/yt-dlp --skip-download --dump-json \
-  "https://www.youtube.com/@YOURHANDLE/videos" > exports/youtube/videos.jsonl
+# any public channel works; this uses Oracle's developer channel as neutral sample data
+./.venv/bin/yt-dlp --skip-download --dump-json --playlist-items 1-7 \
+  "https://www.youtube.com/@oracledevs/videos" > exports/youtube/videos.jsonl
 ./.venv/bin/python scripts/youtube.py
 ```
 
@@ -251,7 +251,7 @@ FETCH FIRST 5 ROWS ONLY;
 ```bash
 ./.venv/bin/python -c "import sys; sys.path.insert(0,'oracle/agent'); import db, content; \
   [print(f\"{r['dist']:.3f}  {r['title']}\") for r in \
-   content.search_content(db.connect(),'using AI in my workflow',k=3)]"
+   content.search_content(db.connect(),'protecting data in the cloud',k=3)]"
 ```
 
 Two refinements the repo adds. It **chunks** long content (transcripts, chats) into a
@@ -447,8 +447,14 @@ you've loaded your own data, do Step 7's privacy scoping **before** you host.
 
 ## Step 7: Make it yours: your sources, kept private and current
 
-You've watched the whole thing work on sample data. Now point it at *your* content. The system is
-**collector-agnostic**, so the only thing it needs is rows in that `posts` table. Map any source's
+You've watched the whole thing work on sample data. Now point it at *your* content. First, wipe
+the sample so it doesn't linger in your real brain:
+
+```bash
+./.venv/bin/python scripts/reset_sample.py
+```
+
+The system is **collector-agnostic**, so the only thing it needs is rows in that `posts` table. Map any source's
 fields to `title`, `caption` (the text), `url`, `published_at`, and the platform; the embedding is
 generated in-DB on insert.
 
