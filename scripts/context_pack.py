@@ -5,8 +5,14 @@ Use it for surfaces that can't reach the MCP (a system prompt, ChatGPT custom
 instructions, a Claude Project's instructions box). Regenerate any time; the daily
 sync keeps the underlying facts current.
 
-  ./.venv/bin/python scripts/context_pack.py            # print to stdout
-  ./.venv/bin/python scripts/context_pack.py -o me.md   # write to a file
+  ./.venv/bin/python scripts/context_pack.py                     # print to stdout
+  ./.venv/bin/python scripts/context_pack.py -o me.md            # write to a file
+  ./.venv/bin/python scripts/context_pack.py --exclude audience  # skip fact categories
+
+REVIEW BEFORE PASTING: the pack reflects what your PUBLIC content says about you — that can
+include personal-story details you've shared on camera but may not want in every system prompt.
+Use --exclude to drop whole fact categories (e.g. audience); private/business data can never
+appear here (semantic memory is consolidated from the content scope only).
 """
 import argparse
 import pathlib
@@ -18,12 +24,13 @@ import content  # noqa: E402
 import db       # noqa: E402
 
 
-def build(conn):
+def build(conn, exclude=()):
     s = content.stats(conn)
     topics = content.list_topics(conn)
+    ex = {e.strip().lower() for e in exclude}
     with conn.cursor() as cur:
         cur.execute("SELECT category, fact FROM semantic_memory ORDER BY category")
-        facts = cur.fetchall()
+        facts = [(c, f) for c, f in cur.fetchall() if (c or "other").lower() not in ex]
         cur.execute("SELECT title FROM posts WHERE title IS NOT NULL "
                     "AND NVL(visibility,'content')='content' "
                     "ORDER BY published_at DESC FETCH FIRST 10 ROWS ONLY")
@@ -61,10 +68,12 @@ def build(conn):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-o", "--out", help="write to file instead of stdout")
+    ap.add_argument("--exclude", nargs="*", default=[],
+                    help="fact categories to omit (e.g. --exclude audience)")
     args = ap.parse_args()
     conn = db.connect()
     try:
-        pack = build(conn)
+        pack = build(conn, exclude=args.exclude)
     finally:
         conn.close()
     if args.out:
