@@ -393,8 +393,8 @@ content scope** by default, so private data stays local. See
   endpoint, no app server. A content dashboard (wiki link graph, memory stream, loop health) is a
   natural first build.
 - **More sources** — repeat Lab 3 for each platform; everything lands in one `posts` model.
-- **Concepts** — how embeddings, JSON Relational Duality, and agent memory work:
-  **[BUILD_WALKTHROUGH.md](BUILD_WALKTHROUGH.md)**. To go deeper on agent memory, Oracle's free
+- **Concepts** — how the pieces fit: **[ARCHITECTURE.md](ARCHITECTURE.md)**.
+  To go deeper on agent memory, Oracle's free
   **[DeepLearning.AI "Agent Memory" course](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**
   and the **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)** — especially
   its hands-on [Agent Memory Workshop](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/workshops/agent_memory_workshop).

@@ -46,8 +46,9 @@ and the MCP surface — on one page:
 
 ![Full architecture: sources → loaders → one Oracle 26ai database (content + wiki + 4 memory types) with hybrid retrieval and a privacy scope → a research agent and a self-improving daily sync → an MCP server reachable from any AI client; the LLM and embedding model are pluggable](docs/images/architecture-full-hand.svg)
 
-New to the concepts (embeddings, duality, agent memory, the agent loop)? Read
-**[docs/BUILD_WALKTHROUGH.md](docs/BUILD_WALKTHROUGH.md)** first. To go deeper on **agent memory**,
+New to the concepts (embeddings, duality, agent memory, the agent loop)? The
+**[TUTORIAL](docs/TUTORIAL.md)** teaches each one as you build it, and
+**[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** shows how the pieces fit. To go deeper on **agent memory**,
 Oracle has two great resources: the free **[Oracle × DeepLearning.AI "Agent Memory" course](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**
 and the **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)**
 (workshops + notebooks from RAG to memory-augmented agents — start with its
@@ -115,14 +116,14 @@ That gives you a live Oracle 26ai with the content schema, the Duality view, the
 ```bash
 # Collect: pull a public channel's metadata (any public channel works — swap in yours later)
 mkdir -p exports/youtube
-./.venv/bin/yt-dlp --skip-download --dump-json \
-  "https://www.youtube.com/@YOURHANDLE/videos" > exports/youtube/videos.jsonl
+./.venv/bin/yt-dlp --skip-download --dump-json --playlist-items 1-7 \
+  "https://www.youtube.com/@oracledevs/videos" > exports/youtube/videos.jsonl
 ./.venv/bin/python scripts/youtube.py
 
 # Search: semantic search over what you just loaded (no API key needed)
 ./.venv/bin/python -c "import sys; sys.path.insert(0,'oracle/agent'); import db, content; \
   [print(f\"{r['dist']:.3f}  {r['title']}\") for r in \
-   content.search_content(db.connect(),'using AI in my workflow',k=3)]"
+   content.search_content(db.connect(),'protecting data in the cloud',k=3)]"
 ```
 
 Swap in any channel, or ingest other platforms via their data exports — see
@@ -167,7 +168,7 @@ scripts/           loaders (youtube, notion, instagram, instagram_export, chatgp
                    (apply_schema, load_model_cloud, copy_local_to_cloud, lint_wiki, review)
 deploy/            hosted-MCP container (Dockerfile; fly.toml lives at repo root)
 sources/           canonical content as Markdown + frontmatter (source of truth)
-docs/              TUTORIAL (start here) · BLOG · BUILD_WALKTHROUGH · EXPORT_GUIDE ·
+docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE ·
                    ARCHITECTURE · CLOUD_MIGRATION · HOSTED_MCP
 ```
 
