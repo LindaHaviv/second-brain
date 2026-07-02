@@ -9,12 +9,14 @@ from db import connect
 from research_agent import run_research
 import anthropic
 
+# These work on the sample data and on your own content — swap in questions
+# about YOUR material once you've loaded it (specific beats broad).
 QUESTIONS = [
-    "What have I made about using AI in my actual workflow?",
-    "If someone wants to break into tech, what advice have I shared?",
-    # needs BOTH my content (LLM inference video) AND the web (current 2026 info):
-    "I made a video on LLM inference vs traditional inference — what are the latest "
-    "2026 developments in LLM inference I could make a follow-up about?",
+    "What do I have about protecting data or security?",
+    "Give me an overview of the main topics in my content, with citations.",
+    # needs BOTH stored content AND the web (current info):
+    "Pick one topic from my content and tell me what's new in 2026 that I "
+    "could follow up on.",
 ]
 
 

@@ -78,9 +78,9 @@ at your own data. Load a public YouTube channel as a stand-in dataset:
 
 ```bash
 mkdir -p exports/youtube
-# any public channel works — pick one to see it run, then swap in your own
-./.venv/bin/yt-dlp --skip-download --dump-json \
-  "https://www.youtube.com/@YOURHANDLE/videos" > exports/youtube/videos.jsonl
+# any public channel works — this uses Oracle's developer channel as neutral sample data
+./.venv/bin/yt-dlp --skip-download --dump-json --playlist-items 1-7 \
+  "https://www.youtube.com/@oracledevs/videos" > exports/youtube/videos.jsonl
 ./.venv/bin/python scripts/youtube.py
 ```
 
@@ -89,7 +89,7 @@ mkdir -p exports/youtube
 ```bash
 ./.venv/bin/python -c "import sys; sys.path.insert(0,'oracle/agent'); import db, content; \
   [print(f\"{r['dist']:.3f}  {r['title']}\") for r in \
-   content.search_content(db.connect(),'using AI in my workflow',k=3)]"
+   content.search_content(db.connect(),'protecting data in the cloud',k=3)]"
 ```
 
 > The query is deliberately broad so it matches *whatever* channel you loaded — swap in a phrase
@@ -121,6 +121,13 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 ## Lab 3 — Bring your own content
 
 🎯 **Goal:** *your* content in *your* database, searchable. This is the point of the whole thing.
+
+**First, clear the sample.** The Lab 2 videos were a stand-in — wipe them (and everything derived
+from them) so they don't linger in your real brain:
+
+```bash
+./.venv/bin/python scripts/reset_sample.py
+```
 
 The system is **collector-agnostic** — the only thing it needs is rows in the Oracle `posts` table,
 so it works for content, research, work notes, transcripts, bookmarks, whatever *you* keep. This repo
