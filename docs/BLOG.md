@@ -8,15 +8,17 @@ top. The data, its embeddings, and the agents' memory all live in one database.*
 
 If you work with AI every day, you've probably felt both of these problems.
 
-The first: **every AI chat has the memory of a goldfish.** New conversation, blank slate, and
-you're re-explaining context the tool should already have. The fix isn't a bigger context window;
-it's giving the AI a place where your context actually *lives*.
+The first is **memory**. Chats remember a little and forget a lot, and agents only know whatever
+context you wire into them. What memory these tools do have lives inside each app, so it doesn't
+carry over: every tool holds its own shallow slice of you, and you end up re-explaining things
+one of them already knew. The fix isn't a bigger context window; it's one place where your
+context actually *lives*.
 
-The second: **nobody wants to be siloed into one app.** Today it's Claude. Tomorrow you might want
-ChatGPT, or an open-source chat, or whatever ships next; the advancements never stop. Every one of
-them needs the same information about you and your work, and that information is scattered:
-videos here, posts there, notes and docs somewhere else, and the long AI chats where the real
-thinking happened.
+The second is **lock-in**. Maybe Claude is your daily driver today; tomorrow ChatGPT ships
+something you want, or an open-source client fits a project better. The advancements never stop,
+and switching should be a choice, not a migration. But the information those tools need about you
+and your work is scattered: videos here, posts there, notes and docs somewhere else, and the long
+AI chats where the real thinking happened.
 
 That's why I built a **second brain**, and it's what we'll build together here: one place that
 holds everything you've made, searchable by *meaning*, that every AI tool you use can share. It
