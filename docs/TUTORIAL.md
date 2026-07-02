@@ -362,6 +362,14 @@ content scope** by default, so private data stays local. See
   `idea_agent.py` (~90 lines) reads the consolidated facts and proposes what to make next. Copy its
   shape for your own: a meeting-prep briefer, a weekly digest, whatever your work needs. Each agent's
   runs enrich the shared memory for the rest.
+- **Generate your "context file" instead of hand-writing one.** If you keep a personal-context
+  markdown for system prompts / custom instructions, stop maintaining it by hand:
+  `./.venv/bin/python scripts/context_pack.py` generates it from the brain (consolidated facts +
+  corpus stats + wiki topics), so it's never stale. **Review before pasting** — it reflects what
+  your *public content* says about you, which can include personal-story details you may not want
+  in every prompt; drop whole fact categories with `--exclude` (e.g. `--exclude audience`).
+  Private/business data can never appear (semantic memory reads content scope only). Wherever the
+  MCP is available, prefer the live connector — the pack is the offline fallback.
 - **Split public from personal (the two-repo pattern).** If you fork this to publish your own
   version, keep *personal* agents — anything encoding your workflow, contacts, or private data —
   out of the public repo. The clean setup: make the (already-gitignored) `private/` directory its
