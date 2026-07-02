@@ -34,9 +34,13 @@ blind, so you can ask things no generic assistant could answer:
 
 Why a database at the center? One of the hardest problems in a system like this isn't storing
 content. It's giving every layer (search, knowledge, memory, privacy) one consistent home.
-That's why we'll build on **Oracle AI Database 26ai**: one engine does relational data, JSON
-documents, **AI Vector Search**, and even runs the embedding model **inside the database**. Less
-glue code, and your data, its meaning, and your agents' memory all live together.
+That's why we'll build on **Oracle AI Database 26ai**: one engine does relational data and JSON
+documents, and with
+**[JSON Relational Duality](https://docs.oracle.com/en/database/oracle/oracle-database/26/jsnvu/)**
+it serves *both shapes from the same rows*, so your agents read friendly documents while the
+engine keeps normalized truth underneath. Add **AI Vector Search** and an embedding model that
+runs **inside the database**, and you get less glue code, with your data, its meaning, and your
+agents' memory all living together.
 
 And it runs wherever you want it. The same code works on the **free container on your laptop**
 and on an **Always Free Autonomous AI Database in Oracle Cloud**. This walkthrough starts local
