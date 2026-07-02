@@ -379,6 +379,11 @@ content scope** by default, so private data stays local. See
   **own private git repo**. Your personal agents live there and simply `import` the public engine
   (`sys.path` → `oracle/agent`) — one codebase, two repos, and nothing personal can leak into the
   public one even by accident. Publish the *pattern*; keep the *personalization* private.
+- **Build apps and dashboards on it** — the brain is an API away from powering applications: add
+  a thin REST layer over the same functions the MCP tools call, or REST-enable your tables and
+  Duality views directly with **Oracle REST Data Services (ORDS)** — `wiki_page_dv` as a JSON
+  endpoint, no app server. A content dashboard (wiki link graph, memory stream, loop health) is a
+  natural first build.
 - **More sources** — repeat Lab 3 for each platform; everything lands in one `posts` model.
 - **Concepts** — how embeddings, JSON Relational Duality, and agent memory work:
   **[BUILD_WALKTHROUGH.md](BUILD_WALKTHROUGH.md)**. To go deeper on agent memory, Oracle's free
