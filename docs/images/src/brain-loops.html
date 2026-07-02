@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <style>
+  @font-face {
+    font-family: 'Virgil';
+    src: url('Virgil.woff2') format('woff2');
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: #0d1117;
@@ -11,7 +15,7 @@
     width: 1200px;
     padding: 44px 48px 40px;
   }
-  .title { font-size: 30px; font-weight: 700; letter-spacing: -0.3px; }
+  .title { font-family: 'Virgil'; font-size: 33px; font-weight: 400; letter-spacing: 0.2px; }
   .title .accent { color: #3fb950; }
   .subtitle { font-size: 16px; color: #9da7b3; margin-top: 8px; }
 
@@ -19,14 +23,16 @@
     margin-top: 30px; border: 1.5px solid #4a5a70; border-radius: 20px;
     background: #10151c; padding: 24px 26px 26px; position: relative;
   }
-  .db-label {
+  .db-label { font-family: 'Virgil';
     position: absolute; top: -14px; left: 26px; background: #0d1117;
     padding: 2px 14px; font-size: 14px; font-weight: 800; letter-spacing: 1px; color: #c9d4de;
     border: 1px solid #4a5a70; border-radius: 999px;
   }
   .cols { display: flex; gap: 20px; }
-  .pillar { flex: 1; border-radius: 14px; padding: 18px 20px; border: 1.3px solid; }
-  .pillar h3 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 9px; }
+  .pillar { flex: 1; padding: 18px 20px; border: 2px solid;
+    border-radius: 14px; }
+  
+  .pillar h3 { font-family: 'Virgil'; font-size: 19px; font-weight: 400; display: flex; align-items: center; gap: 9px; }
   .pillar .desc { font-size: 12.5px; margin: 6px 0 14px; opacity: 0.75; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
@@ -39,15 +45,17 @@
 
   .loops { margin-top: 34px; }
   .loops-head { display: flex; align-items: baseline; gap: 12px; }
-  .loops-head h2 { font-size: 19px; font-weight: 700; color: #e6edf3; }
+  .loops-head h2 { font-family: 'Virgil'; font-size: 22px; font-weight: 400; color: #e6edf3; }
   .loops-head span { font-size: 13.5px; color: #9da7b3; }
   .track { display: flex; align-items: stretch; margin-top: 18px; }
   .loop {
-    flex: 1; background: #141a22; border: 1px solid #2b3646; border-radius: 14px;
+    flex: 1; background: #141a22; border: 1px solid #2b3646;
+    border-radius: 14px;
     padding: 14px 14px 13px; text-align: center; position: relative;
   }
+  
   .loop .when { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #7d8895; }
-  .loop .what { font-size: 15px; font-weight: 700; margin-top: 5px; }
+  .loop .what { font-family: 'Virgil'; font-size: 17px; font-weight: 400; margin-top: 5px; }
   .loop .gain { font-size: 12px; color: #9da7b3; margin-top: 6px; line-height: 1.45; }
   .arrow {
     align-self: center; width: 40px; text-align: center; color: #58a6ff;
@@ -61,7 +69,7 @@
     color: #7d8895; font-size: 13px;
   }
   .cycle .line { flex: 1; border-top: 2px dashed #33405255; position: relative; }
-  .cycle .back { color: #3fb950; font-weight: 700; }
+  .cycle .back { font-family: 'Virgil'; color: #3fb950; font-size: 15px; }
 
   .foot {
     margin-top: 24px; display: flex; align-items: center; gap: 14px;

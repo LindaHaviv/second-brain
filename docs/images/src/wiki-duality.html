@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <style>
+  @font-face {
+    font-family: 'Virgil';
+    src: url('Virgil.woff2') format('woff2');
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: #0d1117;
@@ -11,15 +15,17 @@
     width: 1200px;
     padding: 44px 48px 40px;
   }
-  .title { font-size: 30px; font-weight: 700; letter-spacing: -0.3px; }
+  .title { font-family: 'Virgil'; font-size: 33px; font-weight: 400; letter-spacing: 0.2px; }
   .title .accent { color: #58a6ff; }
   .subtitle { font-size: 16px; color: #9da7b3; margin-top: 8px; }
   .row { display: flex; gap: 26px; margin-top: 30px; align-items: stretch; }
   .card {
-    flex: 1; background: #141a22; border: 1px solid #2b3646; border-radius: 16px;
-    padding: 22px 24px; position: relative;
+    flex: 1; background: #141a22; border: 1px solid #2b3646;
+    border-radius: 16px;
+    padding: 22px 26px; position: relative;
   }
-  .card h2 { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; }
+  
+  .card h2 { font-family: 'Virgil'; font-size: 19px; font-weight: 400; letter-spacing: 0.4px; }
   .card .who { font-size: 13px; color: #9da7b3; margin-top: 3px; margin-bottom: 16px; }
   .doc h2 { color: #58a6ff; }
   .graph h2 { color: #3fb950; }
@@ -61,7 +67,7 @@
     background: linear-gradient(90deg, #101a2b, #101d15); border: 1px solid #2b3646;
     border-radius: 14px; padding: 16px 22px;
   }
-  .bottom .pill {
+  .bottom .pill { font-family: 'Virgil';
     background: #d29922; color: #0d1117; font-weight: 800; font-size: 12.5px;
     border-radius: 999px; padding: 6px 14px; white-space: nowrap; letter-spacing: 0.4px;
   }

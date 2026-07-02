@@ -56,7 +56,7 @@ sharper every time you use it.
 
 The brain is the product. MCP is how everything reaches it. Agents are what you keep building.
 
-![Second Brain architecture: your chosen sources flow into one Oracle 26ai database (content + wiki + memory), used by a research agent and an MCP server any AI client can call](images/architecture-hero-hand.svg)
+![Second Brain at a glance: your sources flow into one Oracle AI Database 26ai (content, self-growing wiki, memory x4, in-DB embeddings, privacy scope), used by a research agent and an MCP server that plugs into Claude, ChatGPT, and open-source clients](images/hero.png)
 
 **What you need:** a Mac with [Homebrew](https://brew.sh), Python 3.12, and about 20 minutes.
 **No prior Oracle experience required.** Every step is copy-paste-able. If anything errors, paste
