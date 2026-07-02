@@ -20,7 +20,7 @@
   <rect width="1040" height="780" fill="#ffffff"/>
 
   <!-- TITLE -->
-  <text x="32" y="40" class="title">Second Brain on Oracle Database 26ai — full architecture</text>
+  <text x="32" y="40" class="title">Second Brain on Oracle AI Database 26ai — full architecture</text>
   <text x="32" y="60" class="lbl">your sources → one database (content · wiki · memory) → a research agent + an MCP server — self-improving, private, and reachable anywhere</text>
 
   <!-- SOURCES -->
@@ -49,7 +49,7 @@
   <!-- DATABASE -->
   <path d="M374,200 L374,216" class="arrow"/>
   <rect x="32" y="216" width="684" height="292" rx="14" fill="#f7fafd" stroke="#9aa7b4" stroke-width="2"/>
-  <text x="46" y="242" class="h">3 · ONE Oracle Database 26ai</text>
+  <text x="46" y="242" class="h">3 · ONE Oracle AI Database 26ai</text>
   <text x="46" y="260" class="lbl">relational + JSON Relational Duality + AI Vector Search — one engine, no glue</text>
 
   <!-- content -->
