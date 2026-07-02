@@ -6,20 +6,6 @@ top. The data, its embeddings, and the agents' memory all live in one database.*
 
 ---
 
-**Key takeaways**
-
-- One Oracle AI Database 26ai instance holds your content, its embeddings, a compiled wiki, and
-  all four types of agent memory. No glue code between five separate systems.
-- The embedding model runs inside the database, so semantic search works locally with no API key.
-- An MCP server turns the brain into a tool any AI client can call: Claude, ChatGPT, your phone.
-  Swap chat apps freely; the brain stays put.
-- Five scheduled loops keep it improving on its own: ingest, record, consolidate, rank tools,
-  refresh the wiki.
-- Privacy is a database constraint, not a folder convention. Every read path filters on a
-  visibility scope, including the loops that update the brain by themselves.
-
----
-
 Everything I make scatters. My notes live in one place, my research in another, and some of my best
 thinking is buried in years of AI chats I will never scroll back through. Every app remembers a
 little piece and forgets the rest. The assistant I ask for help has no idea about any of it.
