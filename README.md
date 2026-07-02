@@ -74,7 +74,9 @@ Vector Search ties it together for semantic retrieval.
 
 - macOS (this guide is Apple Silicon / `arm64`; on Intel, drop the `platform:` line in
   `oracle/docker-compose.yml`).
-- [Homebrew](https://brew.sh), and an **Anthropic API key** (only for the final "Converse" step).
+- [Homebrew](https://brew.sh), and — **only for the final "Converse" step** — an LLM: an
+  **Anthropic API key** (default), an OpenAI key, or a **free local model via Ollama**
+  (`LLM_PROVIDER` in `oracle/.env` — search itself needs no key at all).
 
 ## Quickstart
 
@@ -127,10 +129,11 @@ Swap in any channel, or ingest other platforms via their data exports — see
 **[docs/EXPORT_GUIDE.md](docs/EXPORT_GUIDE.md)**. Every platform lands in the same `posts`
 model, so the pipeline is the same.
 
-## Converse — the research agent (needs your API key)
+## Converse — the research agent (needs an LLM)
 
 ```bash
-# add your key to oracle/.env:  ANTHROPIC_API_KEY=sk-ant-...
+# oracle/.env:  ANTHROPIC_API_KEY=sk-ant-...   (default)
+#   — or LLM_PROVIDER=ollama for a free local model, LLM_PROVIDER=openai for OpenAI
 cd oracle/agent && ../../.venv/bin/python demo_research.py
 ```
 
