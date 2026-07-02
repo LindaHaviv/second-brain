@@ -42,10 +42,10 @@ and on an **Always Free Autonomous AI Database in Oracle Cloud**. This walkthrou
 so you can watch every piece work, then lifts to the cloud at the end. Mine lives in the cloud;
 that's what makes it reachable from my phone, anywhere.
 
-**You choose the sources**: Notion, your videos, your AI chats, docs, bookmarks, whatever matters
-for your use case (content, research, work knowledge, a personal wiki). We'll build everything end
-to end, starting on a **public sample** so you watch the whole thing work, then point it at your
-own content. Our first agent on top is a research agent that **remembers what it learns** and gets
+**You choose the sources**: your markdown vault, your socials (YouTube, Instagram, LinkedIn),
+Notion, your AI chats, docs, bookmarks, and anything else that matters for your use case (content,
+research, work knowledge, a personal wiki). We'll build everything end to end, starting on a
+**public sample** so you watch the whole thing work, then point it at your own content. Our first agent on top is a research agent that **remembers what it learns** and gets
 sharper every time you use it.
 
 The brain is the product. MCP is how everything reaches it. Agents are what you keep building.
