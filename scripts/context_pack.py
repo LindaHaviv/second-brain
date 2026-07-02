@@ -10,7 +10,7 @@ sync keeps the underlying facts current.
   ./.venv/bin/python scripts/context_pack.py --exclude audience  # skip fact categories
 
 REVIEW BEFORE PASTING: the pack reflects what your PUBLIC content says about you — that can
-include personal-story details you've shared on camera but may not want in every system prompt.
+include personal-story details you've shared publicly but may not want in every system prompt.
 Use --exclude to drop whole fact categories (e.g. audience); private/business data can never
 appear here (semantic memory is consolidated from the content scope only).
 """
