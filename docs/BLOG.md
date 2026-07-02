@@ -35,11 +35,10 @@ The brain is the product; the MCP is how everything reaches it; agents are what 
 
 ![Second Brain architecture: your chosen sources → one Oracle 26ai database (content + wiki + memory) → a research agent + an MCP server any AI client can call](images/architecture-hero-hand.svg)
 
-**Who this is for / what you need:** any developer comfortable with a terminal — **no prior Oracle
-experience required.** Newer to the terminal? Every step here is copy-paste-able, so bring an AI
-assistant alongside (Claude, ChatGPT — soon to be powered by the very brain you're building) and
-paste any error you hit; plenty of people build their first real system exactly this way. You'll
-need a Mac with [Homebrew](https://brew.sh), Python 3.12, and ~20 minutes. Everything runs **locally and headless** (no Docker Desktop, no cloud account); going to
+**What you need:** a Mac with [Homebrew](https://brew.sh), Python 3.12, and about 20 minutes —
+**no prior Oracle experience required.** Every step is copy-paste-able, and if anything errors,
+paste it into your AI assistant (Claude, ChatGPT — soon to be powered by the very brain you're
+building) and keep moving. Plenty of people build their first real system exactly this way. Everything runs **locally and headless** (no Docker Desktop, no cloud account); going to
 Oracle Cloud is an optional last step.
 
 > **Follow along here, grab the full code there.** This article is self-contained — you can build it
