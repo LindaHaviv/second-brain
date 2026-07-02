@@ -629,10 +629,14 @@ Only for the agent, the wiki compiler, and the classifiers. Semantic search runs
 MiniLM embedding model with no API key at all. And with `LLM_PROVIDER=ollama`, the entire build
 runs free and fully local.
 
-**Q: Can I use ChatGPT instead of Claude?**
-Yes. The MCP server speaks the standard connector contract both Claude and ChatGPT use, so the same
-brain answers in either. The LLM behind the agents is a config switch (`anthropic`, `openai`, or
-`ollama`); only the research agent's server-side web-search loop is Anthropic-shaped.
+**Q: Do I have to use Claude or ChatGPT?**
+No. Anything that speaks MCP can be the front end: Claude and ChatGPT are the two shown here, and
+open-source MCP clients connect the same way, because the server implements the standard
+connector contract. The LLM behind the agents is just as swappable: `LLM_PROVIDER` ships with
+`anthropic`, `openai`, and `ollama`, the `openai` provider honors `OPENAI_BASE_URL` so any
+OpenAI-compatible host works (Hugging Face Inference, for example), and the small adapter in
+`llm.py` is built for adding new providers as they appear. Only the research agent's server-side
+web-search loop is Anthropic-shaped.
 
 **Q: I already keep a markdown vault. Do I have to give it up?**
 No. Markdown stays the canonical, portable authoring layer in this build. The database adds what
