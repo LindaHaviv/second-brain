@@ -154,7 +154,7 @@ Once the basics work, this scales into a real second brain — the full path is 
 - **Use it everywhere** — host the MCP (OAuth + allowlist) and reach your brain from **claude.ai,
   ChatGPT, and your phone** ([docs/HOSTED_MCP.md](docs/HOSTED_MCP.md)).
 
-![Asking Claude to search your Second Brain — it calls the connector and answers from your own content, read tools auto-allowed and the write tool gated](docs/images/mcp-search.png)
+![The same question answered in Claude and in ChatGPT by the same Second Brain connector — same brain, any chat](docs/images/mcp-search.png)
 
 ## Repo layout
 
