@@ -90,6 +90,13 @@ So the framing isn't *markdown or a database* — it's **markdown where it shine
 portability), a database where the work is** (retrieval, relationships, memory, governance).
 Your notes feed the brain; the database is what makes it think.
 
+For me, this came down to one word: **sustainable**. I didn't want a setup tuned to a single use
+case that I'd have to re-plumb for the next one — I wanted one foundation that serves *different*
+uses of the same knowledge (content planning, research, interview prep, whatever comes next), that
+**maintains itself** as it grows instead of demanding weekend gardening, and that survives tool
+churn: the MCP layer means I can change which AI chat I use without moving the brain, and the
+markdown canonical layer means the data outlives any of it. Build it once, feed it forever.
+
 ---
 
 ## Step 1 — Stand up Oracle 26ai locally (~15 min)
