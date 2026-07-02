@@ -17,7 +17,8 @@ import sys
 import oracledb
 import anthropic
 
-from db import connect          # importing db loads oracle/.env (incl. ANTHROPIC_API_KEY)
+import llm
+from db import connect          # importing db loads oracle/.env (incl. the LLM config)
 from content import search_content
 
 MODEL = "claude-opus-4-8"
@@ -41,10 +42,8 @@ PAGE_SCHEMA = {
 
 
 def _json(client, system, prompt, schema, max_tokens=2048):
-    r = client.messages.create(model=MODEL, max_tokens=max_tokens, system=system,
-                               messages=[{"role": "user", "content": prompt}],
-                               output_config={"format": {"type": "json_schema", "schema": schema}})
-    return json.loads(next(b.text for b in r.content if b.type == "text"))
+    # provider-agnostic: LLM_PROVIDER in oracle/.env picks anthropic / openai / ollama
+    return llm.structured(system, prompt, schema, max_tokens)
 
 
 def propose_topics(client, conn, n=10):

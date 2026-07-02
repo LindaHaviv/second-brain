@@ -107,11 +107,13 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 > - **Embeddings are already open-source and local.** The MiniLM ONNX model runs *inside* Oracle, so
 >   **semantic search needs no API key and makes no external calls** (the search checkpoint above ran
 >   without one). Prefer a different embedding model? Load any ONNX model the same way.
-> - **The LLM is only used by the agent, the wiki compiler, and memory consolidation** — and it's
->   interchangeable. This build defaults to **Claude**, but the loop talks to any model: point it at
->   **OpenAI**, or a **local open-source model** (e.g. Llama via **[Ollama](https://ollama.com)**) by
->   swapping the client in `research_agent.py`, `wiki.py`, and `semantic_memory.py`. Everything
->   else — the database, the schema, search, the MCP server — stays identical.
+> - **The LLM is a config switch, not a code edit.** Set `LLM_PROVIDER` in `oracle/.env` —
+>   `anthropic` (default), `openai`, or `ollama` (a **local open-source model** via
+>   [Ollama](https://ollama.com), free) — and the wiki compiler, memory consolidation, classifiers,
+>   and idea agent all follow (`LLM_MODEL` overrides the default). The **research agent's tool
+>   loop** (server-side web search) is Anthropic-shaped: run it with Claude, or point the SDK at an
+>   Anthropic-compatible gateway. Everything else — database, schema, search, MCP server — is
+>   identical on every provider.
 
 ---
 

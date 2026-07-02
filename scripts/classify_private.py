@@ -18,9 +18,17 @@ everywhere automatically (no other plumbing). Run AFTER importing any chat expor
 import sys, os, json, argparse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "oracle", "agent"))
 import db
-import anthropic
+import llm
 
-MODEL = "claude-haiku-4-5"
+MODEL = "claude-haiku-4-5"   # anthropic fast model; other providers use LLM_MODEL
+LABELS_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "properties": {"items": {"type": "array", "items": {
+        "type": "object", "additionalProperties": False,
+        "properties": {"id": {"type": "integer"}, "label": {"type": "string"}},
+        "required": ["id", "label"]}}},
+    "required": ["items"],
+}
 RUBRIC = """Classify each AI chat from a TECH CONTENT CREATOR / developer advocate into exactly one:
 
 "business" — the chat's primary purpose is the MONEY / LEGAL / TRACKING side of a brand deal:
@@ -51,12 +59,8 @@ VIS = {"business": "business", "archived": "archived"}   # content stays as-is
 
 def classify(client, batch):
     lines = "\n".join(f'{p["id"]}: {p["title"]} :: {p["snip"]}' for p in batch)
-    msg = client.messages.create(model=MODEL, max_tokens=2200, system=RUBRIC,
-        messages=[{"role": "user", "content": f"Classify each:\n{lines}\n\nJSON list only."}])
-    t = msg.content[0].text.strip()
-    if t.startswith("```"):
-        t = t.split("```")[1].replace("json", "", 1).strip()
-    return json.loads(t)
+    return llm.structured(RUBRIC, f"Classify each:\n{lines}", LABELS_SCHEMA,
+                          max_tokens=2200, model=MODEL)["items"]
 
 
 def main():
@@ -64,7 +68,7 @@ def main():
     ap.add_argument("--apply", action="store_true", help="write visibility (else dry-run)")
     ap.add_argument("--all", action="store_true", help="reclassify all chats, not just untagged")
     args = ap.parse_args()
-    client = anthropic.Anthropic()
+    client = None   # provider chosen via LLM_PROVIDER (oracle/.env)
     conn = db.connect(); cur = conn.cursor()
     cur.execute("alter session disable parallel dml")
     scope = "" if args.all else "and nvl(visibility,'content')='content'"

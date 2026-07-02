@@ -9,10 +9,9 @@ import json
 
 import anthropic
 
+import llm
 from db import connect          # importing db loads oracle/.env
 from content import list_topics
-
-MODEL = "claude-opus-4-8"
 
 SCHEMA = {
     "type": "object", "additionalProperties": False,
@@ -63,10 +62,7 @@ def suggest(client, conn, n=6):
         "\n\nRECENT CONTENT:\n" + "\n".join(f"- {t}" for t in recent) +
         f"\n\nPropose {n} new content ideas and 3-4 repurposing moves."
     )
-    r = client.messages.create(model=MODEL, max_tokens=4096, system=SYSTEM,
-                               messages=[{"role": "user", "content": prompt}],
-                               output_config={"format": {"type": "json_schema", "schema": SCHEMA}})
-    return json.loads(next(b.text for b in r.content if b.type == "text"))
+    return llm.structured(SYSTEM, prompt, SCHEMA, max_tokens=4096)
 
 
 def main():

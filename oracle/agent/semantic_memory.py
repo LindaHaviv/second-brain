@@ -7,7 +7,8 @@ without re-deriving it. Facts are embedded in-DB and retrieved with vector searc
 """
 import json
 
-MODEL = "claude-opus-4-8"
+import llm
+
 EMBED_MODEL = "MINILM"
 
 _SYS = (
@@ -67,13 +68,7 @@ def consolidate(client, conn, limit=30, title_sample=80):
         "\n".join(f"- {q} | {(a or '')[:160]} | {d or ''}" for q, a, d in runs) +
         "\n\nReturn the full updated fact set."
     )
-    resp = client.messages.create(
-        model=MODEL, max_tokens=8192, system=_SYS,
-        messages=[{"role": "user", "content": prompt}],
-        output_config={"format": {"type": "json_schema", "schema": _SCHEMA}},
-    )
-    text = next(b.text for b in resp.content if b.type == "text")
-    facts = json.loads(text)["facts"]
+    facts = llm.structured(_SYS, prompt, _SCHEMA, max_tokens=8192)["facts"]
 
     # rebuild the consolidation snapshot
     cur.execute("delete from semantic_memory where source = 'consolidation'")
