@@ -155,10 +155,10 @@ any loader above as a template — search and the agent work over the new conten
 > chat last spring?"*. When you demo it, lead with a question a generic assistant would have to
 > guess at — that's the whole point of the brain.
 
-> **🏷️ Optional — tag your own content *series*.** `posts.series` lets you group content into a
-> named series you care about — an interview series, a tutorial series, a product line, whatever fits
-> *your* content. The demo tags a `tech_walk` series (walking interviews with a guest), but **that's
-> just an example — define your own.** Two ways to set it, pick either:
+> **🏷️ Optional — tag your own content *series*.** `posts.series` lets you group content into any
+> named collection you care about: a **tutorial series**, an **interview show**, **book notes**, a
+> **weekly update**, a product line — whatever recurring shape *your* content has. Two ways to set
+> it, pick either:
 > 1. **Label it at the source (most reliable):** add a `Series` select (or a `Tech Walk`-style
 >    checkbox) to your Notion tracker; the Notion loader reads it into `posts.series`. *You* decide,
 >    no guessing.
@@ -166,7 +166,8 @@ any loader above as a template — search and the agent work over the new conten
 >    run it over your posts.
 >
 > Once tagged, the `search` tool flags each result's `series`, and the **`by_series`** tool lists a
-> series (or shows all series + counts) — so an assistant can answer *"list my interview episodes."*
+> series (or shows all series + counts) — so an assistant can answer *"list everything in my
+> tutorials series."*
 
 > **🔑 One habit to start now:** AI-chat and coding exports often contain **API keys**. The ChatGPT
 > and Claude Code loaders scrub known secret patterns on ingest; after any import, run
