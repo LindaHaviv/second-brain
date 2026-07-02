@@ -6,7 +6,8 @@ In oracle/.env:
   LLM_PROVIDER=ollama                 needs a local Ollama  (OLLAMA_HOST, default localhost:11434)
   LLM_MODEL=<override>                optional; sensible default per provider
 
-This covers every *structured* LLM step (wiki compiler, memory consolidation, the
+Verified: anthropic (live) and ollama (llama3.2, schema-constrained output) — openai follows
+the documented json_schema contract. This covers every *structured* LLM step (wiki compiler, memory consolidation, the
 classifiers, the idea agent): one `structured(system, prompt, schema)` call that returns
 validated JSON on any provider. The research agent's TOOL LOOP (client tools + server-side
 web search) is Anthropic-shaped and stays Claude-first — run it with Claude, or point the
