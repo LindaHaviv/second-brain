@@ -10,10 +10,15 @@ With DB_WALLET_DIR set, this connects over mTLS to the cloud; without it, it con
 Nothing else in the codebase changes.
 """
 import os
+import pathlib
+
 import oracledb
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load oracle/.env EXPLICITLY, relative to this file — plain load_dotenv() can't locate it
+# during import (its caller-frame walk sees importlib, then falls back to the CWD), so the
+# config would only load when running from oracle/agent/. This works from any cwd.
+load_dotenv(pathlib.Path(__file__).resolve().parent.parent / ".env")
 
 # CLOB columns come back as str instead of LOB objects.
 oracledb.defaults.fetch_lobs = False
