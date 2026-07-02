@@ -1,4 +1,4 @@
-# Build a Second Brain on Oracle AI Database 26ai
+# Build a Self-Improving Second Brain on Oracle AI Database 26ai
 
 *A step-by-step build: one private **second brain** for everything you've made — searchable by
 meaning, plugged into **any AI chat you use** through MCP, with **self-improving agents** built on
