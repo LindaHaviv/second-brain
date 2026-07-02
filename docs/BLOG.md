@@ -1,23 +1,28 @@
 # Build a Self-Improving Second Brain on Oracle AI Database 26ai
 
-*A step-by-step build: one private **second brain** for everything you've made. Searchable by
+*A step-by-step build: your own **second brain** for everything you've made. Searchable by
 meaning, plugged into **any AI chat you use** through MCP, with **self-improving agents** built on
 top. The data, its embeddings, and the agents' memory all live in one database.*
 
 ---
 
 I've been making things for years: videos, posts, docs, and the long AI chats where the real
-thinking happens. Every app remembers a little piece of it. None of them talk to each other. And
-the assistant I ask for help has no idea any of it exists.
+thinking happens. And the more I made, the more two problems kept colliding.
 
-So I built myself a **second brain**: one private place that holds everything I've made,
-searchable by *meaning*.
+The first: **every AI chat has the memory of a goldfish.** New conversation, blank slate, and I'm
+re-explaining context the tool should already have. The fix isn't a bigger context window; it's
+giving the AI a place where my context actually *lives*.
 
-The interesting part isn't the storage. It's what becomes possible once it all lives together.
-Because the brain speaks **MCP** (Model Context Protocol), it isn't trapped in any one app. The
-same brain plugs into **Claude, ChatGPT, and my phone**, and it comes with me whatever chat I
-switch to next. And because agents can build on it, I can ask things no generic assistant could
-answer:
+The second: **I don't want to be siloed into one app.** Today I'm in Claude. Tomorrow I might want
+ChatGPT, or an open-source chat, or whatever ships next; the advancements never stop. Every one of
+them needs the same information about my work, and that information is scattered across all of
+them.
+
+So I built a **second brain**: one place that holds everything I've made, searchable by *meaning*,
+that every AI tool I use can share. It grows as I make more and evolves as I do. Because it speaks
+**MCP** (Model Context Protocol), I can swap chats freely and never lose it: the same brain plugs
+into **Claude, ChatGPT, and open-source clients** alike. And the agents I build on top get real
+memory instead of starting blind, so I can ask things no generic assistant could answer:
 
 - *"What have I covered about this topic, and who did I discuss it with?"*
 - *"What do I know about X, and what's new this week?"*
@@ -64,7 +69,7 @@ same code to Oracle Cloud when you want it always-on.
 
 *On top of it:*
 4. **An MCP server**: the brain as a tool for **any** AI client, including Claude, ChatGPT, and
-   your phone. Switch chat apps whenever you like; the brain doesn't move.
+   open-source clients. Switch chat apps whenever you like; the brain doesn't move.
 5. **Agents**: starting with a self-improving research agent. Every one you add shares the
    same brain.
 
@@ -552,8 +557,8 @@ Step back and look at what's actually here. It isn't one agent. It's **three lay
 
 - **The brain**: your content, its meaning, a synthesized wiki, and four kinds of memory, in one
   database. Every new source you add makes everything downstream smarter.
-- **The MCP socket**: the brain as a *tool*, pluggable into Claude, ChatGPT, your phone, and any
-  MCP client that ships next. Build the brain once; every AI surface you use can reach it.
+- **The MCP socket**: the brain as a *tool*, pluggable into Claude, ChatGPT, open-source clients,
+  and any MCP client that ships next. Build the brain once; every AI surface you use can reach it.
 - **The agents.** Here's the part that scales: **they share the brain.** The research agent is
   agent #1, and its self-improving loop (record → recall → consolidate) enriches the same memory
   every future agent reads. The repo ships agent #2 to prove the pattern: an **idea agent** that
