@@ -62,6 +62,14 @@ relational data underneath (bidirectional, no ORM, no syncing two copies); and *
 embeddings** generate the vectors inside the engine, so your content never leaves it. AI
 Vector Search ties it together for semantic retrieval.
 
+> **Why not just a folder of markdown?** Grep isn't meaning (embeddings need an indexed home —
+> most markdown brains bolt on a vector DB anyway), a "private" folder is a convention while a
+> `visibility` column is a *constraint* enforced on every read path, markdown links rot while the
+> wiki's citations are foreign keys, and agent memory needs consolidation + concurrent access,
+> not an ever-growing text file. This repo still keeps markdown where it shines: `sources/` is
+> the portable canonical layer — the database is the *retrieval, memory, and governance* engine
+> derived from it. Your notes aren't the brain; they're what the brain eats.
+
 ## Prerequisites
 
 - macOS (this guide is Apple Silicon / `arm64`; on Intel, drop the `platform:` line in

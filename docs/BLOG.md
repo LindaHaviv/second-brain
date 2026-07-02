@@ -63,6 +63,35 @@ Here's the whole system on one page — the map for the steps that follow:
 
 Let's build each, one step at a time.
 
+## Wait — why not just a folder of markdown?
+
+Fair question: most second-brain tutorials are a vault of markdown files, and for *note-taking*
+that's genuinely great. But watch what happens the moment you want the brain to do the four things
+this build does — each one quietly turns "a folder of files" into "a folder of files plus a
+database you bolted on":
+
+- **Search by meaning.** Files give you grep — exact words. Meaning needs *embeddings*, and
+  embeddings need somewhere indexed to live and be queried. Most markdown-brain stacks end up
+  adding a vector database anyway; here the text, its vectors, **and the embedding model itself**
+  are in one engine.
+- **Privacy you can enforce.** In a folder, "private" is a naming convention — every script that
+  can read the vault reads everything. Here `visibility` is a column, and *every* read path —
+  search, the wiki compiler, memory consolidation, the MCP tools — filters on it. A convention
+  can't self-improve safely; a constraint can.
+- **Knowledge with real relationships.** Markdown links rot silently. The wiki's citations and
+  cross-links are **foreign keys** — delete a post and the database knows every page that cited
+  it. And Duality still hands your app the friendly document view.
+- **Memory that consolidates, concurrently.** An agent's memory in markdown is an append-only
+  text file the model re-reads forever. Here recall is a vector query, consolidation *rewrites*
+  facts transactionally, and the MCP server, the daily sync, and multiple agents read and write
+  the same brain at once — no lock files, no merge conflicts.
+
+The honest footnote: **this build keeps a markdown layer too.** `sources/` holds your content as
+plain markdown + frontmatter — the portable, human-readable canonical copy — and the database is a
+*derived, rebuildable* view of it. Markdown is a great **authoring and portability** format; it's
+just not a retrieval engine, a permission system, or a memory store. Your notes aren't the brain —
+they're what the brain eats.
+
 ---
 
 ## Step 1 — Stand up Oracle 26ai locally (~15 min)
