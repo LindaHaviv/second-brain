@@ -448,9 +448,10 @@ visibility tags, so classification must rerun before anything rebuilds — the s
 state and does it automatically as a safety net.
 
 > **🏷️ Optional — group content into a *series*.** A `series` field lets you tag content into a
-> named group you care about (an interview series, a tutorial series, a product line). Once tagged,
-> search flags each result's series and a `by_series` tool lists it — so an assistant can answer
-> *"list my interview episodes."* Define whatever series fit *your* content.
+> named group you care about — a tutorial series, an interview show, book notes, a weekly update,
+> a product line. Once tagged, search flags each result's series and a `by_series` tool lists it —
+> so an assistant can answer *"list everything in my tutorials series."* Define whatever fits
+> *your* content.
 
 ---
 
