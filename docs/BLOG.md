@@ -443,7 +443,12 @@ client can auto-allow them, while the one write tool is marked a write so the cl
 
 Want it on your phone and in ChatGPT? **Host** the same server over HTTP. That puts your brain on
 the public internet, so lock it down first (OAuth + an allowlist; see Security below), and if
-you've loaded your own data, do Step 7's privacy scoping **before** you host.
+you've loaded your own data, do Step 7's privacy scoping **before** you host. Once it's up, both
+apps attach the same way: add a **custom connector** pointing at your server's `/mcp` URL and sign
+in (claude.ai: Settings, then Connectors; ChatGPT: Settings, then Apps & Connectors, with
+Developer mode enabled). The repo's
+[HOSTED_MCP guide](https://github.com/LindaHaviv/second-brain/blob/main/docs/HOSTED_MCP.md) has
+the click-by-click steps.
 
 > **🔌 Two ways to serve it, and which fits here.** This build uses a **custom MCP server**
 > (Python): you keep full control of the tools, it speaks the OAuth *custom-connector* flow that
