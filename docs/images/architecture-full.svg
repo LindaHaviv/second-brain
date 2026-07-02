@@ -68,7 +68,7 @@
   <text x="372" y="337" text-anchor="middle" class="s2">page_links (graph)</text>
   <text x="372" y="357" text-anchor="middle" class="s2">page_sources (citations)</text>
   <text x="372" y="377" text-anchor="middle" class="s2">Duality: wiki_page_dv</text>
-  <text x="372" y="404" text-anchor="middle" class="lbl">synthesized knowledge</text>
+  <text x="372" y="404" text-anchor="middle" class="lbl">synthesized · grows itself</text>
 
   <!-- memory -->
   <rect x="486" y="272" width="216" height="150" rx="10" class="box" fill="#fff" stroke="#cdd8e3"/>
@@ -105,8 +105,8 @@
   <!-- SELF-IMPROVING LOOP -->
   <rect x="740" y="424" width="268" height="84" rx="12" class="box" fill="#eef7f0" stroke="#b7e0c6"/>
   <text x="756" y="447" class="h2">↻ Self-improving sync (daily)</text>
-  <text x="756" y="467" class="s2">pull sources → refresh wiki →</text>
-  <text x="756" y="485" class="s2">consolidate memory (cumulative)</text>
+  <text x="756" y="467" class="s2">pull → classify (safety net) →</text>
+  <text x="756" y="485" class="s2">refresh + GROW wiki → consolidate</text>
   <path d="M740,466 C716,466 710,466 702,466" class="loop"/>
   <path d="M874,424 L874,410" class="loop"/>
 
@@ -115,7 +115,7 @@
   <rect x="32" y="524" width="684" height="92" rx="12" class="box" fill="#fbf6ee" stroke="#e7d6b8"/>
   <text x="46" y="550" class="h">5 · MCP server — your brain as a tool for any AI client</text>
   <text x="46" y="573" class="s2">read: search · fetch · wiki · topics · recent · by_series · overview   ·   write: ingest_note (gated)</text>
-  <text x="46" y="597" class="lbl">local (stdio)  +  hosted (HTTP · OAuth + email allowlist · MCP_READONLY · injection-guarded) · read/write annotated</text>
+  <text x="46" y="597" class="lbl">local (stdio)  +  hosted (HTTP · OAuth allowlist · fail-closed · rate-limited · MCP_READONLY) · injection-guarded</text>
 
   <!-- CLIENTS -->
   <path d="M374,616 L374,632" class="arrow"/>
