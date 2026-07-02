@@ -8,7 +8,11 @@ EMBED_MODEL = "MINILM"  # the in-DB ONNX model loaded by setup/01_load_onnx_mode
 
 
 def record(conn, run_id, task, action, tool, outcome, reward=None, detail=None):
-    """Write one episodic memory row, embedding the experience text in-DB."""
+    """Write one episodic memory row, embedding the experience text in-DB.
+
+    Values are clamped to their column sizes so a long question can never
+    crash the save step after an expensive run (ORA-12899).
+    """
     experience = f"{task} | {action} | {detail or ''}"
     with conn.cursor() as cur:
         cur.execute(
@@ -18,8 +22,10 @@ def record(conn, run_id, task, action, tool, outcome, reward=None, detail=None):
             VALUES (:run_id, :task, :action, :tool, :outcome, :reward, :detail,
                     VECTOR_EMBEDDING({EMBED_MODEL} USING :exp AS DATA))
             """,
-            run_id=run_id, task=task, action=action, tool=tool,
-            outcome=outcome, reward=reward, detail=detail, exp=experience,
+            run_id=(run_id or "")[:40], task=(task or "")[:500],
+            action=action, tool=tool[:80] if tool else None,
+            outcome=(outcome or "")[:10], reward=reward, detail=detail,
+            exp=experience,
         )
     conn.commit()
 
