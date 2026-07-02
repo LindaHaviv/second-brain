@@ -1,7 +1,8 @@
 # Build a Second Brain on Oracle AI Database 26ai
 
-*A step-by-step build: a self-improving research agent grounded in **your own sources** — the data,
-its embeddings, and the agent's memory all living in one database.*
+*A step-by-step build: one private **second brain** for everything you've made — searchable by
+meaning, plugged into **any AI chat you use** through MCP, with **self-improving agents** built on
+top. The data, its embeddings, and the agents' memory all live in one database.*
 
 ---
 
@@ -9,10 +10,12 @@ Everything you make or collect scatters — across apps that each remember a lit
 rest. Your notes live in one place, your research in another, the long AI chats where the real
 thinking happened in a third, and the assistant you ask for help has no idea about any of them.
 
-This walkthrough builds the fix: a **second brain** — one place that holds *your* stuff, searchable
-by *meaning*, with an agent that researches on top of it and **remembers what it learned**. We'll
-build it end to end and run every step, starting on a **public sample** so you watch the whole thing
-work, then point it at your own sources.
+This walkthrough builds the fix: a **second brain** — one private place that holds *your* stuff,
+searchable by *meaning*. And because it speaks **MCP**, it isn't trapped in any one app: the same
+brain plugs into **Claude, ChatGPT, your phone — whatever chat you use today, and whatever you
+switch to next**. Then you build agents on top of it; our first is a research agent that
+**remembers what it learns**. We'll build it end to end and run every step, starting on a **public
+sample** so you watch the whole thing work, then point it at your own sources.
 
 **You choose the sources** — Notion, your videos, your AI chats, docs, bookmarks, whatever matters
 for your use case (content, research, work knowledge, a personal wiki). The build is the same; only
@@ -23,11 +26,12 @@ relational data, JSON documents, **AI Vector Search**, and even runs the embeddi
 the database** — so there's far less glue code, and your data, its meaning, and the agent's memory
 all live together.
 
-By the end you'll have more than an agent — you'll have a **foundation**: a research agent you can
-ask *"what do I know about X, and what's new this week?"* that gets sharper every time you use it,
-an **MCP server** that plugs that same brain into Claude, ChatGPT, and whatever comes next, and a
-memory layer that every *future* agent you build gets to share. The research agent is just the
-first thing you put on top of it.
+By the end you'll have the whole stack, in the right order: the **brain** (your content, its
+meaning, a synthesized wiki, and agent memory — one database), the **MCP server** that makes that
+brain a tool *every* AI client can call — connect it to Claude today, ChatGPT tomorrow, swap
+freely, the brain stays yours — and the **first agent on top**: a research agent you can ask
+*"what do I know about X, and what's new this week?"* that gets sharper every time you use it.
+The brain is the product; the MCP is how everything reaches it; agents are what you keep building.
 
 ![Second Brain architecture: your chosen sources → one Oracle 26ai database (content + wiki + memory) → a research agent + an MCP server any AI client can call](images/architecture-hero-hand.svg)
 
@@ -40,10 +44,18 @@ Oracle Cloud is an optional last step.
 > straight from these steps. The complete, runnable project (every loader, the agent, the MCP server)
 > lives at **[github.com/LindaHaviv/second-brain](https://github.com/LindaHaviv/second-brain)**.
 
-**What we'll build — three layers, one database:**
+**What we'll build — a brain, and two ways to use it:**
+
+*The brain — three layers, one database:*
 1. **Content** — everything you've made, as rows you can read back as JSON documents.
 2. **A compiled wiki** — synthesized topic pages over that content (self-maintaining).
-3. **Agent memory** — what the agent has learned, in all four flavors.
+3. **Agent memory** — what your agents learn, in all four flavors.
+
+*On top of it:*
+4. **An MCP server** — the brain as a tool for **any** AI client: Claude, ChatGPT, your phone.
+   Switch chat apps whenever you like; the brain doesn't move.
+5. **Agents** — starting with a self-improving research agent; every one you add shares the
+   same brain.
 
 Here's the whole system on one page — the map for the steps that follow:
 
