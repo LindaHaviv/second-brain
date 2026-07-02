@@ -27,10 +27,11 @@ you can swap chats freely and never lose it: the same brain plugs into **Claude,
 open-source clients** alike. And the agents you build on top get real memory instead of starting
 blind, so you can ask things no generic assistant could answer:
 
-- *"Find that conversation where I worked through this idea, even if it was in a different chat."*
-- *"Help me draft the next post in my series, in my tone, building on what I've already covered."*
-- *"Prep me for a conversation with [guest]: how I interview, what I've covered with them before,
-  and what's new in their world."*
+- *"Find that conversation where I worked through X idea."*
+- *"Prep me for a conversation with [guest]: how I usually interview, what I've covered with them
+  before, and what's new in their domain/company."*
+- *"Help me draft the caption for the next post in my series, in my tone, building on what I've
+  already covered."*
 
 Why a database at the center? One of the hardest problems in a system like this isn't storing
 content. It's giving every layer (search, knowledge, memory, privacy) one consistent home.
