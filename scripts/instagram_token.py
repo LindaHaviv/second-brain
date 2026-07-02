@@ -13,9 +13,16 @@ Paste the printed token into oracle/.env as IG_ACCESS_TOKEN (keep it secret — 
 """
 import json
 import os
+import pathlib
 import sys
 import urllib.parse
 import urllib.request
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv(pathlib.Path(__file__).resolve().parents[1] / "oracle" / ".env")
+except ImportError:
+    pass   # shell env still works
 
 BASE = "https://graph.instagram.com"
 
@@ -42,7 +49,10 @@ def main():
     else:
         sys.exit(__doc__)
     days = int(d.get("expires_in", 0)) // 86400
-    print(f"\nIG_ACCESS_TOKEN={d['token']}\n\n(valid ~{days} days — paste into oracle/.env, "
+    token = d.get('access_token') or d.get('token')
+    if not token:
+        sys.exit(f"unexpected response (no access_token): {d}")
+    print(f"\nIG_ACCESS_TOKEN={token}\n\n(valid ~{days} days — paste into oracle/.env, "
           f"then refresh with --refresh before it expires)")
 
 

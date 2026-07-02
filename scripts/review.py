@@ -21,6 +21,7 @@ import db   # noqa: E402
 # leaked-credential patterns (Oracle REGEXP-compatible). Scanned in-DB so only matches transfer.
 SECRET_PATTERNS = [
     r"sk-ant-[A-Za-z0-9_-]{20,}",        # Anthropic
+    r"sk-[A-Za-z0-9_-]{20,}",            # OpenAI classic + sk-proj-... project keys
     r"ntn_[A-Za-z0-9]{20,}",             # Notion
     r"AKIA[0-9A-Z]{16}",                 # AWS access key
     r"gh[pousr]_[A-Za-z0-9]{20,}",       # GitHub token

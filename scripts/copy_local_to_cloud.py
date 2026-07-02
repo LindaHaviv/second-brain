@@ -81,7 +81,8 @@ def main():
         for t in reversed(PRIVATE_TABLES):
             cc.execute(f"DELETE FROM {t}")
             print(f"  purged cloud {t}")
-    cloud.commit()
+    # NO commit yet: the clear + full copy is ONE transaction, so a mid-copy
+    # failure leaves the previous cloud brain intact.
 
     for t in tables:
         cols = cols_of(lc, t)
@@ -101,8 +102,9 @@ def main():
                 cc.setinputsizes(*sizes)
             cc.executemany(insert, rows)
             total += len(rows)
-        cloud.commit()
         print(f"  {t}: {total} rows")
+
+    cloud.commit()   # the whole clear+copy lands atomically here
 
     # Critical after a bulk copy with explicit IDs: advance each identity sequence past the
     # copied max, so new auto-generated IDs don't collide (ORA-00001) on the next insert.

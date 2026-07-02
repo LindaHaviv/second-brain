@@ -110,7 +110,8 @@ def main():
                 "on (p.platform_id=s.id) when not matched then "
                 "insert (platform_id, display_name) values ('notion','Notion')")
     cur.execute("delete from posts where platform_id='notion'")
-    conn.commit()
+    # NO commit here: delete + reload is ONE transaction (a mid-run Notion API
+    # failure leaves the previous content intact).
 
     n, total_chunks, skipped_business, cursor = 0, 0, 0, None
     while True:
@@ -175,7 +176,6 @@ def main():
                 total_chunks += 1
             n += 1
             if n % 25 == 0:
-                conn.commit()
                 print(f"  {n} pages, {total_chunks} chunks...")
         if not r.get("has_more"):
             break

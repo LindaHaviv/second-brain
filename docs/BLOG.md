@@ -326,7 +326,7 @@ daily scheduled consolidation.)
 > **`anthropic`** (default, and the richest agent experience), **`openai`**, or **`ollama`**, and
 > the wiki compiler, memory consolidation, classifiers, and idea agent all follow; no code edits.
 > **Want it free and fully local? Use Ollama**: `brew install ollama && ollama pull llama3.2`, set
-> `LLM_PROVIDER=ollama`, and the entire build runs at **$0 with no accounts anywhere**: local
+> `LLM_PROVIDER=ollama` (and `LLM_MODEL=llama3.2`), and the entire build runs at **$0 with no accounts anywhere**: local
 > database, in-DB embeddings, local LLM. (The research agent's *tool loop*, which uses server-side
 > web search, is Anthropic-shaped: run it with Claude, or via an Anthropic-compatible gateway.)
 > Everything else (the database, the schema, semantic search, the MCP server) is **LLM-free**.

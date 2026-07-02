@@ -24,11 +24,11 @@ CONV = ROOT / "exports" / "claude" / "conversations.json"
 
 
 def connect():
-    return oracledb.connect(
-        user=os.environ.get("DB_USER", "CCC"),
-        password=os.environ.get("APP_PWD", "CHANGE_ME_AppPwd1"),
-        dsn=os.environ.get("DB_DSN", "localhost:1521/FREEPDB1"),
-    )
+    # single source of truth: env-driven, wallet-aware, NO password fallback (oracle/agent/db.py)
+    import sys
+    sys.path.insert(0, str(ROOT / "oracle" / "agent"))
+    import db
+    return db.connect()
 
 
 def iso(s):

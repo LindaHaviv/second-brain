@@ -124,8 +124,13 @@ def _max_post_id(cur):
 
 
 def _set_hwm(cur, value):
-    cur.execute("UPDATE wiki_meta SET last_max_post_id = :v, refreshed_at = SYSTIMESTAMP "
-                "WHERE id = 1", v=value)
+    # MERGE, not UPDATE: survives a missing seed row (e.g. after a data reset),
+    # where an UPDATE would silently touch 0 rows and freeze the high-water mark.
+    cur.execute(
+        "MERGE INTO wiki_meta m USING (SELECT 1 id FROM dual) s ON (m.id = s.id) "
+        "WHEN MATCHED THEN UPDATE SET m.last_max_post_id = :v, m.refreshed_at = SYSTIMESTAMP "
+        "WHEN NOT MATCHED THEN INSERT (id, last_max_post_id, refreshed_at) "
+        "VALUES (1, :v, SYSTIMESTAMP)", v=value)
 
 
 def _get_hwm(cur):
@@ -137,23 +142,28 @@ def _get_hwm(cur):
 # --- build (full) and refresh (incremental) --------------------------------------------------
 
 def build_wiki(client, conn, n=10):
+    """Full rebuild in ONE transaction. Readers keep the old wiki until the new one
+    commits, and any failure (LLM, network) rolls back to the old wiki intact —
+    never an empty brain."""
     cur = conn.cursor()
-    cur.execute("DELETE FROM wiki_pages")   # cascades to links + sources
-    conn.commit()
-    topics = propose_topics(client, conn, n)
-    name2id, link_plan = {}, {}
-    for topic in topics:
-        body, cites, links = compile_page(client, conn, topic, topics)
-        pid = _insert_page(cur, topic, body)
-        name2id[topic.lower()] = pid
-        link_plan[pid] = links
-        _set_citations(cur, pid, cites)
+    try:
+        cur.execute("DELETE FROM wiki_pages")   # cascades to links + sources
+        topics = propose_topics(client, conn, n)
+        name2id, link_plan = {}, {}
+        for topic in topics:
+            body, cites, links = compile_page(client, conn, topic, topics)
+            pid = _insert_page(cur, topic, body)
+            name2id[topic.lower()] = pid
+            link_plan[pid] = links
+            _set_citations(cur, pid, cites)
+            print(f"  compiled '{topic}'  ({len(cites)} citations)")
+        for pid, links in link_plan.items():
+            _set_links(cur, pid, links, name2id)
+        _set_hwm(cur, _max_post_id(cur))
         conn.commit()
-        print(f"  compiled '{topic}'  ({len(cites)} citations)")
-    for pid, links in link_plan.items():
-        _set_links(cur, pid, links, name2id)
-    _set_hwm(cur, _max_post_id(cur))
-    conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     print(f"built {len(topics)} wiki pages")
 
 

@@ -114,18 +114,29 @@ def _maybe_consolidate(client, conn, every=None):
         if new >= every:
             facts = consolidate(client, conn)
             print(f"[auto-consolidate] {new} new runs -> refreshed {len(facts)} semantic facts")
-    except Exception:
-        pass
+    except Exception as e:
+        # consolidation is best-effort, but NEVER leave a partial transaction pending
+        # on this shared connection — and never fail silently.
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        print(f"[auto-consolidate] skipped: {type(e).__name__}: {str(e)[:120]}")
 
 
 def _run_tool(conn, name, inp):
-    if name == "search_content":
-        return search_hybrid(conn, inp["query"], int(inp.get("k", 5)))
-    if name == "get_post":
-        return get_post(conn, int(inp["post_id"]))
-    if name == "get_wiki_page":
-        return get_wiki_page(conn, inp["topic"])
-    return {"error": f"unknown tool {name}"}
+    try:
+        if name == "search_content":
+            return search_hybrid(conn, inp["query"], int(inp.get("k", 5)))
+        if name == "get_post":
+            return get_post(conn, int(inp["post_id"]))
+        if name == "get_wiki_page":
+            return get_wiki_page(conn, inp["topic"])
+        return {"error": f"unknown tool {name}"}
+    except Exception as e:
+        # malformed model input (e.g. post_id null) becomes an error RESULT the model
+        # can recover from, instead of killing the whole run after paid work.
+        return {"error": f"{type(e).__name__}: {str(e)[:200]}"}
 
 
 def run_research(client, conn, question, history=None):
@@ -150,7 +161,12 @@ def run_research(client, conn, question, history=None):
     read = []       # (title, url) the agent actually opened (get_post / get_wiki_page) — used
     answer = ""
     container_id = None   # server-side tools may run in a code-execution container; when a
-    while True:           # turn pauses mid-container, the resume MUST reference the same one
+    turns = 0             # turn pauses mid-container, the resume MUST reference the same one
+    while True:
+        turns += 1
+        if turns > int(os.environ.get("RESEARCH_MAX_TURNS", "20")):
+            answer = answer or "(stopped: research loop hit its turn cap without a final answer)"
+            break
         kwargs = {"container": container_id} if container_id else {}
         resp = client.messages.create(
             model=MODEL, max_tokens=4096, thinking={"type": "adaptive"},

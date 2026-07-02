@@ -231,8 +231,9 @@ def fetch(
     try:
         kind, key = _parse_id(id)
     except (ValueError, TypeError):
-        # models often pass a TITLE instead of the id — try an exact-title lookup before failing
-        title_fallback = str(id).split(":", 1)[-1].strip()
+        # models often pass a TITLE instead of the id — try an exact-title lookup before
+        # failing, using the WHOLE string (titles legitimately contain colons)
+        title_fallback = str(id).strip()
         kind, key = "title", None
     conn = None
     try:

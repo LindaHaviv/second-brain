@@ -24,6 +24,11 @@ load_dotenv(ROOT / "oracle" / ".env")   # so cred checks + child processes see t
 sys.path.insert(0, str(ROOT / "oracle" / "agent"))
 PY = sys.executable
 
+# which credential the configured LLM provider needs (ollama needs none) — the
+# classify/wiki/consolidate steps are provider-agnostic via oracle/agent/llm.py
+LLM_KEY = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}.get(
+    os.environ.get("LLM_PROVIDER", "anthropic").lower())
+
 # (label, argv, required_env) — a loader is skipped when its credential isn't configured.
 STEPS = [
     ("Instagram",    [str(ROOT / "scripts" / "instagram.py")],          "IG_ACCESS_TOKEN"),
@@ -61,7 +66,7 @@ def main():
         print("!! chat visibility tags look RESET (fresh import?) — classifying before rebuild")
         steps.insert(2, ("Classify (safety net)",
                          [str(ROOT / "scripts" / "classify_private.py"), "--apply"],
-                         "ANTHROPIC_API_KEY"))
+                         LLM_KEY))
     failed = []
     for label, argv, need in steps:
         if need and not os.environ.get(need):

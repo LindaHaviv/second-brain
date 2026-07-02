@@ -20,7 +20,6 @@ TABLES = [
     "page_sources",
     "page_links",
     "wiki_pages",
-    "wiki_meta",
     "content_chunks",
     "analytics",
     "media",
@@ -40,6 +39,12 @@ def main():
             print(f"  {t}: {cur.rowcount} rows deleted")
         except Exception as e:  # table may not exist in older schemas
             print(f"  {t}: skipped ({e})")
+    # reset (don't delete) the wiki high-water mark — the seed row must survive
+    try:
+        cur.execute("UPDATE wiki_meta SET last_max_post_id = 0 WHERE id = 1")
+        print(f"  wiki_meta: high-water mark reset ({cur.rowcount} row)")
+    except Exception as e:
+        print(f"  wiki_meta: skipped ({e})")
     conn.commit()
     conn.close()
     print("Done. The brain is empty and ready for your own sources.")

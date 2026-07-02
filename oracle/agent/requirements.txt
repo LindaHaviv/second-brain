@@ -2,3 +2,4 @@ anthropic>=0.40
 oracledb>=2.0
 python-dotenv>=1.0
 fastmcp>=2.0
+notion-client>=2.0          # scripts/notion.py + content_ops loader

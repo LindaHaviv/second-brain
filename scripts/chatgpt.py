@@ -28,7 +28,7 @@ EXPORT_DIR = ROOT / "exports" / "chatgpt"
 # redact obvious credentials before anything hits the database
 SECRETS = [
     re.compile(r"sk-ant-[A-Za-z0-9_-]{20,}"),
-    re.compile(r"sk-[A-Za-z0-9]{20,}"),
+    re.compile(r"sk-[A-Za-z0-9_-]{20,}"),   # OpenAI classic + sk-proj-... project keys
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"ghp_[A-Za-z0-9]{36}"),
     re.compile(r"xox[baprs]-[A-Za-z0-9-]{10,}"),
@@ -94,7 +94,8 @@ def main():
                 "on (p.platform_id=s.id) when not matched then "
                 "insert (platform_id, display_name) values ('chatgpt','ChatGPT chats')")
     cur.execute("delete from posts where platform_id='chatgpt'")
-    conn.commit()
+    # NO commit here: delete + reload is ONE transaction, so a mid-run failure
+    # leaves the previous ChatGPT content intact (and readers never see a gap).
     n, total_chunks, skipped = 0, 0, 0
     for f in files:
         for c in json.load(open(f)):
@@ -116,10 +117,19 @@ def main():
                 title=redact(title)[:1000], caption=asks, pub=ts(c.get("create_time")),
                 emb=emb, outid=outid,
             )
+            post_id = int(outid.getvalue()[0])
+            # the FULL thread, chunked into passages (what makes chats findable)
+            for i, ch in enumerate(chunks_of(turns)):
+                ch = redact(ch)
+                cur.execute(
+                    """insert into content_chunks (post_id, seq, chunk, embedding)
+                       values (:pid, :seq, :chunk, vector_embedding(MINILM using :emb as data))""",
+                    pid=post_id, seq=i, chunk=ch, emb=ch[:3000],
+                )
+                total_chunks += 1
             n += 1
             if n % 100 == 0:
-                conn.commit()
-                print(f"  {n} conversations...")
+                print(f"  {n} conversations, {total_chunks} chunks...")
     conn.commit()
     print(f"loaded {n} ChatGPT conversations ({skipped} empty skipped). "
           f"Next: scripts/classify_private.py --apply")

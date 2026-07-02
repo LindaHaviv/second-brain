@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 load_dotenv(pathlib.Path(__file__).resolve().parent.parent / ".env")
 
 PROVIDER = os.environ.get("LLM_PROVIDER", "anthropic").lower()
-DEFAULTS = {"anthropic": "claude-opus-4-8", "openai": "gpt-5.2", "ollama": "llama3.3"}
+DEFAULTS = {"anthropic": "claude-opus-4-8", "openai": "gpt-5.2", "ollama": "llama3.2"}
 MODEL = os.environ.get("LLM_MODEL") or DEFAULTS.get(PROVIDER, DEFAULTS["anthropic"])
 
 

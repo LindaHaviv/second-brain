@@ -25,6 +25,8 @@ PROJECTS = pathlib.Path.home() / ".claude" / "projects"
 
 SECRET_PATTERNS = [
     re.compile(r"sk-ant-[A-Za-z0-9_\-]{20,}"),
+    re.compile(r"sk-[A-Za-z0-9_\-]{20,}"),                 # OpenAI classic + sk-proj-... keys
+    re.compile(r"AIza[0-9A-Za-z_\-]{35}"),                 # Google API key
     re.compile(r"ntn_[A-Za-z0-9]{20,}"),
     re.compile(r"secret_[A-Za-z0-9]{20,}"),
     re.compile(r"AKIA[0-9A-Z]{16}"),
@@ -42,11 +44,11 @@ def redact(s):
 
 
 def connect():
-    return oracledb.connect(
-        user=os.environ.get("DB_USER", "CCC"),
-        password=os.environ.get("APP_PWD", "CHANGE_ME_AppPwd1"),
-        dsn=os.environ.get("DB_DSN", "localhost:1521/FREEPDB1"),
-    )
+    # single source of truth: env-driven, wallet-aware, NO password fallback (oracle/agent/db.py)
+    import sys
+    sys.path.insert(0, str(ROOT / "oracle" / "agent"))
+    import db
+    return db.connect()
 
 
 def messages_of(path):

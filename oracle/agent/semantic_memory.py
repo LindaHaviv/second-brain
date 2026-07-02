@@ -70,16 +70,30 @@ def consolidate(client, conn, limit=30, title_sample=80):
     )
     facts = llm.structured(_SYS, prompt, _SCHEMA, max_tokens=8192)["facts"]
 
-    # rebuild the consolidation snapshot
-    cur.execute("delete from semantic_memory where source = 'consolidation'")
-    for f in facts:
-        cur.execute(
-            "insert into semantic_memory (fact, category, source, embedding) "
-            "values (:f, :c, 'consolidation', vector_embedding(" + EMBED_MODEL + " using :f as data))",
-            f=f["fact"], c=f.get("category", ""),
-        )
-    conn.commit()
+    # rebuild the consolidation snapshot in ONE transaction; roll back on ANY failure
+    # so a half-done rebuild can never leave a pending DELETE of all facts that a
+    # later, unrelated commit() on this shared connection would silently finalize.
+    try:
+        cur.execute("delete from semantic_memory where source = 'consolidation'")
+        for f in facts:
+            fact = _clamp_bytes(f["fact"], 1000)          # fact VARCHAR2(1000) is BYTES
+            cat = _clamp_bytes(f.get("category", ""), 60)   # category VARCHAR2(60)
+            cur.execute(
+                "insert into semantic_memory (fact, category, source, embedding) "
+                "values (:f, :c, 'consolidation', vector_embedding(" + EMBED_MODEL + " using :f as data))",
+                f=fact, c=cat,
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     return facts
+
+
+def _clamp_bytes(s, limit):
+    """Truncate to a byte budget (VARCHAR2 byte semantics) without splitting a character."""
+    b = (s or "").encode("utf-8")
+    return s if len(b) <= limit else b[:limit].decode("utf-8", errors="ignore")
 
 
 def semantic_recall(conn, query, k=5):

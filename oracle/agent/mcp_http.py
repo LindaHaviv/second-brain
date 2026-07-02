@@ -8,7 +8,8 @@ is set, else an `Authorization: Bearer $MCP_AUTH_TOKEN` header. Open probes:
   GET /ready   — readiness: actually touches the DB (SELECT 1), 200 if reachable else 503
 
 Run locally:
-  MCP_AUTH_TOKEN=dev-secret ../../.venv/bin/uvicorn mcp_http:app --host 0.0.0.0 --port 8000
+  MCP_AUTH_TOKEN=$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))') \\
+      ../../.venv/bin/uvicorn mcp_http:app --host 0.0.0.0 --port 8000
 Deploy: see docs/HOSTED_MCP.md (Dockerfile + Fly.io).
 """
 import hmac
@@ -33,6 +34,13 @@ if (not os.environ.get("AUTHKIT_DOMAIN") and not TOKEN
     raise SystemExit(
         "refusing to start with NO auth configured — set AUTHKIT_DOMAIN (OAuth) or "
         "MCP_AUTH_TOKEN (bearer), or MCP_ALLOW_ANON=1 for a local-only experiment.")
+
+# a bearer token on a public URL must not be guessable: enforce a floor when it is
+# the only auth (OAuth deployments may still set a strong token for API clients).
+if TOKEN and not os.environ.get("AUTHKIT_DOMAIN") and len(TOKEN) < 32:
+    raise SystemExit(
+        "MCP_AUTH_TOKEN is too short for a public deployment (min 32 chars). "
+        "Generate one:  python3 -c \"import secrets; print(secrets.token_urlsafe(32))\"")
 
 
 def _keep_warm():
