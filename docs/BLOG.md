@@ -100,9 +100,17 @@ requirements**:
   column turns that intent into a **constraint** the engine applies on every read path: search,
   the wiki compiler, memory consolidation, the MCP tools. That matters most once the system
   updates *itself* on a schedule.
-- **Knowledge with maintained relationships.** The wiki's citations and cross-links are foreign
-  keys, so they stay consistent as content changes, while JSON Relational Duality still serves
-  each page to your app as one friendly document.
+- **The document feel, without the document rot.** The reason markdown feels right is that a note
+  *is* a document: one thing, read top to bottom, portable anywhere. The reason a vault eventually
+  strains is that a knowledge base is secretly a *graph*: pages cite sources and link to other
+  pages, and in static files those connections are just text that goes stale as content moves and
+  changes. Oracle built a feature for exactly this tension:
+  **[JSON Relational Duality](https://docs.oracle.com/en/database/oracle/oracle-database/26/jsnvu/)**.
+  You declare, once, how normalized tables compose into a document, and the database serves **both
+  shapes over the same rows**: your app and your agents read a wiki page as one JSON document with
+  its citations nested (the same "one thing" feel as a file), while underneath, every citation is
+  a foreign key the engine keeps consistent as your content changes. We set it up in Step 2 and
+  the wiki leans on it in Step 5.
 - **Memory that consolidates, concurrently.** Agent memory here is queryable state. Recall is a
   vector search, consolidation rewrites facts transactionally, and the MCP server, the daily
   sync, and multiple agents can read and write the same brain at the same time.
