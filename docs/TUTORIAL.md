@@ -109,7 +109,8 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 >   without one). Prefer a different embedding model? Load any ONNX model the same way.
 > - **The LLM is a config switch, not a code edit.** Set `LLM_PROVIDER` in `oracle/.env` —
 >   `anthropic` (default), `openai`, or `ollama` (a **local open-source model** via
->   [Ollama](https://ollama.com), free) — and the wiki compiler, memory consolidation, classifiers,
+>   [Ollama](https://ollama.com), free — and since the `openai` provider honors `OPENAI_BASE_URL`,
+>   any OpenAI-compatible host works too, e.g. **Hugging Face Inference**) — and the wiki compiler, memory consolidation, classifiers,
 >   and idea agent all follow (`LLM_MODEL` overrides the default). The **research agent's tool
 >   loop** (server-side web search) is Anthropic-shaped: run it with Claude, or point the SDK at an
 >   Anthropic-compatible gateway. Everything else — database, schema, search, MCP server — is
