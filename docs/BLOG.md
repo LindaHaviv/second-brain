@@ -6,33 +6,39 @@ top. The data, its embeddings, and the agents' memory all live in one database.*
 
 ---
 
-Everything I make scatters. My notes live in one place, my research in another, and some of my best
-thinking is buried in years of AI chats I will never scroll back through. Every app remembers a
-little piece and forgets the rest. The assistant I ask for help has no idea about any of it.
+I've been making things for years: videos, posts, docs, and the long AI chats where the real
+thinking happens. Every app remembers a little piece of it. None of them talk to each other. And
+the assistant I ask for help has no idea any of it exists.
 
-If that sounds familiar, this walkthrough builds the fix: a **second brain**. One private place
-that holds *your* stuff, searchable by *meaning*. And because it speaks **MCP**, it isn't trapped
-in any one app. The same brain plugs into **Claude, ChatGPT, your phone, whatever chat you use
-today, and whatever you switch to next**.
+So I built myself a **second brain**: one private place that holds everything I've made,
+searchable by *meaning*.
 
-Then you build agents on top of it. Our first is a research agent that **remembers what it
-learns**. We'll build everything end to end and run every step, starting on a **public sample** so
-you watch the whole thing work, then point it at your own sources.
+The interesting part isn't the storage. It's what becomes possible once it all lives together.
+Because the brain speaks **MCP** (Model Context Protocol), it isn't trapped in any one app. The
+same brain plugs into **Claude, ChatGPT, and my phone**, and it comes with me whatever chat I
+switch to next. And because agents can build on it, I can ask things no generic assistant could
+answer:
+
+- *"What have I covered about this topic, and who did I discuss it with?"*
+- *"What do I know about X, and what's new this week?"*
+- *"What should I make next, based on gaps in my own content?"*
+
+Why a database at the center? One of the hardest problems in a system like this isn't storing
+content. It's giving every layer (search, knowledge, memory, privacy) one consistent home.
+That's why we'll build on **Oracle AI Database 26ai**: one engine does relational data, JSON
+documents, **AI Vector Search**, and even runs the embedding model **inside the database**. Less
+glue code, and your data, its meaning, and your agents' memory all live together.
+
+And it runs wherever you want it. The same code works on the **free container on your laptop**
+and on an **Always Free Autonomous AI Database in Oracle Cloud**. This walkthrough starts local
+so you can watch every piece work, then lifts to the cloud at the end. Mine lives in the cloud;
+that's what makes it reachable from my phone, anywhere.
 
 **You choose the sources**: Notion, your videos, your AI chats, docs, bookmarks, whatever matters
-for your use case (content, research, work knowledge, a personal wiki). The build is the same; only
-the sources change.
-
-We'll build it on **Oracle AI Database 26ai**, and the reason that matters is simple. One engine
-does relational data, JSON documents, **AI Vector Search**, and even runs the embedding model
-**inside the database**. That means far less glue code, and your data, its meaning, and the agent's
-memory all live together.
-
-By the end you'll have the whole stack, in the right order. The **brain**: your content, its
-meaning, a synthesized wiki, and agent memory, in one database. The **MCP server** that makes the
-brain a tool *every* AI client can call. Connect it to Claude today, ChatGPT tomorrow, swap freely;
-the brain stays yours. And the **first agent on top**: a research agent you can ask *"what do I
-know about X, and what's new this week?"* that gets sharper every time you use it.
+for your use case (content, research, work knowledge, a personal wiki). We'll build everything end
+to end, starting on a **public sample** so you watch the whole thing work, then point it at your
+own content. Our first agent on top is a research agent that **remembers what it learns** and gets
+sharper every time you use it.
 
 The brain is the product. MCP is how everything reaches it. Agents are what you keep building.
 
@@ -41,9 +47,9 @@ The brain is the product. MCP is how everything reaches it. Agents are what you 
 **What you need:** a Mac with [Homebrew](https://brew.sh), Python 3.12, and about 20 minutes.
 **No prior Oracle experience required.** Every step is copy-paste-able. If anything errors, paste
 it into your AI assistant (Claude, ChatGPT, soon to be powered by the very brain you're building)
-and keep moving. Plenty of people build their first real system exactly this way. Everything runs
-**locally and headless** (no Docker Desktop, no cloud account); going to Oracle Cloud is an
-optional last step.
+and keep moving. Plenty of people build their first real system exactly this way. Steps 1–7 run
+**locally and headless** (no Docker Desktop, no cloud account needed to start); Step 8 lifts the
+same code to Oracle Cloud when you want it always-on.
 
 > **Follow along here, grab the full code there.** This article is self-contained; you can build it
 > straight from these steps. The complete, runnable project (every loader, the agent, the MCP server)
@@ -485,11 +491,13 @@ safety net.
 
 ---
 
-## Step 8: Go always-on (optional cloud)
+## Step 8: Go always-on in the cloud
 
-Everything above runs locally. When you want it always-on and backed up, lift it to **Oracle
-Autonomous AI Database**: same engine, managed. The app connects over a wallet with **no code
-changes**; you load the same ONNX model, copy the data, and you're running in the cloud.
+Everything above runs locally, but a brain you can only reach at your desk is half a brain. Lift
+it to **Oracle Autonomous AI Database** (the Always Free tier covers this build): same engine,
+managed, backed up, always-on, and it's what makes the hosted MCP and the phone story real. The
+app connects over a wallet with **no code changes**; you load the same ONNX model, copy the data,
+and you're running in the cloud. This is how mine runs.
 
 Local stays fully private if you'd rather not. And the copy script ships **only the content scope**
 by default, so your private data stays local even when the brain goes to the cloud.
@@ -583,8 +591,9 @@ Happy Building!
 ## FAQs
 
 **Q: Do I need an Oracle Cloud account to follow this?**
-No. Everything runs locally in the free Oracle AI Database 26ai container. Moving to Always Free
-Autonomous AI Database is an optional last step (Step 8).
+Not to start. Everything through Step 7 runs locally in the free Oracle AI Database 26ai
+container. When you want the brain always-on and reachable from anywhere (your phone, ChatGPT, a
+hosted MCP), Step 8 lifts the same code to an Always Free Autonomous AI Database in the cloud.
 
 **Q: Do I need an LLM API key?**
 Only for the agent, the wiki compiler, and the classifiers. Semantic search runs on the in-database
