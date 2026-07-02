@@ -6,23 +6,24 @@ top. The data, its embeddings, and the agents' memory all live in one database.*
 
 ---
 
-I've been making things for years: videos, posts, docs, and the long AI chats where the real
-thinking happens. And the more I made, the more two problems kept colliding.
+If you work with AI every day, you've probably felt both of these problems.
 
-The first: **every AI chat has the memory of a goldfish.** New conversation, blank slate, and I'm
-re-explaining context the tool should already have. The fix isn't a bigger context window; it's
-giving the AI a place where my context actually *lives*.
+The first: **every AI chat has the memory of a goldfish.** New conversation, blank slate, and
+you're re-explaining context the tool should already have. The fix isn't a bigger context window;
+it's giving the AI a place where your context actually *lives*.
 
-The second: **I don't want to be siloed into one app.** Today I'm in Claude. Tomorrow I might want
+The second: **nobody wants to be siloed into one app.** Today it's Claude. Tomorrow you might want
 ChatGPT, or an open-source chat, or whatever ships next; the advancements never stop. Every one of
-them needs the same information about my work, and that information is scattered across all of
-them.
+them needs the same information about you and your work, and that information is scattered:
+videos here, posts there, notes and docs somewhere else, and the long AI chats where the real
+thinking happened.
 
-So I built a **second brain**: one place that holds everything I've made, searchable by *meaning*,
-that every AI tool I use can share. It grows as I make more and evolves as I do. Because it speaks
-**MCP** (Model Context Protocol), I can swap chats freely and never lose it: the same brain plugs
-into **Claude, ChatGPT, and open-source clients** alike. And the agents I build on top get real
-memory instead of starting blind, so I can ask things no generic assistant could answer:
+That's why I built a **second brain**, and it's what we'll build together here: one place that
+holds everything you've made, searchable by *meaning*, that every AI tool you use can share. It
+grows as you make more and evolves as you do. Because it speaks **MCP** (Model Context Protocol),
+you can swap chats freely and never lose it: the same brain plugs into **Claude, ChatGPT, and
+open-source clients** alike. And the agents you build on top get real memory instead of starting
+blind, so you can ask things no generic assistant could answer:
 
 - *"What have I covered about this topic, and who did I discuss it with?"*
 - *"What do I know about X, and what's new this week?"*
