@@ -386,12 +386,14 @@ note. The Duality view isn't just for show either: **every wiki read in the agen
 server goes through it**. One query on `wiki_page_dv` returns the page with its citations already
 nested, replacing the two manual joins you'd otherwise write.
 
-![A compiled wiki page: a synthesized topic overview with its citations back to your posts nested alongside](images/wiki-page.png)
+![One wiki page, two shapes: the JSON document your agents read (citations nested via wiki_page_dv) and the relational graph the engine maintains, served from the same rows by JSON Relational Duality](images/wiki-duality.png)
 
 ### Zoom out: where the self-improvement actually lives
 
 "Self-improving" isn't one feature. It's **several loops at different speeds**, and now that you've
 built both the memory (Step 4) and the wiki (Step 5), you can see the whole system:
+
+![Inside the brain: one Oracle AI Database holding content, wiki, and four memory types, with five self-improving loops (ingest, record, consolidate, rank tools, refresh wiki) reading and writing the same governed tables, and private data excluded from every loop](images/brain-loops.png)
 
 | Loop | Runs | What gets smarter |
 |---|---|---|

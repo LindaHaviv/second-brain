@@ -236,7 +236,7 @@ What it builds in Oracle: `wiki_pages` (document + vector embedding), `page_link
 page as ONE JSON document with citations nested). One page exercises **relational + JSON Relational
 Duality + AI Vector Search** at once.
 
-![A compiled wiki page: synthesized overview on the left, its nested citations and cross-links on the right](images/wiki-page.png)
+![One wiki page, two shapes: the JSON document your agents read and the relational graph the engine maintains, same rows underneath](images/wiki-duality.png)
 
 ---
 
