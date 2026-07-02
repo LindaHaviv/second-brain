@@ -282,13 +282,15 @@ re-deriving them every time. (In the repo this runs automatically every few rese
 daily scheduled consolidation.)
 
 > **🔧 The LLM is a config switch, not a dependency.** Set `LLM_PROVIDER` in `oracle/.env` —
-> **`anthropic`** (default), **`openai`**, or **`ollama`** (a local open-source model, free) — and
+> **`anthropic`** (default, and the richest agent experience), **`openai`**, or **`ollama`** — and
 > the wiki compiler, memory consolidation, classifiers, and idea agent all follow; no code edits.
-> (The research agent's *tool loop* — server-side web search — is Anthropic-shaped: run it with
-> Claude, or via an Anthropic-compatible gateway.) Everything else — the database, the schema,
-> semantic search, the MCP server — is **LLM-free**: the embeddings are an open-source MiniLM
-> running inside Oracle, so search needs **no API key at all** (you proved that at the Step 3
-> checkpoint).
+> **Want it free and fully local? Use Ollama**: `brew install ollama && ollama pull llama3.2`, set
+> `LLM_PROVIDER=ollama`, and the entire build runs at **$0 with no accounts anywhere** — local
+> database, in-DB embeddings, local LLM. (The research agent's *tool loop* — server-side web
+> search — is Anthropic-shaped: run it with Claude, or via an Anthropic-compatible gateway.)
+> Everything else — the database, the schema, semantic search, the MCP server — is **LLM-free**:
+> the embeddings are an open-source MiniLM running inside Oracle, so search needs **no API key at
+> all** (you proved that at the Step 3 checkpoint).
 
 > **📦 Build it, or use Oracle's package — your choice.** This build makes the memory layer from
 > scratch (four purpose-built tables) so you *see* how agent memory works, and get first-class
