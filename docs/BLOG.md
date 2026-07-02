@@ -29,7 +29,8 @@ blind, so you can ask things no generic assistant could answer:
 
 - *"Find that conversation where I worked through this idea, even if it was in a different chat."*
 - *"Help me draft the next post in my series, in my tone, building on what I've already covered."*
-- *"What do I know about this topic, and what's new since I last covered it?"*
+- *"Prep me for a conversation with [guest]: how I interview, what I've covered with them before,
+  and what's new in their world."*
 
 Why a database at the center? One of the hardest problems in a system like this isn't storing
 content. It's giving every layer (search, knowledge, memory, privacy) one consistent home.
