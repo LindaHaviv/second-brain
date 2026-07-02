@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d1117;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #e6edf3;
+    width: 1200px;
+    padding: 44px 48px 40px;
+  }
+  .title { font-size: 30px; font-weight: 700; letter-spacing: -0.3px; }
+  .title .accent { color: #3fb950; }
+  .subtitle { font-size: 16px; color: #9da7b3; margin-top: 8px; }
+
+  .db {
+    margin-top: 30px; border: 1.5px solid #4a5a70; border-radius: 20px;
+    background: #10151c; padding: 24px 26px 26px; position: relative;
+  }
+  .db-label {
+    position: absolute; top: -14px; left: 26px; background: #0d1117;
+    padding: 2px 14px; font-size: 14px; font-weight: 800; letter-spacing: 1px; color: #c9d4de;
+    border: 1px solid #4a5a70; border-radius: 999px;
+  }
+  .cols { display: flex; gap: 20px; }
+  .pillar { flex: 1; border-radius: 14px; padding: 18px 20px; border: 1.3px solid; }
+  .pillar h3 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 9px; }
+  .pillar .desc { font-size: 12.5px; margin: 6px 0 14px; opacity: 0.75; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 6px 12px;
+    background: rgba(13,17,23,0.55); border: 1px solid rgba(255,255,255,0.14);
+  }
+  .content { background: #16283d; border-color: #58a6ff; color: #dbe9ff; }
+  .wiki    { background: #14301f; border-color: #3fb950; color: #d7f5e1; }
+  .memory  { background: #2e2413; border-color: #d29922; color: #f4e4bd; }
+
+  .loops { margin-top: 34px; }
+  .loops-head { display: flex; align-items: baseline; gap: 12px; }
+  .loops-head h2 { font-size: 19px; font-weight: 700; color: #e6edf3; }
+  .loops-head span { font-size: 13.5px; color: #9da7b3; }
+  .track { display: flex; align-items: stretch; margin-top: 18px; }
+  .loop {
+    flex: 1; background: #141a22; border: 1px solid #2b3646; border-radius: 14px;
+    padding: 14px 14px 13px; text-align: center; position: relative;
+  }
+  .loop .when { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #7d8895; }
+  .loop .what { font-size: 15px; font-weight: 700; margin-top: 5px; }
+  .loop .gain { font-size: 12px; color: #9da7b3; margin-top: 6px; line-height: 1.45; }
+  .arrow {
+    align-self: center; width: 40px; text-align: center; color: #58a6ff;
+    font-size: 22px; font-weight: 700; flex: 0 0 40px;
+  }
+  .l1 .what { color: #58a6ff; } .l2 .what { color: #a5b4fc; } .l3 .what { color: #d29922; }
+  .l4 .what { color: #e2b6f7; } .l5 .what { color: #3fb950; }
+
+  .cycle {
+    margin-top: 16px; display: flex; align-items: center; gap: 12px; justify-content: center;
+    color: #7d8895; font-size: 13px;
+  }
+  .cycle .line { flex: 1; border-top: 2px dashed #33405255; position: relative; }
+  .cycle .back { color: #3fb950; font-weight: 700; }
+
+  .foot {
+    margin-top: 24px; display: flex; align-items: center; gap: 14px;
+    background: #101a2b; border: 1px solid #2b3646; border-radius: 14px; padding: 14px 20px;
+  }
+  .foot .lock { font-size: 20px; }
+  .foot p { font-size: 14px; color: #c9d4de; line-height: 1.5; }
+  .foot b { color: #ff9492; }
+</style>
+</head>
+<body>
+  <div class="title">Inside the brain: <span class="accent">one database, five loops</span></div>
+  <div class="subtitle">Everything the system knows lives in one governed home, and five loops at different speeds keep making it smarter.</div>
+
+  <div class="db">
+    <div class="db-label">ONE ORACLE AI DATABASE 26ai</div>
+    <div class="cols">
+      <div class="pillar content">
+        <h3>📝 Content</h3>
+        <div class="desc">everything you've made, searchable by meaning</div>
+        <div class="chips"><span class="chip">posts</span><span class="chip">chunks</span><span class="chip">in-DB vectors</span><span class="chip">privacy scope</span></div>
+      </div>
+      <div class="pillar wiki">
+        <h3>📖 Wiki</h3>
+        <div class="desc">synthesized topic pages, compiled from your content</div>
+        <div class="chips"><span class="chip">pages</span><span class="chip">cross-links</span><span class="chip">citations</span><span class="chip">grows on its own</span></div>
+      </div>
+      <div class="pillar memory">
+        <h3>🧩 Memory ×4</h3>
+        <div class="desc">what your agents learn, recallable by meaning</div>
+        <div class="chips"><span class="chip">episodic</span><span class="chip">semantic</span><span class="chip">conversational</span><span class="chip">procedural</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="loops">
+    <div class="loops-head"><h2>The five self-improving loops</h2><span>each one reads and writes the same governed tables</span></div>
+    <div class="track">
+      <div class="loop l1"><div class="when">every new post</div><div class="what">Ingest</div><div class="gain">embeddings generated in-DB on insert</div></div>
+      <div class="arrow">→</div>
+      <div class="loop l2"><div class="when">every answer</div><div class="what">Record</div><div class="gain">each research run becomes experience</div></div>
+      <div class="arrow">→</div>
+      <div class="loop l3"><div class="when">every few runs + daily</div><div class="what">Consolidate</div><div class="gain">episodes distilled into durable facts</div></div>
+      <div class="arrow">→</div>
+      <div class="loop l4"><div class="when">every question</div><div class="what">Rank tools</div><div class="gain">procedural memory picks what to use</div></div>
+      <div class="arrow">→</div>
+      <div class="loop l5"><div class="when">daily</div><div class="what">Refresh wiki</div><div class="gain">touched pages recompile; new topics appear</div></div>
+    </div>
+    <div class="cycle">
+      <div class="line"></div>
+      <span class="back">⟲&nbsp; every loop feeds the next answer: the compounding is the product</span>
+      <div class="line"></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="lock">🔒</div>
+    <p><b>Private stays out of every loop.</b> Each item carries a visibility scope, and search, the
+    wiki compiler, and memory consolidation only ever read the content scope, so the brain can't
+    re-derive what you've set aside, even while it updates itself.</p>
+  </div>
+</body>
+</html>
