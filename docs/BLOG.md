@@ -497,3 +497,25 @@ Clone it, point it at your own content, and ask it something only *you* would kn
 
 > Full, runnable code + a step-by-step repo workshop:
 > **[github.com/LindaHaviv/second-brain](https://github.com/LindaHaviv/second-brain)**.
+
+## Learn more — official Oracle resources
+
+Everything this build touches has a free, official path to go deeper:
+
+- **[Agent Memory: Building Memory-Aware Agents](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)** —
+  the free **Oracle × DeepLearning.AI course**. The four memory types you built in Step 4 are
+  exactly the model it teaches; take it to master the concepts behind the code.
+- **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)** —
+  Oracle's open workshops + notebooks, from RAG to memory-augmented agents. Start with the
+  hands-on **[Agent Memory Workshop](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/workshops/agent_memory_workshop)**
+  (a research-paper assistant with six memory types and a before/after memory comparison), then
+  the **[agent-memory notebooks](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/notebooks/agent_memory)**
+  for the OAMP package with OpenAI / Claude Agent SDK / LangGraph examples.
+- **[Oracle AI Agent Memory Package (OAMP)](https://docs.oracle.com/en/database/oracle/agent-memory/)** —
+  the official drop-in memory layer, when you'd rather not hand-roll Step 4.
+- **[Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/)** —
+  the managed alternative to Step 6's custom server.
+- Feature docs used in this build:
+  [JSON-Relational Duality](https://docs.oracle.com/en/database/oracle/oracle-database/26/jsnvu/) ·
+  [AI Vector Search](https://docs.oracle.com/en/database/oracle/oracle-database/26/vecse/) ·
+  [Hybrid Search / DBMS_HYBRID_VECTOR](https://docs.oracle.com/en/database/oracle/oracle-database/26/vecse/understand-hybrid-search.html)
