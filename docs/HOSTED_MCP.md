@@ -79,8 +79,17 @@ The code is built in (`mcp_server.py` → `_build_auth`); turn it on with a Work
    > WorkOS **AuthKit access tokens carry `sub` (the user id), not email** — so authorize by
    > **`ALLOWED_SUBS`**. Find your id at **Users → your user → the `user_...` value** (after your
    > first login). (`ALLOWED_EMAILS` also works for providers that put email in the token.)
-3. In claude.ai / ChatGPT → add a custom connector with URL `https://<your-app>.fly.dev/mcp` (no
-   token) → log in via WorkOS. **Only the allow-listed user gets in** — everyone else is denied.
+3. Add the connector in each client (same URL, no token — the OAuth login handles it):
+   - **claude.ai (web + mobile):** Settings → **Connectors** → **Add custom connector** → paste
+     `https://<your-app>.fly.dev/mcp` → complete the WorkOS login. Once added on the web it's
+     available in the mobile app too.
+   - **ChatGPT:** Settings → **Apps & Connectors** → enable **Developer mode** (required for
+     custom MCP connectors) → **Create** → paste the same `/mcp` URL, auth = **OAuth** → complete
+     the login. ChatGPT uses the `search`/`fetch` connector contract this server implements.
+   - **Claude Desktop:** the same custom-connector UI works for the hosted URL — or skip hosting
+     entirely and run it local over stdio (see [TUTORIAL Lab 7](TUTORIAL.md)).
+
+   **Only the allow-listed user gets in** — everyone else is denied after login.
 
 > **Security:** OAuth *authenticates*; the allowlist (`ALLOWED_SUBS` and/or `ALLOWED_EMAILS`)
 > *authorizes* — only your account gets in, even though anyone can attempt a WorkOS login. The
