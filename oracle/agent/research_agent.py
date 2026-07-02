@@ -149,11 +149,15 @@ def run_research(client, conn, question, history=None):
     searched = []   # (title, url) surfaced by search — CANDIDATES, not necessarily used
     read = []       # (title, url) the agent actually opened (get_post / get_wiki_page) — used
     answer = ""
-    while True:
+    container_id = None   # server-side tools may run in a code-execution container; when a
+    while True:           # turn pauses mid-container, the resume MUST reference the same one
+        kwargs = {"container": container_id} if container_id else {}
         resp = client.messages.create(
             model=MODEL, max_tokens=4096, thinking={"type": "adaptive"},
-            system=SYSTEM, tools=TOOLS, messages=messages,
+            system=SYSTEM, tools=TOOLS, messages=messages, **kwargs,
         )
+        c = getattr(resp, "container", None)
+        container_id = c.id if c else container_id
         # web_search is server-side; when it hits its loop limit, re-send to let it continue
         if resp.stop_reason == "pause_turn":
             messages.append({"role": "assistant", "content": resp.content})
