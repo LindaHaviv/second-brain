@@ -525,6 +525,14 @@ research assistant tuned to your domain. Each one is small, because the hard par
 memory, grounding, privacy scope) are already the platform's job. And each one makes the memory
 richer for the rest.
 
+And agents aren't the only thing you can build on it. **The brain is an API away from powering
+applications**: the MCP server already speaks HTTP, so a thin REST layer over the same functions
+serves a **content dashboard** (your wiki as a link graph, memory as a live stream, loop health at
+a glance) or any app you dream up. Or skip the middleware entirely: **Oracle REST Data Services
+(ORDS)** can REST-enable your tables — and your **Duality views** — directly in Autonomous AI
+Database, so `wiki_page_dv` becomes a JSON endpoint with no application server at all. One brain;
+agents, chats, and apps all drinking from it.
+
 ## What you end up with
 
 One database that holds your content, its meaning, your synthesized knowledge, and a growing memory
