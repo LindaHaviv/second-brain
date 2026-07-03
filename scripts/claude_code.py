@@ -96,6 +96,7 @@ def main():
         return
     conn = connect()
     cur = conn.cursor()
+    cur.execute("alter session disable parallel dml")   # Autonomous: delete+insert in one txn
     cur.execute("merge into platforms p using (select 'claude_code' id from dual) s "
                 "on (p.platform_id=s.id) when not matched then "
                 "insert (platform_id, display_name) values ('claude_code','Claude Code sessions')")

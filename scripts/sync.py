@@ -33,6 +33,7 @@ LLM_KEY = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}.get(
 STEPS = [
     ("Instagram",    [str(ROOT / "scripts" / "instagram.py")],          "IG_ACCESS_TOKEN"),
     ("Notion",       [str(ROOT / "scripts" / "notion.py")],             "NOTION_TOKEN"),
+    ("Claude Code",  [str(ROOT / "scripts" / "claude_code.py")],        None),
     ("Wiki refresh", [str(ROOT / "oracle" / "agent" / "wiki.py"), "--refresh"], None),
     ("Consolidate",  [str(ROOT / "scripts" / "consolidate.py")],        None),
 ]
@@ -61,6 +62,11 @@ def _tags_look_reset():
 
 
 def main():
+    # FIRST: pick up any new chat-export zips (drop-zip-and-forget). Runs before the
+    # tags-reset check so a fresh import gets classified in THIS run, not tomorrow's.
+    print("=== Chat exports (watch folder) ===", flush=True)
+    subprocess.run([PY, str(ROOT / "scripts" / "ingest_exports.py")])
+
     steps = list(STEPS)
     if _tags_look_reset():
         print("!! chat visibility tags look RESET (fresh import?) — classifying before rebuild")

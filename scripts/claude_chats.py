@@ -72,6 +72,7 @@ def main():
     convos = json.load(open(CONV))
     conn = connect()
     cur = conn.cursor()
+    cur.execute("alter session disable parallel dml")   # Autonomous: delete+insert in one txn
     cur.execute("merge into platforms p using (select 'claude' id from dual) s "
                 "on (p.platform_id=s.id) when not matched then "
                 "insert (platform_id, display_name) values ('claude','Claude chats')")
@@ -104,7 +105,6 @@ def main():
             total_chunks += 1
         n += 1
         if n % 50 == 0:
-            conn.commit()
             print(f"  {n} conversations, {total_chunks} chunks...")
     conn.commit()
     print(f"loaded {n} Claude conversations (summary) + {total_chunks} passage chunks into the brain")
