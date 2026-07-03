@@ -452,7 +452,7 @@ Developer mode enabled). I host mine on **Fly.io**, and the repo's
 walks that deploy click by click; it's one small container, so any container host works,
 including an Always Free Arm VM on Oracle Cloud.
 
-> **🔌 This build uses a custom MCP server — here's why.** It's a **custom MCP server**
+> **🔌 This build uses a custom MCP server, and here's why.** It's a **custom MCP server**
 > (Python): you keep full control of the tools, it speaks the OAuth *custom-connector* flow that
 > **claude.ai web/mobile and ChatGPT** use, it's **database-agnostic**, and it works with the
 > **local container**, no cloud required. That's the right fit for a portable, teach-the-internals
