@@ -40,12 +40,33 @@ download to device. ➡ Save the `.zip` to `exports/instagram/`.
 
 ## 2. LinkedIn
 
-1. **Settings & Privacy → Data Privacy → Get a copy of your data**.
-2. Choose **"Download larger data archive…"** (includes posts/articles/media) — *not* just the fast one.
-3. Request. Larger archive can take up to **24 hours**; you'll get an email.
+LinkedIn's official data archive is unreliable for post content: rich-media posts (video
+especially) often arrive without their caption text. The dependable path is harvesting your own
+activity feed from a logged-in browser session — your posts are all there, with full text.
 
-➡ Save to `exports/linkedin/`. (CSV + media.) `scripts/linkedin.py` currently reads a captured-posts
-JSON — use it as the template for the official archive's CSVs.
+1. Log in and open `linkedin.com/in/<you>/recent-activity/all/`.
+2. Scroll to the bottom of your history, collecting each post's URN, author, text, relative age,
+   and media type. An AI browser assistant can do the scrolling and collecting for you (keep it
+   supervised — it's your logged-in session); the target JSON shape is documented in
+   `scripts/linkedin_harvest.py`:
+
+   ```json
+   {"harvested_at": "...", "items": [
+     {"urn": "urn:li:activity:...", "actor": "Your Name", "header": "",
+      "text": "full post text", "rel": "3yr", "media": "video"}]}
+   ```
+
+3. Save as `linkedin_harvest.json` and load it — only your original posts are kept (reposts of
+   other people's content are filtered by the `actor` field), and reruns are dedupe-safe:
+
+   ```bash
+   ./.venv/bin/python scripts/linkedin_harvest.py ~/Downloads/linkedin_harvest.json
+   ```
+
+Relative ages ("3yr") become approximate dates — good enough for search and voice mining.
+*(Optional: request the official archive too — **Settings & Privacy → Data Privacy → Get a copy
+of your data → larger archive** — and if its `Shares.csv` has usable text for your posts, its
+exact dates can complement the harvest.)*
 
 ## 3. TikTok
 

@@ -203,8 +203,9 @@ oracle/            the database: docker-compose, schema (Duality + 4 memory type
                    setup SQL; the agents (db / content / memory / research_agent / idea_agent /
                    wiki) + the MCP server (mcp_server stdio, mcp_http hosted)
 scripts/           loaders (youtube, notion, instagram, instagram_export, chatgpt, claude_chats,
-                   linkedin) + pipeline (classify_private, sync, consolidate, wiki) + ops
-                   (apply_schema, load_model_cloud, copy_local_to_cloud, lint_wiki, review)
+                   linkedin, linkedin_harvest) + pipeline (classify_private, sync, consolidate,
+                   wiki) + ops (apply_schema, load_model_cloud, copy_local_to_cloud, lint_wiki,
+                   review)
 deploy/            hosted-MCP container (Dockerfile; fly.toml lives at repo root)
 sources/           canonical content as Markdown + frontmatter (source of truth)
 docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE ·
