@@ -185,6 +185,26 @@ Run it by hand anytime (`./.venv/bin/python scripts/sync.py`) or schedule it dai
 real-time capture: say *"save this chat to my brain"* in any connected client and the `save_chat`
 tool stores it on the spot, no export needed.
 
+## How it improves itself
+
+"Self-improving" here means two specific mechanisms — and, deliberately, not a third:
+
+- **The knowledge self-organizes.** The wiki doesn't just refresh pages whose sources changed —
+  it *proposes new pages* when enough content clusters around a topic no page covers yet. Nightly
+  consolidation distills raw agent runs (`agent_memory`) into durable facts (`semantic_memory`).
+  Nobody asks for either; the daily sync triggers both.
+- **The agents compound experience.** Every run follows **recall → act → record**: an agent
+  recalls consolidated facts before acting, does the work, and records the outcome. Tonight's
+  runs become tomorrow's recalled facts — the research agent literally stops re-deriving things
+  it worked out last month. The more you use it, the better it answers.
+- **Nothing self-modifies.** No agent rewrites its own code or prompts, and no model decides what
+  runs when — scheduling and routing stay deterministic (a 100-line `sync.py` and cron-style
+  timers). The behavior improves because the *memory it stands on* grows, which means every
+  improvement is inspectable with plain SQL: `SELECT * FROM semantic_memory ORDER BY created_at`.
+
+The privacy filter is part of the loop, not an afterthought: consolidation and the wiki only read
+`visibility = 'content'`, so a private item can never be laundered into a "learned" fact.
+
 ## Take it to the cloud
 
 Everything above runs free on your laptop. The same code runs on an **Always Free Autonomous AI
