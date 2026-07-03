@@ -271,7 +271,8 @@ FETCH FIRST 5 ROWS ONLY;
 Two refinements the repo adds. It **chunks** long content (transcripts, chats) into a
 `content_chunks` table so a query lands on the right *passage*, not just the right item. And it
 fuses vector search with a **keyword** pass via Reciprocal Rank Fusion, so exact names, handles,
-and error codes that pure-vector search can miss still surface.
+and error codes that pure-vector search can miss still surface. The fusion also weights by source
+type: your published work wins close calls over your AI-chat notes.
 
 > **⚡ 26ai also has this natively.** Oracle AI Database ships built-in
 > [**hybrid search**](https://docs.oracle.com/en/database/oracle/oracle-database/26/vecse/understand-hybrid-search.html):
@@ -333,9 +334,9 @@ daily scheduled consolidation.)
 > The embeddings are an open-source MiniLM running inside Oracle, so search needs **no API key at
 > all** (you proved that at the Step 3 checkpoint).
 
-> **📦 Build it, or use Oracle's package. Your choice.** This build makes the memory layer from
-> scratch (four purpose-built tables) so you *see* how agent memory works, and get first-class
-> **procedural** memory plus a scheduled consolidation loop. If you'd rather not hand-roll it, Oracle
+> **📦 We build the memory layer from scratch here.** Four purpose-built tables, so you *see* how
+> agent memory works, and you get first-class **procedural** memory plus a scheduled consolidation
+> loop. When you'd rather have a maintained drop-in instead, Oracle
 > ships an official Python package, the **Oracle AI Agent Memory Package** (`oracleagentmemory`),
 > that turns the same database into a memory core, with framework adapters (OpenAI / Claude Agent SDK
 > / LangGraph), multi-actor scoping, and a published LongMemEval benchmark. Pick by use case: **build**
@@ -451,7 +452,7 @@ Developer mode enabled). I host mine on **Fly.io**, and the repo's
 walks that deploy click by click; it's one small container, so any container host works,
 including an Always Free Arm VM on Oracle Cloud.
 
-> **🔌 Two ways to serve it, and which fits here.** This build uses a **custom MCP server**
+> **🔌 This build uses a custom MCP server — here's why.** It's a **custom MCP server**
 > (Python): you keep full control of the tools, it speaks the OAuth *custom-connector* flow that
 > **claude.ai web/mobile and ChatGPT** use, it's **database-agnostic**, and it works with the
 > **local container**, no cloud required. That's the right fit for a portable, teach-the-internals
@@ -575,6 +576,8 @@ Replicating this as *your* second brain is the point. Five steps keep yours priv
    leaked keys before sharing it.
 5. **Customize the personal bits**: your sources, your series labels, your wiki topics. The code
    is generic; everything "you" lives in configuration and your data.
+6. **Run the test suite after changes**: `./.venv/bin/python tests/test_brain.py` checks the
+   schema, search, Duality views, and memory against your live brain in seconds.
 
 ## This is just the beginning: you built a platform
 
