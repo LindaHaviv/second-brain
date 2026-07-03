@@ -75,6 +75,14 @@ def _lexical_posts(conn, terms, k):
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
+def note_chunks(text, max_chunks=40):
+    """Paragraph-level chunks for a note body, so notes get passage-level search like
+    chats and transcripts do. A note saved as prose would otherwise exist only as one
+    diluted post-level embedding and lose to chunked sources on specific queries."""
+    paras = [p.strip() for p in re.split(r"\n\s*\n", text or "") if p.strip()]
+    return [p[:2000] for p in paras[:max_chunks]]
+
+
 def _rid(r):
     return f"wiki:{r['title']}" if r.get("lvl") == "wiki" else f"{r['lvl']}:{r.get('post_id')}"
 

@@ -188,6 +188,19 @@ def test_fetch_title_fallback_keeps_whole_string():
         "fetch fallback regressed to splitting on ':'"
 
 
+def test_note_chunks_paragraphs():
+    """Notes must chunk by paragraph so they get passage-level search like chats do."""
+    from content import note_chunks
+    body = "How to use: fetch this.\n\nSTEP 1 - do a thing\nwith detail\n\n\nSTEP 2 - more"
+    chunks = note_chunks(body)
+    assert chunks == ["How to use: fetch this.", "STEP 1 - do a thing\nwith detail",
+                      "STEP 2 - more"]
+    assert note_chunks("") == [] and note_chunks(None) == []
+    long = "\n\n".join(f"p{i}" for i in range(60))
+    assert len(note_chunks(long)) == 40          # cap
+    assert len(note_chunks("x" * 5000)[0]) == 2000   # per-chunk byte-safe clamp
+
+
 def test_research_tool_errors_are_recoverable():
     """Malformed model tool input must return an error RESULT, not raise."""
     import research_agent

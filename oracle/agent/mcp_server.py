@@ -391,13 +391,25 @@ if not READONLY:
         try:
             conn = db.connect()
             with conn.cursor() as cur:
+                cur.execute("alter session disable parallel dml")
                 cur.execute("MERGE INTO platforms p USING (SELECT 'note' id FROM dual) s "
                             "ON (p.platform_id=s.id) WHEN NOT MATCHED THEN "
                             "INSERT (platform_id, display_name) VALUES ('note','Quick notes')")
+                outid = cur.var(int)
                 cur.execute(
                     "INSERT INTO posts (platform_id, kind, title, caption, content_embedding) "
-                    "VALUES ('note','note', :t, :c, VECTOR_EMBEDDING(MINILM USING :e AS DATA))",
-                    t=title[:1000], c=(text or "")[:8000], e=f"{title}. {text}"[:3000])
+                    "VALUES ('note','note', :t, :c, VECTOR_EMBEDDING(MINILM USING :e AS DATA)) "
+                    "RETURNING post_id INTO :outid",
+                    t=title[:1000], c=(text or "")[:8000], e=f"{title}. {text}"[:3000],
+                    outid=outid)
+                pid = int(outid.getvalue()[0])
+                # paragraph chunks -> passage-level search can land on the right part of the note
+                for i, para in enumerate(content.note_chunks(text)):
+                    cur.execute(
+                        "INSERT INTO content_chunks (post_id, seq, chunk, embedding) "
+                        "VALUES (:pid, :seq, :chunk, "
+                        "        VECTOR_EMBEDDING(MINILM USING :emb AS DATA))",
+                        pid=pid, seq=i, chunk=para, emb=para)
             conn.commit()
             return f"saved note: {title}"
         except ToolError:
