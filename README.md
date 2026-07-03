@@ -157,6 +157,45 @@ Once the basics work, this scales into a real second brain — the full path is 
 
 ![The same question answered in Claude and in ChatGPT by the same Second Brain connector — same brain, any chat](docs/images/mcp-search.png)
 
+## How it all connects
+
+The data flow, in one breath: **loaders** normalize any source into `posts` (embeddings are
+generated in-database on insert, long content is chunked into passages). The **wiki compiler**
+reads those posts and writes synthesized topic pages whose citations are foreign keys back to
+them. **Agents** answer from posts + wiki and write what they learn to `agent_memory`;
+**consolidation** distills those runs into durable `semantic_memory` facts. The **MCP server**
+serves all of it to any AI client, and its write tools (`ingest_note`, `save_chat`) flow new
+knowledge back in. Every read path filters `visibility = 'content'`, so private items are out of
+search AND out of the self-improving loop.
+
+## How it runs day to day
+
+Once your content is in, one scheduled job keeps every derived layer current, in an order that
+can never leak or go stale:
+
+```
+sync.py:  pick up new chat-export zips (ingest_exports.py watches your downloads folder)
+          → pull API sources (Instagram, Notion) → Claude Code sessions (local, automatic)
+          → classify private vs content (safety net re-runs after fresh imports)
+          → refresh + GROW the wiki → consolidate memory
+```
+
+Run it by hand anytime (`./.venv/bin/python scripts/sync.py`) or schedule it daily — the
+**[TUTORIAL](docs/TUTORIAL.md)** ships a ready macOS LaunchAgent plist. For chats there is also
+real-time capture: say *"save this chat to my brain"* in any connected client and the `save_chat`
+tool stores it on the spot, no export needed.
+
+## Take it to the cloud
+
+Everything above runs free on your laptop. The same code runs on an **Always Free Autonomous AI
+Database** so the brain is always-on, backed up, and reachable from anywhere:
+
+1. **Move the database** — wallet + load the same ONNX model + one copy script (ships
+   content-scope only by default): **[docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md)**.
+2. **Host the MCP server** — one small container (the guide deploys to Fly.io) with OAuth + an
+   email allowlist, so claude.ai, ChatGPT, and your phone can reach it:
+   **[docs/HOSTED_MCP.md](docs/HOSTED_MCP.md)**.
+
 ## Repo layout
 
 ```
