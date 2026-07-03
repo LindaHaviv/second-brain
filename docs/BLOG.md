@@ -359,6 +359,15 @@ posts, improving as you add content. And the refresh works in both directions. I
 pages your new content touches, and when new content clusters outside every existing topic it
 **proposes and compiles new pages**. The knowledge base grows on its own.
 
+Credit where the idea comes from: this layer implements Andrej Karpathy's
+[LLM wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) concept. Instead of
+having the model re-read your raw sources on every question, an LLM incrementally compiles them
+into a persistent, interlinked wiki ("Obsidian is the IDE; the LLM is the programmer; the wiki is
+the codebase," as he puts it). His sketch targets markdown files. Here the compile target is the
+database, which is what buys the upgrades above: pages that are searchable by meaning, citations
+that are foreign keys you can verify with SQL, and incremental recompiles the daily sync can
+schedule.
+
 This is the strongest Oracle showcase in the build, because a wiki page is *both* a document *and*
 a graph:
 
