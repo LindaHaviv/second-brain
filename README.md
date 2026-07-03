@@ -203,7 +203,10 @@ tool stores it on the spot, no export needed.
   improvement is inspectable with plain SQL: `SELECT * FROM semantic_memory ORDER BY created_at`.
 
 The privacy filter is part of the loop, not an afterthought: consolidation and the wiki only read
-`visibility = 'content'`, so a private item can never be laundered into a "learned" fact.
+`visibility = 'content'`, so a private item can never be laundered into a "learned" fact. Accuracy
+is guarded the same way: a verification pass fact-checks every research answer against the run's
+own evidence before it is returned or remembered, and consolidation refuses to promote unverified
+claims into durable facts — so the loop compounds knowledge, not mistakes.
 
 ## Take it to the cloud
 

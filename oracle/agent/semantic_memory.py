@@ -22,7 +22,12 @@ _SYS = (
     "and capped at the ~40 most useful. Categories: theme | audience | format | tool | gap.\n"
     "PRIVACY GUARD: never record financial or private business facts — no earnings, rates, fees, "
     "pricing, invoices, payments, banking, budgets, taxes, contracts, or deal terms. Knowing a "
-    "post is a brand collaboration (and its reach/engagement) is fine; the money and terms are not."
+    "post is a brand collaboration (and its reach/engagement) is fine; the money and terms are not.\n"
+    "EVIDENCE GUARD: every fact must be directly supported by the inputs you were given — the "
+    "titles, the runs, or a prior fact that still holds. Never generalize beyond the evidence; "
+    "when recent evidence contradicts a prior fact, revise toward the newer evidence; and when a "
+    "run's answer marks a claim '(unverified)', do NOT promote it to a fact. A smaller, solid "
+    "fact set beats a larger speculative one."
 )
 
 _SCHEMA = {

@@ -240,6 +240,18 @@ Duality + AI Vector Search** at once.
 
 ---
 
+> **The accuracy gate.** A self-improving loop has one failure mode worth engineering against:
+> a wrong claim that gets recorded becomes a wrong "fact" that gets recalled forever. Three
+> guards stand in the way. The agent's system prompt carries an **accuracy contract** (claims
+> need an opened source; significant external claims need corroboration or attribution; label
+> anything ungrounded "(unverified)"). A **verification pass** then fact-checks the draft against
+> the run's own tool evidence *before* it is returned or recorded — every checkable claim gets a
+> supported / unsupported / contradicted verdict, unsupported claims are cut or flagged,
+> contradicted ones corrected (default on; `RESEARCH_VERIFY=0` to skip; import
+> `research_agent.verify_answer` to fact-check any other agent's drafts). And consolidation has
+> an **evidence guard**: it never promotes "(unverified)" claims into durable facts, and revises
+> prior facts toward newer evidence instead of keeping both.
+
 ## Lab 6 — Keep it current (the self-improving loop)
 
 👤 **Who needs this:** anyone whose content grows over time — so the derived layers never go stale.

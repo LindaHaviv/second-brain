@@ -28,8 +28,57 @@ SYSTEM = (
     "underlying posts). Ground any claim about THEIR work in their content and cite their content "
     "titles; use the web for current or external facts and cite those sources. Be explicit about what "
     "comes from their content vs. the web, and say honestly if something isn't covered. Use the "
-    "prior research notes if they're relevant."
+    "prior research notes if they're relevant.\n"
+    "ACCURACY CONTRACT: state as fact only what a source you actually opened supports. For "
+    "significant external claims (numbers, launches, dates), corroborate with a second independent "
+    "web source or attribute the claim to its single source. Include dates for time-sensitive "
+    "claims. If sources conflict, say so — never silently pick one. Anything you infer but cannot "
+    "ground, label '(unverified)'. A shorter answer with solid sources beats a fuller one with weak ones."
 )
+
+VERIFY_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "properties": {
+        "claims": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "properties": {
+                "claim": {"type": "string"},
+                "verdict": {"type": "string", "enum": ["supported", "unsupported", "contradicted"]},
+                "source": {"type": "string"},
+            },
+            "required": ["claim", "verdict", "source"]}},
+        "revised_answer": {"type": "string"},
+    },
+    "required": ["claims", "revised_answer"],
+}
+
+VERIFY_SYSTEM = (
+    "You are an adversarial fact-checker. The conversation contains a research transcript: tool "
+    "results (the EVIDENCE) and a draft answer. Extract the draft's checkable claims and verdict "
+    "each STRICTLY against the evidence in the transcript: 'supported' (a tool result backs it — "
+    "name the source), 'unsupported' (nothing in the evidence backs it), 'contradicted' (the "
+    "evidence says otherwise). Do not use outside knowledge; the transcript is the only ground "
+    "truth here. Then produce revised_answer: the draft with contradicted claims corrected per the "
+    "evidence and unsupported claims either removed or explicitly marked '(unverified)'. Preserve "
+    "the draft's voice and structure; change only what accuracy requires."
+)
+
+
+def verify_answer(client, messages, answer):
+    """Second-pass fact-check of a draft answer against the run's own tool evidence.
+    Returns (revised_answer, claims): every checkable claim gets a verdict; unsupported claims
+    are cut or flagged '(unverified)', contradicted ones corrected. Used by run_research when
+    RESEARCH_VERIFY=1 (the default); import it directly to fact-check any agent's draft."""
+    check = messages + [
+        {"role": "assistant", "content": [{"type": "text", "text": f"DRAFT ANSWER:\n{answer}"}]},
+        {"role": "user", "content": "Fact-check the draft answer against the evidence above."},
+    ]
+    r = client.messages.create(
+        model=MODEL, max_tokens=12288, system=VERIFY_SYSTEM, messages=check,
+        output_config={"format": {"type": "json_schema", "schema": VERIFY_SCHEMA}},
+    )
+    out = json.loads(next(b.text for b in r.content if b.type == "text"))
+    return out["revised_answer"], out["claims"]
 
 TOOLS = [
     {
@@ -202,6 +251,19 @@ def run_research(client, conn, question, history=None):
                 })
         messages.append({"role": "user", "content": results})
 
+    # Verification pass (the accuracy gate): fact-check the draft against the run's own tool
+    # evidence BEFORE it is returned or remembered — a wrong claim that gets recorded would be
+    # recalled on future runs and consolidated into a durable "fact". Opt out: RESEARCH_VERIFY=0.
+    flagged = 0
+    if answer and os.environ.get("RESEARCH_VERIFY", "1") != "0":
+        try:
+            revised, claims = verify_answer(client, messages, answer)
+            flagged = sum(1 for cl in claims if cl["verdict"] != "supported")
+            if flagged:
+                answer = revised
+        except Exception as e:
+            print(f"  (verification pass unavailable, returning unverified draft: {e})")
+
     # Sources = what the answer actually USED, not everything surfaced: items the agent opened
     # (get_post/get_wiki_page), plus any searched item whose title the answer names. This keeps the
     # citation list and the recorded reward honest (grounding), instead of listing every search hit.
@@ -215,6 +277,8 @@ def run_research(client, conn, question, history=None):
         detail = f"researched '{question}' -> answered without citing specific content"
     else:
         detail = f"researched '{question}' -> no relevant content found"
+    if flagged:
+        detail += f"; verify pass revised {flagged} claim(s)"
     record(conn, "research", question, (answer[:500] or "(no answer)"),
            "research", "success" if found else "failure",
            reward=1.0 if found else 0.0, detail=detail)

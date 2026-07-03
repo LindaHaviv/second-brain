@@ -201,6 +201,21 @@ def test_note_chunks_paragraphs():
     assert len(note_chunks("x" * 5000)[0]) == 2000   # per-chunk byte-safe clamp
 
 
+def test_research_verify_gate_is_wired():
+    """The verification pass must sit BEFORE record() (wrong claims must not be remembered),
+    default ON, with a graceful fallback if the check itself fails."""
+    import research_agent
+    src = open(pathlib.Path(__file__).resolve().parent.parent
+               / "oracle" / "agent" / "research_agent.py").read()
+    assert callable(research_agent.verify_answer)
+    assert 'os.environ.get("RESEARCH_VERIFY", "1")' in src, "verify gate no longer default-on"
+    assert src.index('verify_answer(client, messages, answer)') < src.index('record(conn, "research"'), \
+        "verify pass must run before the answer is recorded to memory"
+    for verdict in ("supported", "unsupported", "contradicted"):
+        assert verdict in research_agent.VERIFY_SCHEMA["properties"]["claims"]["items"][
+            "properties"]["verdict"]["enum"]
+
+
 def test_research_tool_errors_are_recoverable():
     """Malformed model tool input must return an error RESULT, not raise."""
     import research_agent
