@@ -387,7 +387,10 @@ content scope** by default, so private data stays local. See
 
   Most batch agents need just the first two: recall facts, do the work, record the run. That
   minimal loop is enough for the self-improvement flywheel — tonight's runs become tomorrow's
-  recalled facts, without the agent's code changing at all.
+  recalled facts, without the agent's code changing at all. One extension worth stealing for any
+  agent that drafts options for a human: record **which option the human actually chose**
+  (revealed preference) and recall those picks on future runs — your published output only shows
+  winners; the picks capture the taste behind them.
 - **Generate your "context file" instead of hand-writing one.** If you keep a personal-context
   markdown for system prompts / custom instructions, stop maintaining it by hand:
   `./.venv/bin/python scripts/context_pack.py` generates it from the brain (consolidated facts +
