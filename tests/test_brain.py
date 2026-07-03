@@ -132,6 +132,73 @@ def test_schema_statement_split():
     assert stmts == ["CREATE TABLE t (a NUMBER)", "INSERT INTO t VALUES (1)"], stmts
 
 
+# --- regression tests for the 2026-07 code-review remediation --------------------------------
+
+def test_record_clamps_long_values():
+    """A question longer than VARCHAR2(500) must not crash the save (ORA-12899 regression)."""
+    c = db.connect()
+    cur = c.cursor()
+    run_id = "test-clamp"
+    try:
+        memory.record(c, run_id + "x" * 60, "Q" * 900, "answered", "tool-name" * 30, "success",
+                      detail="d")
+        cur.execute("SELECT LENGTH(task), LENGTH(run_id), LENGTH(tool) "
+                    "FROM agent_memory WHERE run_id LIKE 'test-clamp%'")
+        task_len, rid_len, tool_len = cur.fetchone()
+        assert task_len <= 500 and rid_len <= 40 and tool_len <= 80
+    finally:
+        cur.execute("DELETE FROM agent_memory WHERE run_id LIKE 'test-clamp%'")
+        c.commit()
+        c.close()
+
+
+def test_clamp_bytes_is_byte_aware():
+    """Byte clamp must respect VARCHAR2 byte semantics without splitting a character."""
+    f = semantic_memory._clamp_bytes
+    emoji = "x" * 998 + "🧠"          # 998 + 4 bytes = 1002 bytes
+    out = f(emoji, 1000)
+    assert len(out.encode()) <= 1000
+    assert not out.endswith("\ufffd") and "🧠" not in out
+    assert f("short", 1000) == "short"
+
+
+def test_set_hwm_survives_missing_seed_row():
+    """_set_hwm must MERGE: after the seed row disappears (e.g. a data reset), the
+    high-water mark must still advance instead of silently updating 0 rows."""
+    import wiki
+    c = db.connect()
+    cur = c.cursor()
+    try:
+        cur.execute("SELECT last_max_post_id FROM wiki_meta WHERE id = 1")
+        before = (cur.fetchone() or [0])[0]
+        cur.execute("DELETE FROM wiki_meta")
+        wiki._set_hwm(cur, 12345)
+        cur.execute("SELECT last_max_post_id FROM wiki_meta WHERE id = 1")
+        assert int(cur.fetchone()[0]) == 12345, "MERGE did not re-create the seed row"
+    finally:
+        c.rollback()   # leave the real row untouched
+        c.close()
+
+
+def test_fetch_title_fallback_keeps_whole_string():
+    """Colon-containing titles must fall back to an exact lookup on the WHOLE string."""
+    src = open(pathlib.Path(__file__).resolve().parent.parent
+               / "oracle" / "agent" / "mcp_server.py").read()
+    assert 'title_fallback = str(id).strip()' in src, \
+        "fetch fallback regressed to splitting on ':'"
+
+
+def test_research_tool_errors_are_recoverable():
+    """Malformed model tool input must return an error RESULT, not raise."""
+    import research_agent
+    c = db.connect()
+    out = research_agent._run_tool(c, "get_post", {"post_id": None})
+    assert isinstance(out, dict) and "error" in out
+    out = research_agent._run_tool(c, "search_content", {})
+    assert isinstance(out, dict) and "error" in out
+    c.close()
+
+
 if __name__ == "__main__":
     tests = [(n, f) for n, f in sorted(globals().items())
              if n.startswith("test_") and callable(f)]
@@ -146,3 +213,4 @@ if __name__ == "__main__":
             failed += 1
     print(f"\n{passed} passed, {failed} failed")
     sys.exit(1 if failed else 0)
+

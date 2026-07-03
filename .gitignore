@@ -33,3 +33,4 @@ sources/*/
 # OS / misc
 .DS_Store
 node_modules/
+oracle/agent/demo_screenshot.py
