@@ -79,9 +79,21 @@ def _rid(r):
     return f"wiki:{r['title']}" if r.get("lvl") == "wiki" else f"{r['lvl']}:{r.get('post_id')}"
 
 
+CHAT_PLATFORMS = {"chatgpt", "claude", "claude_code"}
+# Workflow/AI-chat items carry dense summary text that over-ranks against the published
+# content it summarizes. A gentle fusion weight (<1) makes published work win close calls
+# while chats still surface whenever they're genuinely the best match. 1.0 disables.
+CHAT_SOURCE_WEIGHT = float(__import__("os").environ.get("CHAT_SOURCE_WEIGHT", "0.75"))
+
+
+def _src_weight(r):
+    return CHAT_SOURCE_WEIGHT if r.get("platform_id") in CHAT_PLATFORMS else 1.0
+
+
 def search_hybrid(conn, query, k=8, C=60):
     """Hybrid retrieval: fuse semantic (vector) and keyword (lexical) results with Reciprocal
-    Rank Fusion. Vector handles meaning; lexical rescues exact tokens. Returns the same row
+    Rank Fusion. Vector handles meaning; lexical rescues exact tokens; a source-type weight
+    keeps published content ahead of workflow chats on close calls. Returns the same row
     shape as search_content."""
     pool = max(k * 3, 20)
     vec = search_content(conn, query, pool)
@@ -89,12 +101,12 @@ def search_hybrid(conn, query, k=8, C=60):
     scores, meta, retr = {}, {}, {}
     for rank, r in enumerate(vec):
         rid = _rid(r)
-        scores[rid] = scores.get(rid, 0.0) + 1.0 / (C + rank)
+        scores[rid] = scores.get(rid, 0.0) + _src_weight(r) / (C + rank)
         meta[rid] = r
         retr.setdefault(rid, set()).add("semantic")
     for rank, r in enumerate(lex):
         rid = _rid(r)
-        scores[rid] = scores.get(rid, 0.0) + 1.0 / (C + rank)
+        scores[rid] = scores.get(rid, 0.0) + _src_weight(r) / (C + rank)
         meta.setdefault(rid, r)
         retr.setdefault(rid, set()).add("keyword")
     ranked = sorted(scores, key=lambda x: scores[x], reverse=True)[:k]
