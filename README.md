@@ -44,7 +44,7 @@ Collect  →  Store  →  Search  →  Converse
 The full picture — every layer, the four memory types, the self-improving loop, the privacy scope,
 and the MCP surface — on one page:
 
-![Full architecture: sources → loaders → one Oracle 26ai database (content + wiki + 4 memory types) with hybrid retrieval and a privacy scope → a research agent and a self-improving daily sync → an MCP server reachable from any AI client; the LLM and embedding model are pluggable](docs/images/architecture-full-hand.svg)
+![Full architecture: your sources flow through loaders (normalize, redact, classify, embed in-DB) into one Oracle AI Database 26ai holding content, a self-growing wiki, and four memory types, with hybrid search and enforced privacy; a research agent, a daily self-improve loop, and pluggable LLM/deploy options sit alongside; an MCP server exposes the brain to Claude, ChatGPT, open-source clients, and your apps](docs/images/architecture-full.png)
 
 New to the concepts (embeddings, duality, agent memory, the agent loop)? The
 **[TUTORIAL](docs/TUTORIAL.md)** teaches each one as you build it, and

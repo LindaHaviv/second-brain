@@ -84,7 +84,7 @@ same code to Oracle Cloud when you want it always-on.
 
 Here's the whole system on one page, the map for the steps that follow:
 
-![Full architecture: sources feed loaders into one Oracle 26ai database (content + wiki + 4 memory types) with hybrid retrieval and a privacy scope, used by a research agent, a self-improving daily sync, and an MCP server reachable from any AI client; the LLM and embedding model are pluggable](images/architecture-full-hand.svg)
+![Full architecture: your sources flow through loaders (normalize, redact, classify, embed in-DB) into one Oracle AI Database 26ai holding content, a self-growing wiki, and four memory types, with hybrid search and enforced privacy; a research agent, a daily self-improve loop, and pluggable LLM/deploy options sit alongside; an MCP server exposes the brain to Claude, ChatGPT, open-source clients, and your apps](images/architecture-full.png)
 
 Let's walk through it, one step at a time.
 
