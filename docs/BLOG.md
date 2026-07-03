@@ -380,8 +380,6 @@ nested, replacing the two manual joins you'd otherwise write.
 "Self-improving" isn't one feature. It's **several loops at different speeds**, and now that you've
 built both the memory (Step 4) and the wiki (Step 5), you can see the whole system:
 
-![Inside the brain: one Oracle AI Database holding content, wiki, and four memory types, with five self-improving loops (ingest, record, consolidate, rank tools, refresh wiki) reading and writing the same governed tables, and private data excluded from every loop](images/brain-loops.png)
-
 | Loop | Runs | What gets smarter |
 |---|---|---|
 | **Ingest** | every new post | embeddings generated in-DB on insert; everything downstream sees it |
@@ -395,6 +393,10 @@ inform which wiki topics exist. Wiki pages ground the next research answer, and 
 becomes a new run. The *database* is what makes this compounding rather than chaotic: all five
 loops read and write the same governed tables, with the privacy scope enforced at every entry
 point.
+
+If you're a visual learner, here's another way to see it:
+
+![Inside the brain: one Oracle AI Database holding content, wiki, and four memory types, with five self-improving loops (ingest, record, consolidate, rank tools, refresh wiki) reading and writing the same governed tables, and private data excluded from every loop](images/brain-loops.png)
 
 ---
 
