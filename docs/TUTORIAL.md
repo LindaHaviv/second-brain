@@ -374,6 +374,20 @@ content scope** by default, so private data stays local. See
   `idea_agent.py` (~90 lines) reads the consolidated facts and proposes what to make next. Copy its
   shape for your own: a meeting-prep briefer, a weekly digest, whatever your work needs. Each agent's
   runs enrich the shared memory for the rest.
+
+  Every new agent follows the same three-beat pattern — **recall → act → record** — and the four
+  memory types each have one job in it:
+
+  | Type | Table | Your agent should… |
+  |---|---|---|
+  | **Episodic** (experience) | `agent_memory` | `memory.record()` every run: task, tool, outcome. Cheap, always-on — this is what consolidation feeds on. |
+  | **Semantic** (facts) | `semantic_memory` | *recall* distilled facts before acting (`memory.recall()`), so it starts from lessons, not from zero. Never write it directly — the consolidation step promotes episodic runs into facts for you. |
+  | **Procedural** (how-to) | `procedural_memory` | select tools by meaning (`procedural.select_tools()`) instead of loading them all — matters as the toolset grows. |
+  | **Conversational** (session) | `conversations` | persist multi-turn dialogue if the agent is interactive; load only a recent window into context. |
+
+  Most batch agents need just the first two: recall facts, do the work, record the run. That
+  minimal loop is enough for the self-improvement flywheel — tonight's runs become tomorrow's
+  recalled facts, without the agent's code changing at all.
 - **Generate your "context file" instead of hand-writing one.** If you keep a personal-context
   markdown for system prompts / custom instructions, stop maintaining it by hand:
   `./.venv/bin/python scripts/context_pack.py` generates it from the brain (consolidated facts +
