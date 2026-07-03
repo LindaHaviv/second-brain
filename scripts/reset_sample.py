@@ -39,10 +39,14 @@ def main():
             print(f"  {t}: {cur.rowcount} rows deleted")
         except Exception as e:  # table may not exist in older schemas
             print(f"  {t}: skipped ({e})")
-    # reset (don't delete) the wiki high-water mark — the seed row must survive
+    # reset (never delete) the wiki high-water mark — MERGE also heals a missing seed row
     try:
-        cur.execute("UPDATE wiki_meta SET last_max_post_id = 0 WHERE id = 1")
-        print(f"  wiki_meta: high-water mark reset ({cur.rowcount} row)")
+        cur.execute(
+            "MERGE INTO wiki_meta m USING (SELECT 1 id FROM dual) s ON (m.id = s.id) "
+            "WHEN MATCHED THEN UPDATE SET m.last_max_post_id = 0, m.refreshed_at = SYSTIMESTAMP "
+            "WHEN NOT MATCHED THEN INSERT (id, last_max_post_id, refreshed_at) "
+            "VALUES (1, 0, SYSTIMESTAMP)")
+        print("  wiki_meta: high-water mark reset to 0")
     except Exception as e:
         print(f"  wiki_meta: skipped ({e})")
     conn.commit()
