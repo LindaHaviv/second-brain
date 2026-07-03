@@ -210,7 +210,9 @@ mismatch. Some teams run *both* and sync them. Now you have two copies that drif
 into a document, and the database serves **both interfaces over the same rows**. Read the view,
 you get one JSON document with everything nested. Write JSON *through* the view (insert, update,
 delete), and the engine updates the underlying normalized tables. Change a row relationally, the
-document reflects it instantly. Same data, two shapes, zero sync code. The "duality" is literal:
+document reflects it instantly. Same data, two shapes, zero sync code. The "duality" is literal
+(trimmed to the essentials for reading; Step 1 already created the full version, which lives in
+`oracle/schema/`):
 
 ```sql
 CREATE TABLE posts (
@@ -249,8 +251,12 @@ You load a small ONNX model (MiniLM) *into the database* once (Step 1 did this),
 embeddings in SQL:
 
 ```sql
--- the model was loaded once, from a local file:
-EXEC DBMS_VECTOR.LOAD_ONNX_MODEL('DATA_PUMP_DIR', 'all_MiniLM_L12_v2.onnx', 'MINILM', ...);
+-- for reference, not to run: Step 1's bootstrap already did this for you
+-- (the exact call lives in oracle/setup/01_load_onnx_model.sql)
+EXEC DBMS_VECTOR.LOAD_ONNX_MODEL(
+  directory => 'VEC_MODELS', file_name => 'all_MiniLM_L12_v2.onnx', model_name => 'MINILM',
+  metadata  => JSON('{"function":"embedding", "embeddingOutput":"embedding",
+                      "input":{"input":["DATA"]}}'));
 ```
 
 Now semantic search is just SQL. Embed the query and rank by cosine distance, with no keys and no
