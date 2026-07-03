@@ -446,12 +446,10 @@ the public internet, so lock it down first (OAuth + an allowlist; see Security b
 you've loaded your own data, do Step 7's privacy scoping **before** you host. Once it's up, both
 apps attach the same way: add a **custom connector** pointing at your server's `/mcp` URL and sign
 in (claude.ai: Settings, then Connectors; ChatGPT: Settings, then Apps & Connectors, with
-Developer mode enabled). Where you host it is up to you: it's one small container, and it wants a
-long-running process rather than serverless (it keeps a database connection pool and a keep-warm
-thread), so any container host works. The repo's
+Developer mode enabled). I host mine on **Fly.io**, and the repo's
 [HOSTED_MCP guide](https://github.com/LindaHaviv/second-brain/blob/main/docs/HOSTED_MCP.md)
-deploys it to Fly.io click by click, and an Always Free Arm VM on Oracle Cloud is the
-keep-it-all-on-one-cloud option.
+walks that deploy click by click; it's one small container, so any container host works,
+including an Always Free Arm VM on Oracle Cloud.
 
 > **🔌 Two ways to serve it, and which fits here.** This build uses a **custom MCP server**
 > (Python): you keep full control of the tools, it speaks the OAuth *custom-connector* flow that
