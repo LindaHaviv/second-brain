@@ -141,9 +141,13 @@ Build it once, feed it forever.
 
 We run the free **Oracle AI Database 26ai** container image locally. It's the *same engine* as the
 cloud, so AI Vector Search, JSON Relational Duality, and in-DB ONNX embeddings all work on your
-machine. Clone the repo (it carries the schema and setup scripts), then:
+machine. Everything below runs from inside the repo:
 
 ```bash
+# get the code (schema, setup scripts, loaders, the agents)
+git clone https://github.com/LindaHaviv/second-brain.git
+cd second-brain
+
 # container engine (headless, no Docker Desktop)
 brew install colima docker docker-compose
 colima start --cpu 4 --memory 8 --disk 60
@@ -186,6 +190,7 @@ mkdir -p exports/youtube
 ./.venv/bin/yt-dlp --skip-download --dump-json --playlist-items 1-7 \
   "https://www.youtube.com/@oracledevs/videos" > exports/youtube/videos.jsonl
 ./.venv/bin/python scripts/youtube.py
+# -> loaded 7 YouTube videos -> sources/youtube/ + Oracle posts
 ```
 
 Here's what that data lands in, and why the storage model is worth a minute of your attention.
@@ -287,7 +292,8 @@ type: your published work wins close calls over your AI-chat notes.
 
 ## Step 4: The research agent + four kinds of memory
 
-Here's the agent you came for. Add your key to `oracle/.env` and run it:
+Here's the agent you came for. Add your key to `oracle/.env` (create one at
+[console.anthropic.com](https://console.anthropic.com) under API keys) and run it:
 
 ```bash
 # oracle/.env:  ANTHROPIC_API_KEY=sk-ant-...
@@ -416,8 +422,9 @@ point.
 
 Finally, make the brain a tool any AI client can call. A small **MCP server** exposes the standard
 `search`/`fetch` connector contract, the same shape **Claude *and* ChatGPT** expect, plus `wiki`,
-`topics`, `recent`, `by_series`, `overview`, and `ingest_note`. Run it **locally over stdio**
-(Claude Desktop / Claude Code) by registering it in your client config:
+`topics`, `recent`, `by_series`, `overview`, and `ingest_note`. Run it **locally over stdio** first. In
+Claude Desktop: Settings, then Developer, then Edit Config, and add this block (replace `<repo>`
+with the absolute path to your clone), then restart Claude:
 
 ```json
 {
@@ -483,7 +490,9 @@ generated in-DB on insert.
 
 The repo ships loaders for **Notion**, **YouTube** (+ transcripts), **Instagram** (API or export,
 with captions *and* reel transcripts), **LinkedIn**, and **AI chats** (Claude/ChatGPT exports).
-Any one is a copyable template.
+Any one is a copyable template, and the repo's
+[EXPORT_GUIDE](https://github.com/LindaHaviv/second-brain/blob/main/docs/EXPORT_GUIDE.md) shows
+exactly where to click to get each platform's export.
 
 > **🎙️ Capture what you *said*, not just what you posted.** The brain searches text, so for video
 > pull **transcripts** (YouTube captions; the `.srt` files in an Instagram export). That makes the
@@ -528,7 +537,9 @@ Everything above runs locally, but a brain you can only reach at your desk is ha
 it to **Oracle Autonomous AI Database** (the Always Free tier covers this build): same engine,
 managed, backed up, always-on, and it's what makes the hosted MCP and the phone story real. The
 app connects over a wallet with **no code changes**; you load the same ONNX model, copy the data,
-and you're running in the cloud. This is how mine runs.
+and you're running in the cloud. This is how mine runs; the repo's
+[CLOUD_MIGRATION guide](https://github.com/LindaHaviv/second-brain/blob/main/docs/CLOUD_MIGRATION.md)
+walks it step by step.
 
 Local stays fully private if you'd rather not. And the copy script ships **only the content scope**
 by default, so your private data stays local even when the brain goes to the cloud.
