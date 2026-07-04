@@ -344,9 +344,9 @@ machine); register it in Claude Desktop (**Settings → Developer → Edit Confi
 ```
 
 Now ask Claude *"search my brain for what I've covered on AI inference"* or *"show my wiki topics."*
-Tools: `search`, `fetch`, `wiki`, `topics`, `recent`, `by_series`, `overview`, plus two writes —
+Tools: `search`, `fetch`, `wiki`, `topics`, `recent`, `by_series`, `overview`, plus write tools —
 `ingest_note` (*"save this idea to my brain"*) and `save_chat` (*"save this conversation to my
-brain"* — real-time capture, no data export needed). Read tools are annotated `readOnlyHint` and
+brain"* — real-time capture, no data export needed; hosted deployments can also enable `diagram_from_video_url`). Read tools are annotated `readOnlyHint` and
 the write tools gated, so clients can auto-allow reads and ask before writes.
 
 ![The same question answered in Claude and in ChatGPT by the same connector — one brain, any chat](images/mcp-search.png)

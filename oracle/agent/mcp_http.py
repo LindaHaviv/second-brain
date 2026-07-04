@@ -144,6 +144,10 @@ class Gateway(BaseHTTPMiddleware):
             if request.method == "POST" and not _bucket.allow():
                 return JSONResponse({"error": "rate limited — slow down"}, status_code=429)
             return await diagram_ext.handle(request)
+        if path.startswith("/diagram/file/"):
+            # short-lived capability URLs for chat-tool results (random id, 1h TTL)
+            import diagram_ext
+            return diagram_ext.serve_file(path.rsplit("/", 1)[1])
         if path.startswith("/mcp") and not _bucket.allow():
             return JSONResponse({"error": "rate limited — slow down"}, status_code=429)
         start = time.monotonic()

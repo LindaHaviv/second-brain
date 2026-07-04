@@ -485,6 +485,48 @@ if not READONLY:
             if conn is not None:
                 conn.close()
 
+    @mcp.tool(annotations={**_WRITE, "title": "Make an Excalidraw diagram from a video link"})
+    def diagram_from_video_url(
+        video_url: Annotated[str, Field(description=(
+            "An https link to the video (Dropbox or Google Drive share links work; iCloud "
+            "share pages do not). The video's AUDIO is sent to a transcription API."))],
+    ) -> str:
+        """Turn a video into an editable Excalidraw diagram: transcribe its audio, design a
+        diagram in the user's style (their workflow note + design feedback from this brain),
+        fact-check it against the transcript, and return a 1-hour download link plus the
+        beats and accuracy corrections. The transcript is saved to the brain. Takes 1-3
+        minutes; only call when the user explicitly asks for a diagram from a video link."""
+        import diagram_ext
+        if not diagram_ext.enabled():
+            raise ToolError("the diagram intake is not enabled on this server")
+        try:
+            video_bytes = diagram_ext.fetch_video(video_url)
+        except ValueError as e:
+            raise ToolError(str(e))
+        except Exception:
+            raise ToolError("could not download that link — use a direct/download link "
+                            "(Dropbox '?dl=1' or a Drive file link shared with 'anyone')")
+        try:
+            spec, issues, scene = diagram_ext.run_pipeline(video_bytes, video_url)
+        except ValueError as e:
+            raise ToolError(str(e))
+        except Exception as e:
+            raise _unavailable("diagram_from_video_url", e)
+        safe = "".join(c if c.isalnum() or c in "-_" else "-"
+                       for c in spec["title"].lower())[:50]
+        fid = diagram_ext.stash_scene(scene, safe)
+        base = os.environ.get("MCP_BASE_URL", "").rstrip("/")
+        link = f"{base}/diagram/file/{fid}" if base else f"/diagram/file/{fid}"
+        beats = "\n".join(f"  {i}. {b['name']} ({len(b['nodes'])} nodes)"
+                          for i, b in enumerate(spec["beats"], 1))
+        fixes = ("\naccuracy review corrected:\n" +
+                 "\n".join(f"  - {i}" for i in issues)) if issues else \
+            "\naccuracy review: no misrepresentations found."
+        return (f"'{spec['title']}' — diagram ready.\n\nbeats (filming reveal order):\n{beats}"
+                f"{fixes}\n\ndownload (valid 1 hour): {link}\n"
+                f"open it at excalidraw.com. transcript saved to the brain as "
+                f"'Video transcript: {spec['title']}'.")
+
 
 if __name__ == "__main__":
     mcp.run()   # stdio transport (local)

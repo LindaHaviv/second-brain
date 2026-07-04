@@ -142,6 +142,6 @@ fly secrets set DIAGRAM_TOKEN=$(python3 -c "import secrets; print(secrets.token_
 ```
 
 Then open `https://<your-app>.fly.dev/diagram` on your phone, enter the key once (kept in
-the browser), and upload. **Privacy note:** this path sends the draft's *audio* to OpenAI's
+the browser), and upload. The same secrets also enable a **connector tool**, `diagram_from_video_url`: paste a video link (Dropbox / Google Drive share links; iCloud pages don't work) into any connected chat and ask for a diagram — the reply includes the beats, the accuracy corrections, and a 1-hour download link. An iOS Shortcut can also POST the form directly (`raw=1` returns the file itself). **Privacy note:** this path sends the draft's *audio* to OpenAI's
 transcription API — for anything that must never leave your machines, use the local agent
 (it transcribes on-device with mlx-whisper).
