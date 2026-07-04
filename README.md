@@ -236,6 +236,8 @@ scripts/           loaders (youtube, notion, instagram, instagram_export, chatgp
                    linkedin, linkedin_harvest) + pipeline (classify_private, sync, consolidate,
                    wiki) + ops (apply_schema, load_model_cloud, copy_local_to_cloud, lint_wiki,
                    review)
+tests/             regression suite (test_brain.py) + quality evals (eval_retrieval /
+                   eval_classifier / eval_verify / eval_grounding, with JSON golden sets)
 deploy/            hosted-MCP container (Dockerfile; fly.toml lives at repo root)
 sources/           canonical content as Markdown + frontmatter (source of truth)
 docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE ·
