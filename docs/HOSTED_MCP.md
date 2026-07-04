@@ -122,3 +122,26 @@ The code is built in (`mcp_server.py` → `_build_auth`); turn it on with a Work
   the one write tool (`ingest_note`) is annotated as a write so clients gate it. To make the hosted
   server **read-only** — recommended unless you actually ingest *through* the connector — set
   `fly secrets set MCP_READONLY=1` and the write tool isn't registered at all.
+
+## Optional: video → diagram intake (/diagram)
+
+The same container can accept a video from your phone and return an editable Excalidraw
+diagram designed from its transcript (accuracy-reviewed against what was actually said).
+
+Flow: authenticated upload → ffmpeg extracts audio → OpenAI Whisper API transcribes → the
+shared diagram engine (`oracle/agent/diagram.py`) designs + fact-checks the spec, pulling
+your style workflow note and design feedback from the brain → `.excalidraw` downloads
+directly (nothing stored server-side); the transcript is saved to the brain as a note.
+
+Enable it with three secrets (absent `DIAGRAM_TOKEN`, the endpoint 404s):
+
+```bash
+fly secrets set DIAGRAM_TOKEN=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))") \
+                OPENAI_API_KEY=sk-...        # Whisper transcription
+# ANTHROPIC_API_KEY (or your LLM_PROVIDER's key) for the design + accuracy passes
+```
+
+Then open `https://<your-app>.fly.dev/diagram` on your phone, enter the key once (kept in
+the browser), and upload. **Privacy note:** this path sends the draft's *audio* to OpenAI's
+transcription API — for anything that must never leave your machines, use the local agent
+(it transcribes on-device with mlx-whisper).

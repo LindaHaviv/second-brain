@@ -136,6 +136,14 @@ class Gateway(BaseHTTPMiddleware):
             return JSONResponse({"ok": True})
         if path == "/ready":
             return _readiness()
+        if path == "/diagram":
+            # video->diagram intake: its own token auth (DIAGRAM_TOKEN); 404 when disabled
+            import diagram_ext
+            if not diagram_ext.enabled():
+                return JSONResponse({"error": "not found"}, status_code=404)
+            if request.method == "POST" and not _bucket.allow():
+                return JSONResponse({"error": "rate limited — slow down"}, status_code=429)
+            return await diagram_ext.handle(request)
         if path.startswith("/mcp") and not _bucket.allow():
             return JSONResponse({"error": "rate limited — slow down"}, status_code=429)
         start = time.monotonic()
