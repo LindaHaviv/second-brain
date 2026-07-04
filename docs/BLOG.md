@@ -566,7 +566,7 @@ Full checklist: **[SECURITY.md](https://github.com/LindaHaviv/second-brain/blob/
 
 ## Make it yours (safely)
 
-Replicating this as *your* second brain is the point. Five steps keep yours private while you do:
+Replicating this as *your* second brain is the point. Seven steps keep yours private and reliable while you do:
 
 1. **Change every demo password** before anything real touches the database.
 2. **Decide your private categories first, then ingest.** Adapt the classifier's rubric to *your*
