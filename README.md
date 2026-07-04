@@ -208,6 +208,13 @@ is guarded the same way: a verification pass fact-checks every research answer a
 own evidence before it is returned or remembered, and consolidation refuses to promote unverified
 claims into durable facts — so the loop compounds knowledge, not mistakes.
 
+And because quality can regress silently, the repo ships **evals** alongside the tests (plain
+Python + JSON golden sets, no framework): `tests/eval_retrieval.py` (golden queries that must keep
+ranking — free, in-database), `eval_classifier.py` (privacy-classifier drift vs your reviewed
+labels), `eval_verify.py` (a fabrication probe for the accuracy gate), and `eval_grounding.py`
+(do answers cite the sources they should?). Tests prove the code runs; evals prove the system
+still finds and says the right things.
+
 ## Take it to the cloud
 
 Everything above runs free on your laptop. The same code runs on an **Always Free Autonomous AI

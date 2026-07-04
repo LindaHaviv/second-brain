@@ -64,15 +64,44 @@ VERIFY_SYSTEM = (
 )
 
 
+def _evidence_digest(messages, cap=120_000):
+    """Flatten a research transcript into plain-text evidence for the verifier. Server-side
+    tool blocks (web_search containers) can't be re-sent verbatim to a tool-less call, so we
+    extract what matters: tool results, web results, and text — nothing else."""
+    parts = []
+    for m in messages:
+        content = m.get("content") if isinstance(m, dict) else m.content
+        if isinstance(content, str):
+            parts.append(content)
+            continue
+        for b in content or []:
+            btype = b.get("type") if isinstance(b, dict) else getattr(b, "type", "")
+            if btype == "text":
+                parts.append(b["text"] if isinstance(b, dict) else b.text)
+            elif btype == "tool_result":
+                c = b.get("content") if isinstance(b, dict) else getattr(b, "content", "")
+                parts.append(c if isinstance(c, str) else json.dumps(c, default=str))
+            elif btype == "web_search_tool_result":
+                for r in (b.get("content") if isinstance(b, dict)
+                          else getattr(b, "content", None)) or []:
+                    title = r.get("title") if isinstance(r, dict) else getattr(r, "title", "")
+                    url = r.get("url") if isinstance(r, dict) else getattr(r, "url", "")
+                    if title or url:
+                        parts.append(f"[web] {title} ({url})")
+    return "\n".join(p for p in parts if p)[:cap]
+
+
 def verify_answer(client, messages, answer):
     """Second-pass fact-check of a draft answer against the run's own tool evidence.
     Returns (revised_answer, claims): every checkable claim gets a verdict; unsupported claims
     are cut or flagged '(unverified)', contradicted ones corrected. Used by run_research when
-    RESEARCH_VERIFY=1 (the default); import it directly to fact-check any agent's draft."""
-    check = messages + [
-        {"role": "assistant", "content": [{"type": "text", "text": f"DRAFT ANSWER:\n{answer}"}]},
-        {"role": "user", "content": "Fact-check the draft answer against the evidence above."},
-    ]
+    RESEARCH_VERIFY=1 (the default); import it directly to fact-check any agent's draft.
+    The transcript is distilled to plain text first (_evidence_digest) — raw server-tool
+    blocks (web_search containers) can't be re-sent to a tool-less call."""
+    check = [{"role": "user", "content":
+              f"RESEARCH TRANSCRIPT EVIDENCE:\n{_evidence_digest(messages)}\n\n"
+              f"DRAFT ANSWER:\n{answer}\n\n"
+              "Fact-check the draft answer against the evidence above."}]
     r = client.messages.create(
         model=MODEL, max_tokens=12288, system=VERIFY_SYSTEM, messages=check,
         output_config={"format": {"type": "json_schema", "schema": VERIFY_SCHEMA}},

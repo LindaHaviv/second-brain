@@ -251,6 +251,15 @@ Duality + AI Vector Search** at once.
 > `research_agent.verify_answer` to fact-check any other agent's drafts). And consolidation has
 > an **evidence guard**: it never promotes "(unverified)" claims into durable facts, and revises
 > prior facts toward newer evidence instead of keeping both.
+>
+> Guards can regress silently, so the repo also ships **evals** — plain Python + JSON golden
+> sets, no framework: `tests/eval_retrieval.py` (golden queries must keep ranking; free,
+> in-database — run after anything that touches ranking), `eval_classifier.py` (does the privacy
+> classifier still agree with your reviewed labels? run before re-applying it after a rubric or
+> model change), `eval_verify.py` (plants fabrications and confirms the gate still catches
+> them — run when the model or verify prompt changes), and `eval_grounding.py` (full agent runs;
+> do answers cite the expected sources? run before anything demo-facing). Grow the golden sets
+> the same way you grow tests: every quality bug you fix becomes a case that can't come back.
 
 ## Lab 6 — Keep it current (the self-improving loop)
 

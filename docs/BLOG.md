@@ -580,6 +580,15 @@ Replicating this as *your* second brain is the point. Five steps keep yours priv
    is generic; everything "you" lives in configuration and your data.
 6. **Run the test suite after changes**: `./.venv/bin/python tests/test_brain.py` checks the
    schema, search, Duality views, and memory against your live brain in seconds.
+7. **Keep a golden set, and eval quality, not just correctness.** Tests prove the code runs;
+   evals prove the system still finds and says the right things. The repo ships four, plain
+   Python and JSON, no framework needed: `tests/eval_retrieval.py` (golden queries that must
+   keep ranking, free, run after anything that touches ranking), `tests/eval_classifier.py`
+   (would the privacy classifier still agree with your reviewed labels?), `tests/eval_verify.py`
+   (plant fabrications, confirm the accuracy gate still catches them), and
+   `tests/eval_grounding.py` (do research answers cite the sources they should?). The habit that
+   makes them work: whenever a query should find something and does not, fix it, then add it to
+   the golden set so it can never quietly break again.
 
 ## This is just the beginning: you built a platform
 
