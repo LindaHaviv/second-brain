@@ -15,7 +15,7 @@ mTLS wallet when wallet env vars are set, with **no other code changes.** You do
 2. **Autonomous Database → Create Autonomous Database.**
    - Workload type: **Transaction Processing** (or "AI").
    - **Always Free**: on.
-   - Database version: **23ai / 26ai**.
+   - Database version: **26ai** (some region consoles still label it 23ai — either works here).
    - Set the **ADMIN password** (save it).
 3. When it's **Available**, open it → **Database Connection → Download Wallet** (Instance Wallet).
    Set a **wallet password** (save it). **Unzip** it to a folder, e.g. `~/brain-wallet/`.
