@@ -136,18 +136,26 @@ class Gateway(BaseHTTPMiddleware):
             return JSONResponse({"ok": True})
         if path == "/ready":
             return _readiness()
-        if path == "/diagram":
-            # video->diagram intake: its own token auth (DIAGRAM_TOKEN); 404 when disabled
+        if path == "/diagram" or path.startswith("/diagram/file/"):
+            # video->diagram intake: its own token auth (DIAGRAM_TOKEN); 404 when disabled.
+            # CORS open: the MCP Apps widget posts from a sandboxed (cross-origin) iframe;
+            # auth travels in the form body, never cookies, so a wildcard origin is safe.
             import diagram_ext
             if not diagram_ext.enabled():
                 return JSONResponse({"error": "not found"}, status_code=404)
-            if request.method == "POST" and not _bucket.allow():
-                return JSONResponse({"error": "rate limited — slow down"}, status_code=429)
-            return await diagram_ext.handle(request)
-        if path.startswith("/diagram/file/"):
-            # short-lived capability URLs for chat-tool results (random id, 1h TTL)
-            import diagram_ext
-            return diagram_ext.serve_file(path.rsplit("/", 1)[1])
+            if request.method == "OPTIONS":
+                resp = JSONResponse({"ok": True})
+            elif path.startswith("/diagram/file/"):
+                resp = diagram_ext.serve_file(path.rsplit("/", 1)[1])
+            else:
+                if request.method == "POST" and not _bucket.allow():
+                    return JSONResponse({"error": "rate limited — slow down"},
+                                        status_code=429)
+                resp = await diagram_ext.handle(request)
+            resp.headers["Access-Control-Allow-Origin"] = "*"
+            resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+            resp.headers["Access-Control-Allow-Headers"] = "*"
+            return resp
         if path.startswith("/mcp") and not _bucket.allow():
             return JSONResponse({"error": "rate limited — slow down"}, status_code=429)
         start = time.monotonic()

@@ -528,5 +528,36 @@ if not READONLY:
                 f"'Video transcript: {spec['title']}'.")
 
 
+    # ---- MCP Apps: in-chat video upload panel (renders as an iframe in Claude/ChatGPT) ----
+    _DIAGRAM_BASE = os.environ.get("MCP_BASE_URL", "https://my-second-brain.fly.dev").rstrip("/")
+
+    @mcp.resource(
+        "ui://diagram/upload", name="Video diagram upload panel",
+        mime_type="text/html;profile=mcp-app",
+        meta={"ui": {"csp": {"connectDomains": [_DIAGRAM_BASE]}, "prefersBorder": True}})
+    def diagram_upload_panel() -> str:
+        import diagram_ext
+        if not diagram_ext.enabled():
+            return "<p>diagram intake is not enabled on this server</p>"
+        return diagram_ext.widget_html()
+
+    @mcp.tool(
+        annotations={**_WRITE, "title": "Open the video → diagram upload panel"},
+        meta={"ui": {"resourceUri": "ui://diagram/upload"},
+              "openai/outputTemplate": "ui://diagram/upload"})
+    def upload_diagram_ext() -> str:
+        """Open an in-chat panel where the user picks a video from their device; it uploads
+        straight to the diagram pipeline (transcribe -> design in their style -> fact-check
+        against the transcript) and shows the download link + beats right in the panel. Use
+        when the user wants a diagram from a video they have ON THEIR DEVICE (for a video
+        LINK, use diagram_from_video_url instead)."""
+        import diagram_ext
+        if not diagram_ext.enabled():
+            raise ToolError("the diagram intake is not enabled on this server")
+        return ("Upload panel opened — pick your video in the panel above. It transcribes, "
+                "designs the diagram in your style, fact-checks it against what you said, "
+                "and gives you the .excalidraw download right there (1-3 minutes).")
+
+
 if __name__ == "__main__":
     mcp.run()   # stdio transport (local)
