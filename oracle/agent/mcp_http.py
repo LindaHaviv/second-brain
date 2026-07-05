@@ -100,24 +100,54 @@ def _readiness():
 
 
 class _Bucket:
-    """Tiny token-bucket rate limiter (MCP spec: servers MUST rate-limit tool invocations).
-    Single-tenant server, so one global bucket is enough — burst of RATE_BURST, refills
-    RATE_PER_SEC/s. Not distributed (per-machine), which is fine at this scale."""
+    """Token-bucket rate limiter, PER CLIENT IP (MCP spec: servers MUST rate-limit tool
+    invocations). Per-IP so one misbehaving client throttles only itself, never the owner —
+    plus a global backstop that protects the database no matter how many IPs attack.
+    Not distributed (per-machine), which is fine at this scale."""
+
+    MAX_IPS = 10_000   # memory backstop; oldest buckets evicted beyond this
 
     def __init__(self, burst=30, per_sec=5.0):
         self.capacity = float(os.environ.get("RATE_BURST", burst))
         self.rate = float(os.environ.get("RATE_PER_SEC", per_sec))
-        self.tokens, self.at, self.lock = self.capacity, time.monotonic(), threading.Lock()
+        # global backstop: generous multiple of the per-IP rate
+        self.gcapacity = self.capacity * 4
+        self.grate = self.rate * 4
+        self.gtokens, self.gat = self.gcapacity, time.monotonic()
+        self.ips = {}          # ip -> [tokens, last_refill]
+        self.lock = threading.Lock()
 
-    def allow(self):
+    def allow(self, ip="?"):
         with self.lock:
             now = time.monotonic()
-            self.tokens = min(self.capacity, self.tokens + (now - self.at) * self.rate)
-            self.at = now
-            if self.tokens >= 1.0:
-                self.tokens -= 1.0
+            # global backstop first
+            self.gtokens = min(self.gcapacity, self.gtokens + (now - self.gat) * self.grate)
+            self.gat = now
+            if self.gtokens < 1.0:
+                return False
+            # per-IP bucket
+            b = self.ips.get(ip)
+            if b is None:
+                if len(self.ips) >= self.MAX_IPS:   # evict stalest
+                    oldest = min(self.ips, key=lambda k: self.ips[k][1])
+                    del self.ips[oldest]
+                b = self.ips[ip] = [self.capacity, now]
+            b[0] = min(self.capacity, b[0] + (now - b[1]) * self.rate)
+            b[1] = now
+            if b[0] >= 1.0:
+                b[0] -= 1.0
+                self.gtokens -= 1.0
                 return True
             return False
+
+
+def _client_ip(request):
+    """Real client IP behind Fly's proxy. Fly sets Fly-Client-IP; fall back to the first
+    X-Forwarded-For hop, then the socket peer. Never trust these for auth — only for
+    fairness bucketing (worst case a spoofer gets its own bucket)."""
+    return (request.headers.get("fly-client-ip")
+            or (request.headers.get("x-forwarded-for", "").split(",")[0].strip() or None)
+            or (request.client.host if request.client else "?"))
 
 
 _bucket = _Bucket()
@@ -144,10 +174,11 @@ class Gateway(BaseHTTPMiddleware):
         if _HTTP_EXT is not None:
             # Extension hook: private routes (see http_ext in your private deploy) get first
             # look at the request; None means "not mine" and the public gateway continues.
-            ext_resp = await _HTTP_EXT.maybe_handle(request, _bucket.allow)
+            _ip = _client_ip(request)
+            ext_resp = await _HTTP_EXT.maybe_handle(request, lambda: _bucket.allow(_ip))
             if ext_resp is not None:
                 return ext_resp
-        if path.startswith("/mcp") and not _bucket.allow():
+        if path.startswith("/mcp") and not _bucket.allow(_client_ip(request)):
             return JSONResponse({"error": "rate limited — slow down"}, status_code=429)
         start = time.monotonic()
         resp = await call_next(request)
