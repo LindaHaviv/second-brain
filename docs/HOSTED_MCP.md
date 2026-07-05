@@ -128,7 +128,9 @@ The code is built in (`mcp_server.py` → `_build_auth`); turn it on with a Work
 The server ships two import hooks so you can add personal tools and routes WITHOUT forking
 the public code: `mcp_server` tries `import server_ext` and calls
 `server_ext.register(mcp, ...)` (register extra tools/resources — including MCP Apps UI
-panels), and `mcp_http` tries `import http_ext` and gives `http_ext.maybe_handle(request,
+panels — and **MCP prompts**: expose your brain-stored workflow notes as native prompts,
+fetched live per call, so every client lists your procedures like slash commands and an
+edit to the note updates every client at once), and `mcp_http` tries `import http_ext` and gives `http_ext.maybe_handle(request,
 rate_limit_ok)` first look at every request (return `None` to pass through).
 
 Deploy by layering your private module(s) into the image next to the agent code — a private

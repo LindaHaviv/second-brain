@@ -392,7 +392,9 @@ content scope** by default, so private data stays local. See
 
 - **Build more agents** — the brain is a *platform*: every agent shares the same retrieval, memory,
   and privacy scope, so new agents are small. The repo ships a second one as the template —
-  `idea_agent.py` (~90 lines) reads the consolidated facts and proposes what to make next. Copy its
+  `idea_agent.py` (~90 lines) reads the consolidated facts and proposes what to make next, and
+  `digest_agent.py` writes a weekly what-your-brain-did note back into the brain (pair it with
+  `scripts/freshness.py`, the no-LLM staleness alarm, on a weekly schedule). Copy their
   shape for your own: a meeting-prep briefer, a weekly digest, whatever your work needs. Each agent's
   runs enrich the shared memory for the rest.
 
