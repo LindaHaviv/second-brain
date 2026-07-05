@@ -123,25 +123,16 @@ The code is built in (`mcp_server.py` → `_build_auth`); turn it on with a Work
   server **read-only** — recommended unless you actually ingest *through* the connector — set
   `fly secrets set MCP_READONLY=1` and the write tool isn't registered at all.
 
-## Optional: video → diagram intake (/diagram)
+## Extending the hosted server (private tools, public engine)
 
-The same container can accept a video from your phone and return an editable Excalidraw
-diagram designed from its transcript (accuracy-reviewed against what was actually said).
+The server ships two import hooks so you can add personal tools and routes WITHOUT forking
+the public code: `mcp_server` tries `import server_ext` and calls
+`server_ext.register(mcp, ...)` (register extra tools/resources — including MCP Apps UI
+panels), and `mcp_http` tries `import http_ext` and gives `http_ext.maybe_handle(request,
+rate_limit_ok)` first look at every request (return `None` to pass through).
 
-Flow: authenticated upload → ffmpeg extracts audio → OpenAI Whisper API transcribes → the
-shared diagram engine (`oracle/agent/diagram.py`) designs + fact-checks the spec, pulling
-your style workflow note and design feedback from the brain → `.excalidraw` downloads
-directly (nothing stored server-side); the transcript is saved to the brain as a note.
-
-Enable it with three secrets (absent `DIAGRAM_TOKEN`, the endpoint 404s):
-
-```bash
-fly secrets set DIAGRAM_TOKEN=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))") \
-                OPENAI_API_KEY=sk-...        # Whisper transcription
-# ANTHROPIC_API_KEY (or your LLM_PROVIDER's key) for the design + accuracy passes
-```
-
-Then open `https://<your-app>.fly.dev/diagram` on your phone, enter the key once (kept in
-the browser), and upload. The same secrets also enable a **connector tool**, `diagram_from_video_url`: paste a video link (Dropbox / Google Drive share links; iCloud pages don't work) into any connected chat and ask for a diagram — the reply includes the beats, the accuracy corrections, and a 1-hour download link. An iOS Shortcut can also POST the form directly (`raw=1` returns the file itself). **Privacy note:** this path sends the draft's *audio* to OpenAI's
-transcription API — for anything that must never leave your machines, use the local agent
-(it transcribes on-device with mlx-whisper).
+Deploy by layering your private module(s) into the image next to the agent code — a private
+Dockerfile that does `COPY yourprivate/*.py ./agent/` after copying `oracle/agent/`, plus its
+own `Dockerfile.dockerignore` admitting that directory. Your workflows stay in your private
+repo; the public repo stays a teaching artifact. (This split is how the reference deployment
+runs its own video→diagram intake.)

@@ -122,6 +122,11 @@ class _Bucket:
 
 _bucket = _Bucket()
 
+try:                       # optional private HTTP routes (never present in the public repo)
+    import http_ext as _HTTP_EXT
+except ImportError:
+    _HTTP_EXT = None
+
 
 class Gateway(BaseHTTPMiddleware):
     """Outermost middleware: serve the open probes, rate-limit, and time/log tool traffic.
@@ -136,26 +141,12 @@ class Gateway(BaseHTTPMiddleware):
             return JSONResponse({"ok": True})
         if path == "/ready":
             return _readiness()
-        if path == "/diagram" or path.startswith("/diagram/file/"):
-            # video->diagram intake: its own token auth (DIAGRAM_TOKEN); 404 when disabled.
-            # CORS open: the MCP Apps widget posts from a sandboxed (cross-origin) iframe;
-            # auth travels in the form body, never cookies, so a wildcard origin is safe.
-            import diagram_ext
-            if not diagram_ext.enabled():
-                return JSONResponse({"error": "not found"}, status_code=404)
-            if request.method == "OPTIONS":
-                resp = JSONResponse({"ok": True})
-            elif path.startswith("/diagram/file/"):
-                resp = diagram_ext.serve_file(path.rsplit("/", 1)[1])
-            else:
-                if request.method == "POST" and not _bucket.allow():
-                    return JSONResponse({"error": "rate limited — slow down"},
-                                        status_code=429)
-                resp = await diagram_ext.handle(request)
-            resp.headers["Access-Control-Allow-Origin"] = "*"
-            resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-            resp.headers["Access-Control-Allow-Headers"] = "*"
-            return resp
+        if _HTTP_EXT is not None:
+            # Extension hook: private routes (see http_ext in your private deploy) get first
+            # look at the request; None means "not mine" and the public gateway continues.
+            ext_resp = await _HTTP_EXT.maybe_handle(request, _bucket.allow)
+            if ext_resp is not None:
+                return ext_resp
         if path.startswith("/mcp") and not _bucket.allow():
             return JSONResponse({"error": "rate limited — slow down"}, status_code=429)
         start = time.monotonic()
