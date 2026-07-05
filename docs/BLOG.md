@@ -44,9 +44,13 @@ runs **inside the database**, and you get less glue code, with your data, its me
 agents' memory all living together.
 
 And it runs wherever you want it. The same code works on the **free container on your laptop**
-and on an **Always Free Autonomous AI Database in Oracle Cloud**. This walkthrough starts local
-so you can watch every piece work, then lifts to the cloud at the end. Mine lives in the cloud;
-that's what makes it reachable from my phone, anywhere.
+and on an **Always Free Autonomous AI Database in Oracle Cloud**. Free here is unusually real:
+the Always Free tier includes **two full Autonomous AI Databases** (1 OCPU and 20 GB of storage
+each, plenty for a personal brain), an Arm VM that can host the MCP server, and 10 TB of monthly
+outbound transfer, and none of it expires, where most clouds' free tiers run out after 12 months
+or are trial credits. This walkthrough starts local so you can watch every piece work, then
+lifts to the cloud at the end. Mine lives in the cloud; that's what makes it reachable from my
+phone, anywhere.
 
 **You choose the sources**: your markdown vault, your socials (YouTube, Instagram, LinkedIn),
 Notion, your AI chats, docs, bookmarks, and anything else that matters for your use case (content,
@@ -525,7 +529,8 @@ safety net.
 ## Step 8: Go always-on in the cloud
 
 Everything above runs locally, but a brain you can only reach at your desk is half a brain. Lift
-it to **Oracle Autonomous AI Database** (the Always Free tier covers this build): same engine,
+it to **Oracle Autonomous AI Database** (the Always Free tier covers this build: two Autonomous
+AI Databases at 1 OCPU + 20 GB each, forever, no expiry): same engine,
 managed, backed up, always-on, and it's what makes the hosted MCP and the phone story real. The
 app connects over a wallet with **no code changes**; you load the same ONNX model, copy the data,
 and you're running in the cloud. This is how mine runs; the repo's

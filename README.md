@@ -63,6 +63,11 @@ relational data underneath (bidirectional, no ORM, no syncing two copies); and *
 embeddings** generate the vectors inside the engine, so your content never leaves it. AI
 Vector Search ties it together for semantic retrieval.
 
+And the free path is unusually generous: locally, the 26ai container is free; in the cloud,
+the **Always Free tier** includes **two Autonomous AI Databases** (1 OCPU + 20 GB each — this
+whole build fits in one), an Arm VM that can host the MCP server, 200 GB of block storage, and
+10 TB/month of outbound transfer — permanently, not a 12-month trial.
+
 > **Already keep a markdown vault?** This build keeps markdown at its core — `sources/` is the
 > portable, canonical layer. The database adds what files alone can't: semantic search with the
 > embeddings *and* the model in one indexed engine, privacy as an enforced `visibility` constraint
