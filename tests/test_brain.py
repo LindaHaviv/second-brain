@@ -201,6 +201,64 @@ def test_note_chunks_paragraphs():
     assert len(note_chunks("x" * 5000)[0]) == 2000   # per-chunk byte-safe clamp
 
 
+def test_mcp_public_layout_is_generic():
+    """The PUBLIC server must expose exactly the teaching tools — no private workflow tools.
+    (Private deploys layer server_ext in; this pins the boundary for forks and wrong builds.)"""
+    import asyncio
+    import subprocess
+    import sys as _sys
+    code = (
+        "import sys, asyncio; sys.path.insert(0, 'oracle/agent')\n"
+        "import mcp_server\n"
+        "tools = sorted(t.name for t in asyncio.run(mcp_server.mcp._list_tools()))\n"
+        "print(','.join(tools))\n")
+    out = subprocess.run([_sys.executable, "-c", code], capture_output=True, text=True,
+                         cwd=str(pathlib.Path(__file__).resolve().parent.parent))
+    tools = out.stdout.strip().split(",")
+    assert tools == ["by_series", "fetch", "ingest_note", "overview", "recent",
+                     "save_chat", "search", "topics", "wiki"], tools
+
+
+def test_rate_limiter_per_ip_isolation():
+    """One noisy IP must not throttle another; the global backstop must still trip."""
+    import importlib
+    import os as _os
+    _os.environ["MCP_ALLOW_ANON"] = "1"
+    _os.environ["RATE_BURST"] = "5"
+    _os.environ["RATE_PER_SEC"] = "0.001"
+    import mcp_http
+    importlib.reload(mcp_http)
+    b = mcp_http._Bucket()
+    assert sum(b.allow("1.1.1.1") for _ in range(10)) == 5
+    assert sum(b.allow("2.2.2.2") for _ in range(10)) == 5   # unaffected by IP 1
+    assert sum(b.allow("3.3.3.3") for _ in range(10)) == 5
+    assert sum(b.allow("4.4.4.4") for _ in range(10)) == 5
+    assert sum(b.allow("5.5.5.5") for _ in range(10)) == 0   # global backstop (4x burst) hit
+    for k in ("RATE_BURST", "RATE_PER_SEC"):
+        del _os.environ[k]
+
+
+def test_search_cursor_roundtrip():
+    """Cursors must survive the round trip and ERROR on a mismatched query (silent page-1
+    restarts hand the model duplicates with no signal)."""
+    import mcp_server
+    tok = mcp_server._encode_cursor("my query", 16)
+    assert mcp_server._decode_cursor(tok, "my query") == 16
+    try:
+        mcp_server._decode_cursor(tok, "different query")
+        assert False, "mismatched cursor must raise"
+    except Exception:
+        pass
+
+
+def test_output_cap_is_explicit():
+    """Truncation must announce itself — silent truncation reads as 'that was everything'."""
+    import mcp_server
+    big = "x" * (mcp_server._TEXT_CAP + 500)
+    capped = mcp_server._cap(big)
+    assert len(capped) < len(big) and "truncated" in capped
+
+
 def test_research_verify_gate_is_wired():
     """The verification pass must sit BEFORE record() (wrong claims must not be remembered),
     default ON, with a graceful fallback if the check itself fails."""
