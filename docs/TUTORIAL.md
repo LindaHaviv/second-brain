@@ -336,6 +336,16 @@ Different sources update different ways; here's the strategy per type:
 Whatever the source, the order is always the same — **ingest → classify → wiki refresh →
 consolidate** — and `sync.py` enforces it, so the derived layers never lag the data.
 
+> **🤝 The manual refreshes don't have to be solo.** For sources that can't self-update
+> (export-only platforms, anything needing your login), split the work with your AI assistant:
+> **you** do the identity part — request the export, click the download — and let the
+> **assistant** do the rest end-to-end: run the loader, verify the new rows landed, confirm the
+> privacy classifier reran (the rule above), and check the wiki refresh picked the content up.
+> Since your assistant is already connected to the brain over MCP, it can verify its own work
+> with `search` and `recent` when it's done. Two clicks from you; the pipeline and its checks
+> from the machine. If the assistant drives a logged-in browser for any step, stay present and
+> watch it work — never schedule that part.
+
 ---
 
 ## Lab 7 — Use your brain everywhere (MCP)
