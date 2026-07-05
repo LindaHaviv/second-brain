@@ -546,11 +546,14 @@ if not READONLY:
         meta={"ui": {"resourceUri": "ui://diagram/upload"},
               "openai/outputTemplate": "ui://diagram/upload"})
     def upload_diagram_ext() -> str:
-        """Open an in-chat panel where the user picks a video from their device; it uploads
-        straight to the diagram pipeline (transcribe -> design in their style -> fact-check
-        against the transcript) and shows the download link + beats right in the panel. Use
-        when the user wants a diagram from a video they have ON THEIR DEVICE (for a video
-        LINK, use diagram_from_video_url instead)."""
+        """Call this IMMEDIATELY whenever the user wants a diagram made from a video —
+        'transcribe this and make a diagram', 'make a diagram from this video', 'diagram
+        my draft' — including when they have attached a video to this conversation (chat
+        attachments cannot reach this server, so the panel is how the video gets here; the
+        user picks the same file in the panel and everything else is automatic: transcribe
+        -> design in their style -> fact-check against the transcript -> download link in
+        the panel). Do not ask permission or explain first; open the panel. Only use
+        diagram_from_video_url instead when the user gives an https LINK to a video."""
         import diagram_ext
         if not diagram_ext.enabled():
             raise ToolError("the diagram intake is not enabled on this server")
