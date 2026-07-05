@@ -417,7 +417,9 @@ If you're a visual learner, here's another way to see it:
 
 Finally, make the brain a tool any AI client can call. A small **MCP server** exposes the standard
 `search`/`fetch` connector contract, the same shape **Claude *and* ChatGPT** expect, plus `wiki`,
-`topics`, `recent`, `by_series`, `overview`, and `ingest_note`. Run it **locally over stdio** first. In
+`topics`, `recent`, `by_series`, `overview`, and two write tools: `ingest_note` (capture an idea
+from any chat) and `save_chat` (save the conversation itself into the brain). Run it **locally
+over stdio** first. In
 Claude Desktop: Settings, then Developer, then Edit Config, and add this block (replace `<repo>`
 with the absolute path to your clone), then restart Claude:
 
@@ -434,8 +436,8 @@ with the absolute path to your clone), then restart Claude:
 
 Then open Claude and ask *"search my brain for what I've covered on AI inference."* It answers from
 your own content. The tools are **capability-scoped**: read tools are annotated `readOnlyHint` so a
-client can auto-allow them, while the one write tool is marked a write so the client asks first
-(and `MCP_READONLY` drops it entirely).
+client can auto-allow them, while the write tools are marked as writes so the client asks first
+(and `MCP_READONLY` drops them entirely).
 
 > **🔎 Show your work (great for teaching).** Instead of a black-box list, each `search` result
 > carries **how it was found**: `match` (wiki / post / passage), `rank`, `score`, and `found_by`
@@ -608,9 +610,10 @@ Step back and look at what's actually here. It isn't one agent. It's **three lay
   every future agent reads. The repo ships agent #2 to prove the pattern: an **idea agent** that
   reads the consolidated facts (your themes, formats, *gaps*) and proposes what to make next,
   grounded in what you've actually made. It's about 90 lines, because the brain does the heavy
-  lifting.
+  lifting. (The repo now ships two more the same size: a **weekly digest** agent and a no-LLM
+  **freshness alarm** that nags you when a source goes stale.)
 
-Your third agent is whatever your work needs: a meeting-prep briefer, a weekly digest writer, a
+Your next agent is whatever your work needs: a meeting-prep briefer, a caption drafter, a
 research assistant tuned to your domain. Each one is small, because the hard parts (retrieval,
 memory, grounding, privacy scope) are already the platform's job. And each one makes the memory
 richer for the rest.
