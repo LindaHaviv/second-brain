@@ -22,6 +22,10 @@ sys.path.insert(0, str(ROOT / "oracle" / "agent"))
 import db  # noqa: E402  (wallet-aware connect — works for local AND cloud)
 
 oracledb.defaults.fetch_lobs = False
+if not os.environ.get("NOTION_TOKEN"):
+    raise SystemExit("NOTION_TOKEN is not set. Create an internal integration at "
+                     "notion.so/my-integrations, share your pages with it, and put "
+                     "NOTION_TOKEN=... in oracle/.env (see docs/EXPORT_GUIDE.md).")
 notion = Client(auth=os.environ["NOTION_TOKEN"])
 
 # Private brand-deal financials stay OUT of the content brain by default; opt in only for a

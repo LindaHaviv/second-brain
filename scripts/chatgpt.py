@@ -87,6 +87,12 @@ def chunks_of(turns, size=1500):
 def main():
     files = sorted(glob.glob(str(EXPORT_DIR / "conversations-*.json"))) or \
         [str(EXPORT_DIR / "conversations.json")]
+    files = [f for f in files if pathlib.Path(f).exists()]
+    if not files:
+        raise SystemExit(f"no ChatGPT export found in {EXPORT_DIR}/. Request your data export "
+                         "in ChatGPT (Settings -> Data controls), then unzip it there — or just "
+                         "drop the zip in ~/Downloads and run scripts/sync.py "
+                         "(see docs/EXPORT_GUIDE.md).")
     conn = db.connect()
     cur = conn.cursor()
     cur.execute("alter session disable parallel dml")   # Autonomous DB: allow delete+insert in one txn

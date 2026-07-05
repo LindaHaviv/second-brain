@@ -21,24 +21,22 @@ echo " ready."
 echo "applying schema (as CCC)..."
 docker exec -i ccc-oracle bash -lc "sqlplus -s CCC/${APP}@${DSN}" <<'SQL'
 whenever sqlerror continue
-drop view post_dv;
-drop view tool_stats;
-drop table content_chunks cascade constraints;
-drop table media cascade constraints;
-drop table posts cascade constraints;
-drop table deals cascade constraints;
-drop table brands cascade constraints;
-drop table platforms cascade constraints;
-drop table agent_memory cascade constraints;
-drop table semantic_memory cascade constraints;
-drop table conversations cascade constraints;
-drop table procedural_memory cascade constraints;
-drop view wiki_page_dv;
-drop table wiki_meta cascade constraints;
-drop table page_links cascade constraints;
-drop table page_sources cascade constraints;
-drop table wiki_pages cascade constraints;
-drop table analytics cascade constraints;
+-- idempotent reset: drop only what exists, so a FRESH database stays silent
+-- (a wall of ORA-00942 here used to scare first-time readers; nothing was wrong)
+begin
+  for v in (select view_name from user_views
+            where view_name in ('POST_DV','TOOL_STATS','WIKI_PAGE_DV')) loop
+    execute immediate 'drop view ' || v.view_name;
+  end loop;
+  for t in (select table_name from user_tables
+            where table_name in ('CONTENT_CHUNKS','MEDIA','POSTS','DEALS','BRANDS',
+                                 'PLATFORMS','AGENT_MEMORY','SEMANTIC_MEMORY',
+                                 'CONVERSATIONS','PROCEDURAL_MEMORY','WIKI_META',
+                                 'PAGE_LINKS','PAGE_SOURCES','WIKI_PAGES','ANALYTICS')) loop
+    execute immediate 'drop table ' || t.table_name || ' cascade constraints';
+  end loop;
+end;
+/
 @/container-entrypoint-initdb.d/01_content_duality.sql
 @/container-entrypoint-initdb.d/02_agent_memory.sql
 @/container-entrypoint-initdb.d/03_semantic_memory.sql

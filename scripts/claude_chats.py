@@ -69,6 +69,10 @@ def chunks_of(c, size=1500):
 
 
 def main():
+    if not pathlib.Path(CONV).exists():
+        raise SystemExit(f"no Claude export found at {CONV}. Request your export in Claude "
+                         "(Settings -> Privacy), unzip it there — or drop the zip in "
+                         "~/Downloads and run scripts/sync.py (see docs/EXPORT_GUIDE.md).")
     convos = json.load(open(CONV))
     conn = connect()
     cur = conn.cursor()

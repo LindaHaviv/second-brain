@@ -269,12 +269,25 @@ New content is only useful if the *derived* layers keep up. The rule: **whenever
 refresh the wiki and consolidate memory.** `scripts/sync.py` encodes that order:
 
 ```
-pull configured API sources  →  wiki refresh  →  consolidate memory
+ingest new chat-export zips  →  pull configured API sources  →  ingest local AI-coding sessions
+   →  (classify safety net)  →  wiki refresh  →  consolidate memory
 ```
 
 ```bash
 ./.venv/bin/python scripts/sync.py
 ```
+
+Two of those steps are **automatic ingesters** worth knowing about before you run it:
+
+- **The export watcher** checks a folder for new ChatGPT/Claude export zips and ingests any it
+  finds — *drop the zip and forget*. Default folder: `~/Downloads`; point `EXPORT_WATCH_DIR`
+  somewhere else (or at an empty dir to disable). If an export zip is sitting in your Downloads
+  right now, the first `sync.py` run will ingest it.
+- **The Claude Code step** reads your local `~/.claude/projects` transcripts (if you use Claude
+  Code) so your AI-coding sessions become searchable too. No Claude Code? It's a quiet no-op.
+
+API loaders (Instagram, Notion) run only when their credential is configured, so on a fresh
+build `sync.py` is safe: it just refreshes the wiki and consolidates memory.
 
 **Schedule it (macOS LaunchAgent)** — save this as
 `~/Library/LaunchAgents/com.you.secondbrain.sync.plist` (fix the two `<repo>` paths), then load it:
@@ -310,7 +323,8 @@ Different sources update different ways; here's the strategy per type:
 |---|---|---|
 | **API sources** (Instagram, Notion) | `sync.py` pulls them automatically | daily, hands-off |
 | **Public metadata** (YouTube) | re-run the yt-dlp collect + loader | whenever you publish |
-| **Export-only** (ChatGPT / Claude / LinkedIn) | download a fresh export → run its loader → `sync.py` | set a monthly reminder — no push API exists |
+| **Export-only** (ChatGPT / Claude) | drop the fresh export zip in the watch folder — the next `sync.py` ingests it automatically | set a monthly reminder — no push API exists |
+| **Export-only** (LinkedIn) | download the export → run `scripts/linkedin.py` → `sync.py` | same monthly reminder |
 | **In-the-moment ideas** | the MCP `ingest_note` tool — say *"save this idea to my brain"* from any AI client | as they happen |
 
 > **⚠️ The one rule for chat re-imports:** re-importing a chat export **resets visibility tags** —
