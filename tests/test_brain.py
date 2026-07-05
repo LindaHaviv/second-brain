@@ -7,11 +7,21 @@ pure-function unit tests. No LLM calls, so it's fast and deterministic.
 import asyncio
 import pathlib
 import sys
+import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "oracle" / "agent"))
 
 import db                # noqa: E402
+
+
+def _skip_if_empty(c, table, hint):
+    """Fresh brains aren't failures: Lab 1 alone leaves these tables empty by design."""
+    n = c.cursor().execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+    if n == 0:
+        c.close()
+        raise unittest.SkipTest(f"{table} is empty — {hint}")
+
 import content           # noqa: E402
 import memory            # noqa: E402
 import semantic_memory   # noqa: E402
@@ -29,9 +39,10 @@ def test_connect():
 
 def test_tables_have_data():
     c = db.connect()
+    _skip_if_empty(c, "posts", "load content first (Lab 2 sample or your own), then re-run")
     cur = c.cursor()
-    # thresholds work for BOTH a real library and the 7-video tutorial sample
-    for t, lo in [("posts", 5), ("content_chunks", 0), ("wiki_pages", 0),
+    # thresholds work for a real library, the 7-video tutorial sample, or a tiny own-data start
+    for t, lo in [("posts", 1), ("content_chunks", 0), ("wiki_pages", 0),
                   ("page_sources", 0), ("semantic_memory", 0)]:
         n = cur.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
         assert n >= lo, f"{t} has {n} rows (< {lo})"
@@ -40,6 +51,8 @@ def test_tables_have_data():
 
 def test_duality_views_readable():
     c = db.connect()
+    _skip_if_empty(c, "posts", "load content first (Lab 2), then re-run")
+    _skip_if_empty(c, "wiki_pages", "compile the wiki first (Lab 5 / Step 5), then re-run")
     cur = c.cursor()
     cur.execute("SELECT JSON_VALUE(data,'$.topic') FROM wiki_page_dv FETCH FIRST 1 ROWS ONLY")
     assert (cur.fetchone() or [None])[0], "wiki_page_dv not readable"
@@ -50,6 +63,7 @@ def test_duality_views_readable():
 
 def test_vector_search():
     c = db.connect()
+    _skip_if_empty(c, "posts", "load content first (Lab 2), then re-run")
     res = content.search_content(c, "AI inference and the compute stack", 5)
     assert res and {"lvl", "title", "snippet"} <= set(res[0]), "bad search result shape"
     assert any(r["lvl"] == "wiki" for r in res) or len(res) >= 3, "expected layered results"
@@ -83,6 +97,7 @@ def test_hybrid_rescues_exact_name():
 
 def test_get_wiki_page():
     c = db.connect()
+    _skip_if_empty(c, "wiki_pages", "compile the wiki first (Lab 5 / Step 5), then re-run")
     topic = content.list_topics(c)[0]
     p = content.get_wiki_page(c, topic)
     assert p and p["body"] and isinstance(p["citations"], list), "wiki page incomplete"
@@ -91,6 +106,7 @@ def test_get_wiki_page():
 
 def test_get_post():
     c = db.connect()
+    _skip_if_empty(c, "posts", "load content first (Lab 2), then re-run")
     pid = c.cursor().execute("SELECT MIN(post_id) FROM posts").fetchone()[0]
     post = content.get_post(c, pid)
     assert post and "caption" in post, "get_post failed"
@@ -288,15 +304,19 @@ def test_research_tool_errors_are_recoverable():
 if __name__ == "__main__":
     tests = [(n, f) for n, f in sorted(globals().items())
              if n.startswith("test_") and callable(f)]
-    passed = failed = 0
+    passed = failed = skipped = 0
     for n, f in tests:
         try:
             f()
             print(f"  PASS  {n}")
             passed += 1
+        except unittest.SkipTest as e:
+            print(f"  SKIP  {n}: {e}")
+            skipped += 1
         except Exception as e:
             print(f"  FAIL  {n}: {str(e).splitlines()[0]}")
             failed += 1
-    print(f"\n{passed} passed, {failed} failed")
+    tail = f", {skipped} skipped (fine on a fresh brain)" if skipped else ""
+    print(f"\n{passed} passed, {failed} failed{tail}")
     sys.exit(1 if failed else 0)
 
