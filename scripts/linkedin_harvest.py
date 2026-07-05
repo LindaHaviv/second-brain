@@ -14,7 +14,7 @@ new posts are inserted. One transaction; --dry to preview.
 
   ./.venv/bin/python scripts/linkedin_harvest.py [path.json] [--dry]
 
-Config: LINKEDIN_ACTOR (default "linda haviv") — case-insensitive substring that
+Config: LINKEDIN_ACTOR (required) — case-insensitive substring of your display name that
 identifies your own posts in the harvest.
 """
 import json
@@ -28,7 +28,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "oracle" / "agent"))
 import db  # noqa: E402
 
-ACTOR = os.environ.get("LINKEDIN_ACTOR", "linda haviv").lower()
+ACTOR = os.environ.get("LINKEDIN_ACTOR", "").lower()
 DEFAULT = pathlib.Path.home() / "Downloads" / "linkedin_harvest.json"
 
 REL = re.compile(r"^(\d+)\s*(h|d|w|mo|yr)$")
@@ -49,6 +49,9 @@ def norm_cap(s):
 
 
 def main():
+    if not ACTOR:
+        raise SystemExit("set LINKEDIN_ACTOR to your display name as it appears "
+                         "on your posts (used to keep only YOUR originals)")
     args = [a for a in sys.argv[1:] if a != "--dry"]
     dry = "--dry" in sys.argv
     path = pathlib.Path(args[0]) if args else DEFAULT

@@ -56,7 +56,7 @@ activity feed from a logged-in browser session — your posts are all there, wit
       "text": "full post text", "rel": "3yr", "media": "video"}]}
    ```
 
-3. Save as `linkedin_harvest.json` and load it — only your original posts are kept (reposts of
+3. Save as `linkedin_harvest.json` and load it — only your original posts are kept (set `LINKEDIN_ACTOR` to your display name; reposts of
    other people's content are filtered by the `actor` field), and reruns are dedupe-safe:
 
    ```bash
