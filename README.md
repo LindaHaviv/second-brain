@@ -238,7 +238,7 @@ oracle/            the database: docker-compose, schema (Duality + 4 memory type
                    setup SQL; the agents (db / content / memory / research_agent / idea_agent /
                    wiki) + the MCP server (mcp_server stdio, mcp_http hosted)
 scripts/           loaders (youtube, notion, instagram, instagram_export, chatgpt, claude_chats,
-                   linkedin, linkedin_harvest) + pipeline (classify_private, sync, consolidate,
+                   linkedin, linkedin_harvest, obsidian, gdrive) + pipeline (classify_private, sync, consolidate,
                    wiki) + ops (apply_schema, load_model_cloud, copy_local_to_cloud, lint_wiki,
                    review)
 tests/             regression suite (test_brain.py) + quality evals (eval_retrieval /
