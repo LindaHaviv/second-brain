@@ -135,10 +135,10 @@ ships loaders you can use directly:
 
 | Source | How | Loader |
 |---|---|---|
-| **YouTube** | public metadata (yt-dlp) + transcripts | `scripts/youtube.py`, `youtube_transcripts.py` |
+| **YouTube** | public metadata (yt-dlp) + transcripts | `scripts/youtube.py`, `scripts/youtube_transcripts.py` |
 | **Notion** | API (pages/databases) | `scripts/notion.py` |
-| **Instagram** | official **API** (creator/business) *or* data export | `scripts/instagram.py`, `instagram_export.py` |
-| **ChatGPT / Claude** | data export (JSON) | `scripts/chatgpt.py`, `claude_chats.py` |
+| **Instagram** | official **API** (creator/business) *or* data export | `scripts/instagram.py`, `scripts/instagram_export.py` |
+| **ChatGPT / Claude** | data export (JSON) | `scripts/chatgpt.py`, `scripts/claude_chats.py` |
 | **Obsidian / local files** | point at any folder of .md/.txt/PDF/EPUB (starter: `examples/obsidian-starter/`) | `scripts/obsidian.py` |
 | **Google Drive** | share specific folders with a service account (Docs exported as text; PDFs/EPUBs as reference) | `scripts/gdrive.py` |
 | **LinkedIn** | data export or captured posts | `scripts/linkedin.py` |
@@ -327,7 +327,7 @@ Different sources update different ways; here's the strategy per type:
 | **Local files** (Obsidian vault or any drop folder: .md, .txt, PDFs, EPUBs) | set `OBSIDIAN_VAULT` — `sync.py` ingests new/edited files automatically; documents become searchable `reference` material | daily, hands-off |
 | **Public metadata** (YouTube) | re-run the yt-dlp collect + loader | whenever you publish |
 | **Export-only** (ChatGPT / Claude) | drop the fresh export zip in the watch folder — the next `sync.py` ingests it automatically | set a monthly reminder — no push API exists |
-| **Export-only** (LinkedIn) | download the export → run `scripts/linkedin.py` → `sync.py` | same monthly reminder |
+| **Export-only** (LinkedIn) | capture posts to JSON (see EXPORT_GUIDE) → `scripts/linkedin.py` loads them → `sync.py` | same monthly reminder |
 | **In-the-moment ideas** | the MCP `ingest_note` tool — say *"save this idea to my brain"* from any AI client | as they happen |
 
 > **⚠️ The one rule for chat re-imports:** re-importing a chat export **resets visibility tags** —

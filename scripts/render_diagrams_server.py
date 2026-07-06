@@ -51,6 +51,9 @@ class H(http.server.BaseHTTPRequestHandler):
             shutil.copyfileobj(f, self.wfile)
 
     def do_POST(self):
+        if self.headers.get("X-Render") != "1":
+            self.send_error(403, "missing X-Render header (CSRF guard)")
+            return
         if not self._host_ok():
             return self._deny(403, "bad host")
         q = urllib.parse.urlparse(self.path)

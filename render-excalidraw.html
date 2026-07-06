@@ -27,7 +27,8 @@
       });
       const xml = new XMLSerializer().serializeToString(svg);
       const r = await fetch(`http://127.0.0.1:8123/save?name=${s.out}`,
-                            { method: "POST", body: xml });
+                            { method: "POST", body: xml,
+                              headers: { "X-Render": "1" } });
       if (!r.ok) throw new Error(`save failed for ${s.out}`);
     }
     status("DONE");

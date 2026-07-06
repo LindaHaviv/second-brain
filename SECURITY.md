@@ -92,6 +92,13 @@ are for you) and keep them separate:
 - [ ] hosted MCP: OAuth + email allowlist on, HTTPS, secrets in a vault
 
 
+## The local-experiments escape hatch (never in deployment)
+
+`MCP_ALLOW_ANON=1` lets the HTTP server start without auth for local
+experiments on your own machine. Never set it on a hosted deployment — the
+fail-closed startup refusal exists precisely so a missing allowlist can't
+become an open door.
+
 ## Secrets in the OS keychain (recommended)
 
 Any env var in `oracle/.env` can hold `keychain:<item>` instead of a raw value

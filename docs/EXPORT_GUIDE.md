@@ -221,3 +221,18 @@ Two patterns for sensitive-but-useful material:
   every other source (Lab 4). When in doubt, share a clean subfolder instead
   of a parent.
 
+
+
+## ChatGPT / Claude (chat exports)
+
+Both apps export your full chat history as a zip; neither has a push API.
+
+- **ChatGPT**: Settings → **Data controls** → **Export data** → confirm — a
+  download link arrives by email.
+- **Claude**: Settings → **Privacy** → **Export data** — a download link
+  arrives by email.
+
+You don't even need to unzip: **drop the zip in the watch folder**
+(`~/Downloads` by default; `EXPORT_WATCH_DIR` to change) and the next
+`sync.py` run ingests it, re-runs the privacy classifier, and refreshes the
+wiki. Set a monthly reminder — that's the one manual step chat sources need.

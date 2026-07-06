@@ -490,7 +490,7 @@ The repo ships loaders for **Obsidian** (point it at your vault — or any local
 folder — and the daily sync keeps the brain current with it: markdown notes, and even
 PDFs/EPUBs as searchable reference material that never pollutes your wiki), **Notion**, **YouTube**
 (+ transcripts), **Instagram** (API or export, with captions *and* reel transcripts),
-**LinkedIn**, and **AI chats** (Claude/ChatGPT exports).
+**LinkedIn**, **Google Drive** (share specific folders — Docs become notes, PDFs searchable reference), and **AI chats** (Claude/ChatGPT exports).
 Any one is a copyable template, and the repo's
 [EXPORT_GUIDE](https://github.com/LindaHaviv/second-brain/blob/main/docs/EXPORT_GUIDE.md) shows
 exactly where to click to get each platform's export.
