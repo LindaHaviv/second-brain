@@ -63,11 +63,16 @@ def route(mime, name):
 
 
 def _session():
+    import json as _json
     from google.auth.transport.requests import AuthorizedSession
     from google.oauth2 import service_account
-    creds = service_account.Credentials.from_service_account_file(
-        os.environ["GDRIVE_KEY"],
-        scopes=["https://www.googleapis.com/auth/drive.readonly"])
+    key = os.environ["GDRIVE_KEY"]
+    scopes = ["https://www.googleapis.com/auth/drive.readonly"]
+    if key.lstrip().startswith("{"):      # keychain-resolved JSON content
+        creds = service_account.Credentials.from_service_account_info(
+            _json.loads(key), scopes=scopes)
+    else:                                  # plain file path
+        creds = service_account.Credentials.from_service_account_file(key, scopes=scopes)
     return AuthorizedSession(creds)
 
 
@@ -121,7 +126,8 @@ def main():
     folders = [x.strip() for x in os.environ.get("GDRIVE_FOLDERS", "").split(",") if x.strip()]
     exclude = frozenset(x.strip() for x in os.environ.get("GDRIVE_EXCLUDE", "").split(",")
                         if x.strip())
-    if not key or not pathlib.Path(key).is_file() or not folders:
+    valid_key = key and (key.lstrip().startswith("{") or pathlib.Path(key).is_file())
+    if not valid_key or not folders:
         raise SystemExit("GDRIVE_KEY (service-account json) and GDRIVE_FOLDERS "
                          "(comma-separated folder ids) must be set in oracle/.env — "
                          "see the setup steps in this file's docstring.")

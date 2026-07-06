@@ -6,3 +6,5 @@ notion-client>=2.0          # scripts/notion.py + content_ops loader
 pypdf>=5.1
 google-auth>=2.35
 requests>=2.32
+keyring>=25
+google-auth-oauthlib>=1.2

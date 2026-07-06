@@ -90,3 +90,23 @@ are for you) and keep them separate:
       (out of search **and** the consolidation/wiki loop), not in the hosted brain
 - [ ] app/MCP run as a least-privilege user, DB not publicly reachable
 - [ ] hosted MCP: OAuth + email allowlist on, HTTPS, secrets in a vault
+
+
+## Secrets in the OS keychain (recommended)
+
+Any env var in `oracle/.env` can hold `keychain:<item>` instead of a raw value
+or key-file path. On import, the app resolves it from the OS keychain (macOS
+Keychain / SecretService / Windows Credential Locker via `keyring`):
+
+```bash
+# store once (example: a Drive service-account key)
+./.venv/bin/python -c "import keyring; keyring.set_password(
+    'second-brain', 'gdrive-key', open('key.json').read())"
+# then in oracle/.env:
+#   GDRIVE_KEY=keychain:gdrive-key
+# ...and delete the plaintext key file.
+```
+
+Why: no plaintext credentials on disk, nothing to accidentally commit or
+leave in Downloads, encrypted at rest, unlocked only with your login session.
+Combine with full-disk encryption (FileVault) and read-only API scopes.

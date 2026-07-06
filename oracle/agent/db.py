@@ -19,6 +19,8 @@ from dotenv import load_dotenv
 # during import (its caller-frame walk sees importlib, then falls back to the CWD), so the
 # config would only load when running from oracle/agent/. This works from any cwd.
 load_dotenv(pathlib.Path(__file__).resolve().parent.parent / ".env")
+import keychain_secrets  # noqa: E402
+keychain_secrets.resolve_env()   # any keychain:<item> values become real secrets
 
 # CLOB columns come back as str instead of LOB objects.
 oracledb.defaults.fetch_lobs = False
