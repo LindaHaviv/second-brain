@@ -140,6 +140,7 @@ ships loaders you can use directly:
 | **Instagram** | official **API** (creator/business) *or* data export | `scripts/instagram.py`, `instagram_export.py` |
 | **ChatGPT / Claude** | data export (JSON) | `scripts/chatgpt.py`, `claude_chats.py` |
 | **Obsidian / local files** | point at any folder of .md/.txt/PDF/EPUB (starter: `examples/obsidian-starter/`) | `scripts/obsidian.py` |
+| **Google Drive** | share specific folders with a service account (Docs exported as text; PDFs/EPUBs as reference) | `scripts/gdrive.py` |
 | **LinkedIn** | data export or captured posts | `scripts/linkedin.py` |
 
 **Don't scrape** the social platforms (logins + anti-bot + terms of service = account risk). Use
@@ -322,7 +323,7 @@ Different sources update different ways; here's the strategy per type:
 
 | Source type | How it stays current | Cadence |
 |---|---|---|
-| **API sources** (Instagram, Notion) | `sync.py` pulls them automatically | daily, hands-off |
+| **API sources** (Instagram, Notion, Google Drive) | `sync.py` pulls them automatically | daily, hands-off |
 | **Local files** (Obsidian vault or any drop folder: .md, .txt, PDFs, EPUBs) | set `OBSIDIAN_VAULT` — `sync.py` ingests new/edited files automatically; documents become searchable `reference` material | daily, hands-off |
 | **Public metadata** (YouTube) | re-run the yt-dlp collect + loader | whenever you publish |
 | **Export-only** (ChatGPT / Claude) | drop the fresh export zip in the watch folder — the next `sync.py` ingests it automatically | set a monthly reminder — no push API exists |

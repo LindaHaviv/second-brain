@@ -33,6 +33,7 @@ LLM_KEY = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}.get(
 STEPS = [
     ("Instagram",    [str(ROOT / "scripts" / "instagram.py")],          "IG_ACCESS_TOKEN"),
     ("Obsidian",     [str(ROOT / "scripts" / "obsidian.py")],           "OBSIDIAN_VAULT"),
+    ("Google Drive", [str(ROOT / "scripts" / "gdrive.py")],             "GDRIVE_KEY"),
     ("Notion",       [str(ROOT / "scripts" / "notion.py")],             "NOTION_TOKEN"),
     ("Claude Code",  [str(ROOT / "scripts" / "claude_code.py")],        None),
     ("Wiki refresh", [str(ROOT / "oracle" / "agent" / "wiki.py"), "--refresh"], None),

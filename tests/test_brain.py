@@ -310,6 +310,20 @@ def test_doc_chunks_covers_long_documents():
     assert len(blocks) > 10 and covered > len(text) * 0.9, (len(blocks), covered)
 
 
+def test_gdrive_routing_skips_media():
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from gdrive import route
+    assert route("application/vnd.google-apps.document", "Editing notes") == ("export", "note")
+    assert route("application/pdf", "book.pdf") == ("pdf", "reference")
+    assert route("application/epub+zip", "book.epub") == ("epub", "reference")
+    assert route("text/plain", "note.txt") == ("text", "note")
+    assert route("application/octet-stream", "notes.md") == ("text", "note")
+    for mime, name in (("video/mp4", "footage.mp4"), ("image/png", "thumb.png"),
+                       ("application/vnd.google-apps.spreadsheet", "tracker"),
+                       ("application/vnd.google-apps.folder", "sub")):
+        assert route(mime, name) is None, (mime, name)
+
+
 def test_obsidian_extract_epub():
     import io
     import zipfile

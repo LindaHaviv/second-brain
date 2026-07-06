@@ -126,3 +126,26 @@ are ingested too** — full text, chunked, as `kind='reference'`: searchable whe
 you ask, but excluded from the wiki compiler (your wiki synthesizes your work,
 not your library). This also works for any folder that isn't Obsidian: a drop
 folder of e-books, course notes, plain-text files.
+
+
+## Google Drive
+
+No export — the loader reads folders you explicitly share with it (API only,
+scheduled-sync safe). One-time setup (~10 min):
+
+1. [console.cloud.google.com](https://console.cloud.google.com) → create a
+   project → **enable the Google Drive API**.
+2. IAM & Admin → **Service Accounts** → create one → Keys → **add JSON key** →
+   save it outside the repo (e.g. `~/keys/brain-gdrive.json`).
+3. In Drive, **share each folder you want ingested** with the service account's
+   email (Viewer). The loader can only see what you share — nothing else.
+4. `oracle/.env`:
+   ```
+   GDRIVE_KEY=/absolute/path/to/key.json
+   GDRIVE_FOLDERS=<folderId>,<folderId>     # from each folder's URL
+   ```
+
+Google Docs are exported as text (notes); PDFs/EPUBs ingest as full-text
+**reference** material (searchable, excluded from the wiki). Video, audio,
+images and spreadsheets are skipped by design. Each top-level folder's name
+becomes the `series`.
