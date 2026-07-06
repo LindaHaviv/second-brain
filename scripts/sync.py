@@ -32,6 +32,7 @@ LLM_KEY = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}.get(
 # (label, argv, required_env) — a loader is skipped when its credential isn't configured.
 STEPS = [
     ("Instagram",    [str(ROOT / "scripts" / "instagram.py")],          "IG_ACCESS_TOKEN"),
+    ("Obsidian",     [str(ROOT / "scripts" / "obsidian.py")],           "OBSIDIAN_VAULT"),
     ("Notion",       [str(ROOT / "scripts" / "notion.py")],             "NOTION_TOKEN"),
     ("Claude Code",  [str(ROOT / "scripts" / "claude_code.py")],        None),
     ("Wiki refresh", [str(ROOT / "oracle" / "agent" / "wiki.py"), "--refresh"], None),

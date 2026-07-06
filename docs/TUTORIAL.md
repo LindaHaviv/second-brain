@@ -286,7 +286,7 @@ Two of those steps are **automatic ingesters** worth knowing about before you ru
 - **The Claude Code step** reads your local `~/.claude/projects` transcripts (if you use Claude
   Code) so your AI-coding sessions become searchable too. No Claude Code? It's a quiet no-op.
 
-API loaders (Instagram, Notion) run only when their credential is configured, so on a fresh
+API loaders (Instagram, Notion) and the Obsidian vault loader run only when their credential/path is configured, so on a fresh
 build `sync.py` is safe: it just refreshes the wiki and consolidates memory.
 
 **Schedule it (macOS LaunchAgent)** — save this as
@@ -322,6 +322,7 @@ Different sources update different ways; here's the strategy per type:
 | Source type | How it stays current | Cadence |
 |---|---|---|
 | **API sources** (Instagram, Notion) | `sync.py` pulls them automatically | daily, hands-off |
+| **Local markdown** (Obsidian vault, course notes, any .md folder) | set `OBSIDIAN_VAULT` — `sync.py` ingests new/edited notes automatically | daily, hands-off |
 | **Public metadata** (YouTube) | re-run the yt-dlp collect + loader | whenever you publish |
 | **Export-only** (ChatGPT / Claude) | drop the fresh export zip in the watch folder — the next `sync.py` ingests it automatically | set a monthly reminder — no push API exists |
 | **Export-only** (LinkedIn) | download the export → run `scripts/linkedin.py` → `sync.py` | same monthly reminder |

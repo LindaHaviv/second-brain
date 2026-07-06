@@ -301,6 +301,24 @@ def test_research_tool_errors_are_recoverable():
     c.close()
 
 
+def test_obsidian_parse_note():
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from obsidian import parse_note
+    meta, body = parse_note("""---
+title: My Course Notes
+tags: ml, course
+visibility: private
+---
+# Heading
+Text with a [[Wiki Link]] and an [[page|aliased link]].""")
+    assert meta["title"] == "My Course Notes"
+    assert meta["visibility"] == "private"
+    assert "Wiki Link" in body and "aliased link" in body
+    assert "[[" not in body and "# " not in body
+    meta2, body2 = parse_note("no frontmatter at all")
+    assert meta2 == {} and body2 == "no frontmatter at all"
+
+
 if __name__ == "__main__":
     tests = [(n, f) for n, f in sorted(globals().items())
              if n.startswith("test_") and callable(f)]

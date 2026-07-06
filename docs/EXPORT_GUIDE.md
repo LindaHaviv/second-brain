@@ -109,3 +109,15 @@ generated in-DB). Then run `classify_private.py` and `sync.py` to fold the new c
 
 If something only exists live (e.g. a repost you don't own), prefer each platform's **official API**
 over scraping — logins + anti-bot + terms of service make scraping an account risk.
+
+
+## Obsidian (or any markdown folder)
+
+No export needed — a vault is already plain markdown on disk. Set
+`OBSIDIAN_VAULT=/path/to/vault` in `oracle/.env` and either run
+`./.venv/bin/python scripts/obsidian.py` or let the daily sync pick it up.
+Optional frontmatter per note: `title`, `tags`, `series`, `created`, and
+`visibility` (anything other than `content` keeps that note out of the
+searchable brain). Wikilinks are flattened to plain text. Edited notes
+re-import in place; unchanged notes are skipped. This also works for any
+markdown folder that isn't Obsidian: e-book highlights, course notes, docs.
