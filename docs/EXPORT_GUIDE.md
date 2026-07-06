@@ -130,23 +130,94 @@ folder of e-books, course notes, plain-text files.
 
 ## Google Drive
 
-No export — the loader reads folders you explicitly share with it (API only,
-scheduled-sync safe). One-time setup (~10 min):
+Connect specific Drive folders to your brain — Google Docs become searchable
+notes, PDFs/EPUBs become searchable reference material, and your videos/photos
+are never touched. No export step: the daily sync pulls changes via the API.
 
-1. [console.cloud.google.com](https://console.cloud.google.com) → create a
-   project → **enable the Google Drive API**.
-2. IAM & Admin → **Service Accounts** → create one → Keys → **add JSON key** →
-   save it outside the repo (e.g. `~/keys/brain-gdrive.json`).
-3. In Drive, **share each folder you want ingested** with the service account's
-   email (Viewer). The loader can only see what you share — nothing else.
-4. `oracle/.env`:
-   ```
-   GDRIVE_KEY=/absolute/path/to/key.json
-   GDRIVE_FOLDERS=<folderId>,<folderId>     # from each folder's URL
-   GDRIVE_EXCLUDE=<folderId>                # optional: skip subtrees (contracts,
-   ```                                      # agreements) inside a shared tree
+**The security model, up front:** the loader authenticates as its own *service
+account* — a robot Google identity that starts with access to nothing. It can
+only ever read the folders you explicitly share with it. Your wider Drive is
+invisible to it by construction, not by promise.
 
-Google Docs are exported as text (notes); PDFs/EPUBs ingest as full-text
-**reference** material (searchable, excluded from the wiki). Video, audio,
-images and spreadsheets are skipped by design. Each top-level folder's name
-becomes the `series`.
+### One-time setup (~10 minutes)
+
+**1. Create a Google Cloud project.**
+Go to [console.cloud.google.com](https://console.cloud.google.com) → project
+picker (top bar) → **New project** → name it anything (e.g. `second-brain`) →
+Create. Make sure the picker now shows the new project. (Reusing an existing
+project also works — the project is just a container.)
+
+**2. Enable the Drive API.**
+Top search bar → "**Google Drive API**" → open it → **Enable**.
+
+**3. Create a service account.**
+Search "**Service accounts**" → **+ Create service account** → name it (e.g.
+`brain-loader`) → Create and continue → skip the optional role steps
+(Continue → Done). It needs **no** project roles: its only access will come
+from Drive sharing.
+
+**4. Download its key.**
+Click the new service account → **Keys** tab → **Add key → Create new key →
+JSON** → Create. A `.json` file downloads. Move it somewhere safe **outside
+the repo** (e.g. `~/keys/brain-gdrive.json`) — this file is a credential;
+treat it like a password and never commit it.
+
+**5. Share folders with the service account.**
+On the service account's page, copy its email
+(`brain-loader@<project-id>.iam.gserviceaccount.com`). In Google Drive,
+for each folder you want ingested: right-click → **Share** → paste that
+email → **Viewer** → Share. (A warning about sharing outside your
+organization is expected.)
+
+**6. Configure the env.** In `oracle/.env`:
+
+```bash
+GDRIVE_KEY=/absolute/path/to/brain-gdrive.json
+GDRIVE_FOLDERS=<folderId>,<folderId>    # each folder's URL ends in /folders/<id>
+GDRIVE_EXCLUDE=<folderId>               # optional — see below
+```
+
+**7. Run it** (afterwards the daily sync runs it for you):
+
+```bash
+./.venv/bin/python scripts/gdrive.py
+# -> gdrive: 12 new, 0 updated, 0 unchanged, 97 skipped (folders/media/oversize)
+```
+
+✅ **Checkpoint** — ask your brain about something that lives in a Drive doc:
+
+```bash
+./.venv/bin/python -c "import sys; sys.path.insert(0,'oracle/agent'); import db, content; \
+  [print(f\"{r['dist']:.3f}  {r['title']}\") for r in \
+   content.search_content(db.connect(), 'a phrase from one of your docs', k=3)]"
+```
+
+### What gets ingested (and what never does)
+
+| In your folders | Becomes |
+|---|---|
+| Google Docs | searchable **notes** (exported as text) |
+| `.md` / `.txt` | searchable **notes** |
+| PDFs / EPUBs | full-text **reference** material — searchable when you ask, **excluded from the wiki compiler** (your wiki synthesizes your work, not your library) |
+| video, audio, images, Sheets, Slides | **skipped by design** — footage stays footage |
+| anything over 30 MB | skipped |
+
+Each top-level shared folder's name becomes the `series`, so "list everything
+in my course-library series" works from any AI client.
+
+### Keep business subtrees out: `GDRIVE_EXCLUDE`
+
+Real Drive folders mix content with things that must never enter a searchable
+brain — contracts, agreements, financials. If a folder you want is the parent
+of one you don't (say, `Projects/` contains `Projects/Contracts/`), don't
+fork your folder structure: share the parent and put the sensitive subtree's
+folder id in `GDRIVE_EXCLUDE`. The loader skips that whole branch.
+
+Two patterns for sensitive-but-useful material:
+- **Never ingest, read on demand**: keep it excluded; when an AI session needs
+  one document as context, fetch it in the chat (via a Drive connector) and
+  let it stay there. Context, not storage.
+- **Decide first, then ingest**: the same classify-before-you-ingest rule as
+  every other source (Lab 4). When in doubt, share a clean subfolder instead
+  of a parent.
+

@@ -28,6 +28,7 @@ import hashlib
 import io
 import os
 import pathlib
+import re
 import sys
 import tempfile
 
@@ -136,7 +137,12 @@ def main():
     for fid in folders:
         r = sess.get(f"{API}/files/{fid}", params={"fields": "name"}, timeout=60)
         r.raise_for_status()
-        series = r.json()["name"].strip().lower().replace(" ", "_").strip("*_")[:20].rstrip("_")
+        words = re.findall(r"[a-z0-9]+", r.json()["name"].lower())
+        series = ""
+        for w in words:                       # pack whole words into the 20-char column
+            if len(series) + len(w) + bool(series) > 20:
+                break
+            series = f"{series}_{w}" if series else w
         for f in walk(sess, fid, exclude):
             routed = route(f["mimeType"], f.get("name"))
             if not routed or int(f.get("size") or 0) > MAX_BYTES:
