@@ -288,9 +288,10 @@ It's a small, transparent loop (Claude + tools); the database does the heavy lif
 search your content, read a post, read a wiki page, search the live web. It grounds claims about
 *your* work in *your* content and uses the web for what's current.
 
-What makes it a **second brain** rather than a search box is **memory**. We model the four types
-the agent-memory literature talks about, each a table in the same database (the literature's
-"working memory" appears here as the `conversations` table — same job, day-to-day name):
+What makes it a **second brain** rather than a search box is **memory**. We model the long-term
+memory types the agent-memory literature describes, each a table in the same database
+(conversational memory — stored, time-stamped interaction history — is formally the simplest
+kind of episodic memory; this build gives it its own table):
 
 | Memory | Table | What it holds |
 |---|---|---|
@@ -680,9 +681,10 @@ export; everything else is automatic.
 Everything this build touches has a free, official path to go deeper:
 
 - **[Agent Memory: Building Memory-Aware Agents](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**:
-  the free **Oracle × DeepLearning.AI course**. It teaches the same four-type model you built
-  in Step 4 — episodic, semantic, procedural, and working memory (our `conversations` table);
-  take it to master the concepts behind the code.
+  the free **Oracle × DeepLearning.AI course**. Its reference architecture is exactly what you
+  built in Step 4 — long-term memory types (episodic, semantic, procedural) as database tables
+  with a memory manager over them, and the database as the **agent memory core**; take it to
+  master the concepts behind the code.
 - **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)**:
   Oracle's open workshops + notebooks, from RAG to memory-augmented agents. Start with the
   hands-on **[Agent Memory Workshop](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/workshops/agent_memory_workshop)**
