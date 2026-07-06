@@ -113,7 +113,9 @@ over scraping — logins + anti-bot + terms of service make scraping an account 
 
 ## Obsidian (or any markdown folder)
 
-No export needed — a vault is already plain files on disk. Set
+No export needed — a vault is already plain files on disk. (Starting fresh?
+Copy **[examples/obsidian-starter/](../examples/obsidian-starter/)** — a minimal
+template with the frontmatter conventions pre-documented.) Set
 `OBSIDIAN_VAULT=/path/to/vault` in `oracle/.env` and either run
 `./.venv/bin/python scripts/obsidian.py` or let the daily sync pick it up.
 Optional frontmatter per note: `title`, `tags`, `series`, `created`, and

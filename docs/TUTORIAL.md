@@ -139,6 +139,7 @@ ships loaders you can use directly:
 | **Notion** | API (pages/databases) | `scripts/notion.py` |
 | **Instagram** | official **API** (creator/business) *or* data export | `scripts/instagram.py`, `instagram_export.py` |
 | **ChatGPT / Claude** | data export (JSON) | `scripts/chatgpt.py`, `claude_chats.py` |
+| **Obsidian / local files** | point at any folder of .md/.txt/PDF/EPUB (starter: `examples/obsidian-starter/`) | `scripts/obsidian.py` |
 | **LinkedIn** | data export or captured posts | `scripts/linkedin.py` |
 
 **Don't scrape** the social platforms (logins + anti-bot + terms of service = account risk). Use
