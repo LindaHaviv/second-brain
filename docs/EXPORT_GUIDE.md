@@ -143,7 +143,8 @@ scheduled-sync safe). One-time setup (~10 min):
    ```
    GDRIVE_KEY=/absolute/path/to/key.json
    GDRIVE_FOLDERS=<folderId>,<folderId>     # from each folder's URL
-   ```
+   GDRIVE_EXCLUDE=<folderId>                # optional: skip subtrees (contracts,
+   ```                                      # agreements) inside a shared tree
 
 Google Docs are exported as text (notes); PDFs/EPUBs ingest as full-text
 **reference** material (searchable, excluded from the wiki). Video, audio,

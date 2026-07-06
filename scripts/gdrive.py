@@ -10,6 +10,8 @@ One-time setup (~10 minutes):
   4. In oracle/.env:
        GDRIVE_KEY=/absolute/path/to/key.json
        GDRIVE_FOLDERS=<folderId>[,<folderId>...]     (the id from the folder URL)
+       GDRIVE_EXCLUDE=<folderId>[,...]   (optional: subtrees to skip — e.g. a
+                                          contracts/ folder inside a shared tree)
 
 What it ingests (recursively): Google Docs (exported as plain text), .md/.txt,
 PDFs and EPUBs. Everything else — video, audio, images, spreadsheets, slides —
@@ -68,8 +70,10 @@ def _session():
     return AuthorizedSession(creds)
 
 
-def walk(sess, folder_id):
-    """Yield file dicts in a folder, recursively."""
+def walk(sess, folder_id, exclude=frozenset()):
+    """Yield file dicts in a folder, recursively; excluded subtree ids are skipped."""
+    if folder_id in exclude:
+        return
     page = None
     while True:
         params = {"q": f"'{folder_id}' in parents and trashed = false",
@@ -82,7 +86,7 @@ def walk(sess, folder_id):
         data = r.json()
         for f in data.get("files", []):
             if f["mimeType"] == "application/vnd.google-apps.folder":
-                yield from walk(sess, f["id"])
+                yield from walk(sess, f["id"], exclude)
             else:
                 yield f
         page = data.get("nextPageToken")
@@ -114,6 +118,8 @@ def fetch_text(sess, f, handler):
 def main():
     key = os.environ.get("GDRIVE_KEY")
     folders = [x.strip() for x in os.environ.get("GDRIVE_FOLDERS", "").split(",") if x.strip()]
+    exclude = frozenset(x.strip() for x in os.environ.get("GDRIVE_EXCLUDE", "").split(",")
+                        if x.strip())
     if not key or not pathlib.Path(key).is_file() or not folders:
         raise SystemExit("GDRIVE_KEY (service-account json) and GDRIVE_FOLDERS "
                          "(comma-separated folder ids) must be set in oracle/.env — "
@@ -131,7 +137,7 @@ def main():
         r = sess.get(f"{API}/files/{fid}", params={"fields": "name"}, timeout=60)
         r.raise_for_status()
         series = r.json()["name"].strip().lower().replace(" ", "_")[:100]
-        for f in walk(sess, fid):
+        for f in walk(sess, fid, exclude):
             routed = route(f["mimeType"], f.get("name"))
             if not routed or int(f.get("size") or 0) > MAX_BYTES:
                 skipped += 1
