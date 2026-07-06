@@ -205,8 +205,11 @@ def refresh_wiki(client, conn):
         print(f"no new content since last compile (max post_id {cur_max}); nothing to refresh")
         return
     new_ids = set()
+    # kind='reference' (e-books, imported documents) is searchable but must never
+    # reshape the wiki: the wiki synthesizes YOUR work, not your library.
     cur.execute("SELECT post_id FROM posts WHERE post_id > :h "
-                "AND NVL(visibility,'content') = 'content'", h=hwm)
+                "AND NVL(visibility,'content') = 'content' "
+                "AND NVL(kind,'x') <> 'reference'", h=hwm)
     new_ids = {int(r[0]) for r in cur.fetchall()}
     print(f"{len(new_ids)} new posts since last compile — checking which topics they touch")
 

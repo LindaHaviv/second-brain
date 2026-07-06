@@ -113,11 +113,14 @@ over scraping — logins + anti-bot + terms of service make scraping an account 
 
 ## Obsidian (or any markdown folder)
 
-No export needed — a vault is already plain markdown on disk. Set
+No export needed — a vault is already plain files on disk. Set
 `OBSIDIAN_VAULT=/path/to/vault` in `oracle/.env` and either run
 `./.venv/bin/python scripts/obsidian.py` or let the daily sync pick it up.
 Optional frontmatter per note: `title`, `tags`, `series`, `created`, and
 `visibility` (anything other than `content` keeps that note out of the
 searchable brain). Wikilinks are flattened to plain text. Edited notes
-re-import in place; unchanged notes are skipped. This also works for any
-markdown folder that isn't Obsidian: e-book highlights, course notes, docs.
+re-import in place; unchanged notes are skipped. **PDFs and EPUBs in the vault
+are ingested too** — full text, chunked, as `kind='reference'`: searchable when
+you ask, but excluded from the wiki compiler (your wiki synthesizes your work,
+not your library). This also works for any folder that isn't Obsidian: a drop
+folder of e-books, course notes, plain-text files.

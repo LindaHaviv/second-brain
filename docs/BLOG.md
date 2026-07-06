@@ -485,8 +485,9 @@ The system is **collector-agnostic**, so the only thing it needs is rows in that
 fields to `title`, `caption` (the text), `url`, `published_at`, and the platform; the embedding is
 generated in-DB on insert.
 
-The repo ships loaders for **Obsidian** (point it at your vault — or any folder of
-markdown — and the daily sync keeps the brain current with it), **Notion**, **YouTube**
+The repo ships loaders for **Obsidian** (point it at your vault — or any local drop
+folder — and the daily sync keeps the brain current with it: markdown notes, and even
+PDFs/EPUBs as searchable reference material that never pollutes your wiki), **Notion**, **YouTube**
 (+ transcripts), **Instagram** (API or export, with captions *and* reel transcripts),
 **LinkedIn**, and **AI chats** (Claude/ChatGPT exports).
 Any one is a copyable template, and the repo's

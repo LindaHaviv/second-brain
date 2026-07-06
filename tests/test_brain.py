@@ -301,6 +301,32 @@ def test_research_tool_errors_are_recoverable():
     c.close()
 
 
+def test_doc_chunks_covers_long_documents():
+    """A book-sized wall of text must chunk with near-full coverage — not truncate
+    to the first block (the e-book regression)."""
+    text = ("Agents consolidate memory. " * 60 + "\n\n") * 20   # ~34k chars
+    blocks = content.doc_chunks(text)
+    covered = sum(len(b) for b in blocks)
+    assert len(blocks) > 10 and covered > len(text) * 0.9, (len(blocks), covered)
+
+
+def test_obsidian_extract_epub():
+    import io
+    import zipfile
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from obsidian import extract_epub
+    import tempfile, pathlib as pl
+    with tempfile.TemporaryDirectory() as d:
+        p = pl.Path(d) / "b.epub"
+        with zipfile.ZipFile(p, "w") as z:
+            z.writestr("OEBPS/c.xhtml",
+                       "<html><body><h1>T</h1><p>First para.</p><p>Second para.</p>"
+                       "<script>bad()</script></body></html>")
+        text = extract_epub(p)
+    assert "First para." in text and "Second para." in text
+    assert "bad()" not in text and "<" not in text
+
+
 def test_obsidian_parse_note():
     sys.path.insert(0, str(ROOT / "scripts"))
     from obsidian import parse_note

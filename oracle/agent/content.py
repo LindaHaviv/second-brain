@@ -75,6 +75,37 @@ def _lexical_posts(conn, terms, k):
         return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
+def doc_chunks(text, size=1600, max_chunks=500):
+    """Chunks for LONG documents (e-books, imported PDFs): pack paragraphs into
+    ~size-char blocks so a whole book stays searchable, not just its opening.
+    note_chunks' 40-paragraph cap is right for notes; books need the full text."""
+    paras = []
+    for p in re.split(r"\n\s*\n|\n", text or ""):
+        p = p.strip()
+        if not p:
+            continue
+        while len(p) > size:                      # a wall-of-text "paragraph": split on
+            cut = p.rfind(". ", 0, size) + 1      # the last sentence end before the limit
+            if cut <= 0:
+                cut = size
+            paras.append(p[:cut].strip())
+            p = p[cut:].strip()
+        if p:
+            paras.append(p)
+    blocks, buf = [], ""
+    for p in paras:
+        if len(buf) + len(p) > size and buf:
+            blocks.append(buf)
+            buf = p
+        else:
+            buf = f"{buf}\n{p}" if buf else p
+        if len(blocks) >= max_chunks:
+            break
+    if buf and len(blocks) < max_chunks:
+        blocks.append(buf)
+    return [b[:2000] for b in blocks]
+
+
 def note_chunks(text, max_chunks=40):
     """Paragraph-level chunks for a note body, so notes get passage-level search like
     chats and transcripts do. A note saved as prose would otherwise exist only as one

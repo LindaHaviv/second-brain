@@ -322,7 +322,7 @@ Different sources update different ways; here's the strategy per type:
 | Source type | How it stays current | Cadence |
 |---|---|---|
 | **API sources** (Instagram, Notion) | `sync.py` pulls them automatically | daily, hands-off |
-| **Local markdown** (Obsidian vault, course notes, any .md folder) | set `OBSIDIAN_VAULT` — `sync.py` ingests new/edited notes automatically | daily, hands-off |
+| **Local files** (Obsidian vault or any drop folder: .md, .txt, PDFs, EPUBs) | set `OBSIDIAN_VAULT` — `sync.py` ingests new/edited files automatically; documents become searchable `reference` material | daily, hands-off |
 | **Public metadata** (YouTube) | re-run the yt-dlp collect + loader | whenever you publish |
 | **Export-only** (ChatGPT / Claude) | drop the fresh export zip in the watch folder — the next `sync.py` ingests it automatically | set a monthly reminder — no push API exists |
 | **Export-only** (LinkedIn) | download the export → run `scripts/linkedin.py` → `sync.py` | same monthly reminder |
