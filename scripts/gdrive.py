@@ -136,7 +136,7 @@ def main():
     for fid in folders:
         r = sess.get(f"{API}/files/{fid}", params={"fields": "name"}, timeout=60)
         r.raise_for_status()
-        series = r.json()["name"].strip().lower().replace(" ", "_")[:100]
+        series = r.json()["name"].strip().lower().replace(" ", "_").strip("*_")[:20].rstrip("_")
         for f in walk(sess, fid, exclude):
             routed = route(f["mimeType"], f.get("name"))
             if not routed or int(f.get("size") or 0) > MAX_BYTES:
