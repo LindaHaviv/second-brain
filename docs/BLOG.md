@@ -293,19 +293,27 @@ memory types the agent-memory literature describes, each a table in the same dat
 (conversational memory — stored, time-stamped interaction history — is formally the simplest
 kind of episodic memory; this build gives it its own table):
 
-| Memory | Table | What it holds |
+| Memory | Table (default backend) | What it holds |
 |---|---|---|
 | **Episodic** | `agent_memory` | every past research run (question, outcome, sources, lesson) |
-| **Semantic** | `semantic_memory` | durable facts distilled from those runs |
-| **Conversational** | `conversations` | the current multi-turn context |
+| **Semantic** | `brain_memory` (OAMP) | durable facts the package's extractor distills from each exchange |
+| **Conversational** | `brain_thread` + `brain_message` (OAMP) | the session's threads and messages, with running summaries |
 | **Procedural** | `procedural_memory` | the agent's tools, retrieved by relevance per question |
+
+The semantic and conversational rows are managed by Oracle's official package (next box); the
+learning track (`MEMORY_BACKEND=custom`) swaps them for hand-built `semantic_memory` and
+`conversations` tables so you can see the same model from the inside. Episodic and procedural
+are this build's extensions of the core on both backends.
 
 Before answering, the agent **recalls** relevant past runs and learned facts, and **ranks its own
 toolset** against the question. That's procedural memory: with four tools it's a hint; at forty
 it's how you'd pick which tools to send at all. After answering, it **records** the run.
 
-Periodically it **consolidates** episodic memory into semantic facts, distilling "what happened"
-into "what I now know about this creator." That's the self-improving loop:
+And the distillation step runs itself. On the default backend, OAMP's extractor turns each
+exchange into durable semantic memories automatically (with this build's privacy guard passed in
+as custom extraction instructions). On the learning track, a scheduled job **consolidates**
+episodic memory into semantic facts by hand — same idea, visible plumbing. Either way, "what
+happened" becomes "what I now know about this creator." That's the self-improving loop:
 
 ```
  answer  →  record the run  →  recall + consolidate  →  answer better next time
@@ -326,13 +334,23 @@ daily scheduled consolidation.)
 > The embeddings are an open-source MiniLM running inside Oracle, so search needs **no API key at
 > all** (you proved that at the Step 3 checkpoint).
 
-> **📦 We build the memory layer from scratch here.** Four purpose-built tables, so you *see* how
-> agent memory works, and you get first-class **procedural** memory plus a scheduled consolidation
-> loop. When you'd rather have a maintained drop-in instead, Oracle
-> ships an official Python package, the **Oracle AI Agent Memory Package** (`oracleagentmemory`),
-> that turns the same database into a memory core, with framework adapters (OpenAI / Claude Agent SDK
-> / LangGraph), multi-actor scoping, and a published LongMemEval benchmark. Pick by use case: **build**
-> for full control and to learn the model; **the package** for a maintained, drop-in layer. Either
+> **📦 The repo runs Oracle's official memory package by default.** The recommended path is the
+> **Oracle AI Agent Memory Package** (`pip install oracleagentmemory`), and it is what the agent
+> uses out of the box: conversation threads with context summaries (conversational memory) and
+> durable memories that an LLM **extracts automatically** from each exchange (semantic memory) —
+> stored in the same database, as plain tables you can read with SQL. Three 26.6 features do real
+> work in this build: **hybrid retrieval** (`SearchStrategy.HYBRID` — lexical + vector in one
+> Oracle-managed index), **custom extraction instructions** (this build passes its privacy guard
+> straight into the extractor, so "never memorize financials" is enforced inside the managed core
+> too), and **schema controls** (`schema_policy`, `schema_owner` for read-only runtime users).
+> It uses the same in-database MiniLM embedder — still zero embedding API calls.
+>
+> **The from-scratch build stays in the repo as the learning track** (`MEMORY_BACKEND=custom`):
+> the same types as hand-built tables, so you can *see* the model the package manages for you.
+> And two memory types are this build's **extensions of the core** on either backend — the
+> **episodic run log** (what the agent did, with outcomes and rewards) and **procedural** memory
+> (which tools earn their place, ranked per question) — because the package doesn't cover those
+> record types, and the point of memory-in-a-database is that you can add your own. Either
 > way, the memory lives in your Oracle AI Database. See the
 > [Oracle AI Agent Memory Package](https://docs.oracle.com/en/database/oracle/agent-memory/).
 >
@@ -692,7 +710,9 @@ Everything this build touches has a free, official path to go deeper:
   the **[agent-memory notebooks](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/notebooks/agent_memory)**
   for the OAMP package with OpenAI / Claude Agent SDK / LangGraph examples.
 - **[Oracle AI Agent Memory Package (OAMP)](https://docs.oracle.com/en/database/oracle/agent-memory/)**:
-  the official drop-in memory layer, when you'd rather not hand-roll Step 4.
+  the official memory core — the **default backend** in this build (`oamp_memory.py`;
+  `MEMORY_BACKEND=custom` switches to the from-scratch learning track). The repo also ships a
+  LangGraph example (`examples/langgraph_oamp.py`) wiring OAMP into a framework agent.
 - **[Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/)**:
   the managed alternative to Step 6's custom server.
 - Feature docs used in this build:

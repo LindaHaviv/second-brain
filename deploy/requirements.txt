@@ -3,6 +3,7 @@
 # bypassing the allowlist. Bump versions deliberately and re-test the allowlist (a denied login
 # must stay denied) after any upgrade.
 oracledb==4.0.1
+oracleagentmemory==26.6.0
 fastmcp==3.4.2
 python-dotenv==1.2.2
 uvicorn==0.49.0

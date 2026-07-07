@@ -103,6 +103,17 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 
 ![The research agent answering from your own content, citing your videos, and recording the run to agent_memory](images/agent-answer.png)
 
+> **🧠 Memory backend.** By default the agent's conversational + semantic memory runs on
+> **Oracle's official AI Agent Memory package** (`oracleagentmemory`, installed with the
+> requirements): threads and durable memories are managed for you — extracted automatically
+> from each exchange by an LLM, retrieved with hybrid (lexical + vector) search, and stored as
+> plain tables (`brain_*`) you can read with SQL. The repo's privacy guard is passed into the
+> extractor as custom instructions. Prefer to see the plumbing? `MEMORY_BACKEND=custom` in
+> `oracle/.env` switches to the from-scratch build (`semantic_memory.py`, `conversation.py`) —
+> the learning track. The episodic run log and procedural tool-ranking are this build's
+> extensions of the memory core and run on both backends. Using LangGraph or another framework?
+> See `examples/langgraph_oamp.py` for OAMP as a framework agent's memory.
+
 > **🔧 Swap the models — your choice.** Two pluggable pieces, so you're not locked in:
 > - **Embeddings are already open-source and local.** The MiniLM ONNX model runs *inside* Oracle, so
 >   **semantic search needs no API key and makes no external calls** (the search checkpoint above ran
@@ -434,12 +445,12 @@ content scope** by default, so private data stays local. See
   Every new agent follows the same three-beat pattern — **recall → act → record** — and the four
   memory types each have one job in it:
 
-  | Type | Table | Your agent should… |
+  | Type | Table (default backend) | Your agent should… |
   |---|---|---|
-  | **Episodic** (experience) | `agent_memory` | `memory.record()` every run: task, tool, outcome. Cheap, always-on — this is what consolidation feeds on. |
-  | **Semantic** (facts) | `semantic_memory` | *recall* distilled facts before acting (`memory.recall()`), so it starts from lessons, not from zero. Never write it directly — the consolidation step promotes episodic runs into facts for you. |
+  | **Episodic** (experience) | `agent_memory` | `memory.record()` every run: task, tool, outcome. Cheap, always-on — this is what distillation feeds on. |
+  | **Semantic** (facts) | `brain_memory` (OAMP) | *recall* durable facts before acting (`oamp_memory.recall_facts()`), so it starts from lessons, not from zero. Never write it directly — the package's extractor distills them from your exchanges. On the custom track: `semantic_memory` + the consolidation step. |
   | **Procedural** (how-to) | `procedural_memory` | select tools by meaning (`procedural.select_tools()`) instead of loading them all — matters as the toolset grows. |
-  | **Conversational** (session) | `conversations` | persist multi-turn dialogue if the agent is interactive; load only a recent window into context. |
+  | **Conversational** (session) | `brain_thread` + `brain_message` (OAMP) | record each exchange (`oamp_memory.record_exchange()`); OAMP keeps summaries and context cards. On the custom track: `conversations` with a recent-window load. |
 
   Most batch agents need just the first two: recall facts, do the work, record the run. That
   minimal loop is enough for the self-improvement flywheel — tonight's runs become tomorrow's

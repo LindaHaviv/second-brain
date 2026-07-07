@@ -17,6 +17,19 @@ from content import search_hybrid, get_post, get_wiki_page
 from procedural import seed_tools, select_tools
 from semantic_memory import semantic_recall, consolidate
 
+# MEMORY BACKEND — oamp (default) = Oracle's official AI Agent Memory package as the
+# managed core for conversational + semantic memory; custom = this repo's from-scratch
+# implementations (the learning track). Episodic (memory.py) and procedural
+# (procedural.py) are the repo's EXTENSIONS of the core and run on both backends.
+MEMORY_BACKEND = os.environ.get("MEMORY_BACKEND", "oamp").lower()
+if MEMORY_BACKEND == "oamp":
+    try:
+        import oamp_memory
+    except ImportError:
+        print("[memory] oracleagentmemory not installed — falling back to the custom "
+              "backend (pip install -r requirements.txt, or set MEMORY_BACKEND=custom)")
+        MEMORY_BACKEND = "custom"
+
 MODEL = "claude-opus-4-8"
 
 SYSTEM = (
@@ -222,7 +235,8 @@ def run_research(client, conn, question, history=None):
     `history` = prior conversation turns (working memory) for multi-turn follow-ups."""
     prior = recall(conn, question, k=3)
     prior_txt = "\n".join(f"- {m.get('detail') or ''}" for m in prior) if prior else "(no prior research yet)"
-    facts = semantic_recall(conn, question, k=5)
+    facts = (oamp_memory.recall_facts(conn, question, k=5) if MEMORY_BACKEND == "oamp"
+             else semantic_recall(conn, question, k=5))
     facts_txt = "\n".join(f"- [{f['category']}] {f['fact']}" for f in facts) if facts else "(none yet)"
     tool_hint = _procedural_hint(conn, question)   # procedural memory: tools ranked for THIS question
     messages = list(history or [])   # conversational / working memory (prior turns this session)
@@ -311,5 +325,10 @@ def run_research(client, conn, question, history=None):
     record(conn, "research", question, (answer[:500] or "(no answer)"),
            "research", "success" if found else "failure",
            reward=1.0 if found else 0.0, detail=detail)
-    _maybe_consolidate(client, conn)   # auto-improve: refresh semantic facts as runs accrue
+    if MEMORY_BACKEND == "oamp":
+        # the managed core: the exchange lands in the session thread and OAMP's extractor
+        # distills durable memories from it — no separate consolidation step needed.
+        oamp_memory.record_exchange(conn, question, answer)
+    else:
+        _maybe_consolidate(client, conn)   # learning track: episodic -> semantic, by hand
     return answer, uniq
