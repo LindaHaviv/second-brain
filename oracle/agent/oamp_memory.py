@@ -37,10 +37,17 @@ USER_ID = os.environ.get("BRAIN_USER", "me")
 AGENT_ID = "research"
 
 # Same rule as semantic_memory.py's consolidator — the guard moves INTO the managed core.
+# Written adversarially on purpose: the first version of this rule let a contract term
+# ("999-day exclusivity clause") through extraction while correctly dropping the dollar
+# amount — tests/eval_oamp.py probe 2 exists to catch exactly that regression.
 _PRIVACY_GUARD = (
-    "Never extract financial or private business details: no earnings, rates, fees, "
-    "pricing, invoices, payments, banking, budgets, taxes, or contract/deal terms. "
-    "A post being a brand collaboration is fine to remember; the money and terms are not."
+    "HARD RULE — private business information must NEVER become a memory, not even "
+    "paraphrased or partially. That means: no earnings, rates, fees, pricing, invoices, "
+    "payments, banking, budgets, or taxes; no brand/client names attached to deals; and "
+    "no contract or deal terms OF ANY KIND — exclusivity, duration, deliverable counts, "
+    "usage rights, legal clauses. If a message mixes private business detail with normal "
+    "content, extract ONLY the normal content and silently drop the rest. When unsure "
+    "whether something is a business/deal detail, do not extract it."
 )
 
 # LiteLLM model ids per provider (OAMP speaks LiteLLM). Overridable with OAMP_LLM_MODEL.
