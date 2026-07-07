@@ -257,6 +257,8 @@ FETCH FIRST 5 ROWS ONLY;
    content.search_content(db.connect(),'protecting data in the cloud',k=3)]"
 ```
 
+*[NICE-TO-HAVE GIF: terminal recording of this search — query typed, ranked titles + distances appearing. Scriptable/reproducible with charmbracelet `vhs` against the sandbox; no personal data.]*
+
 Two refinements the repo adds. It **chunks** long content (transcripts, chats) into a
 `content_chunks` table so a query lands on the right *passage*, not just the right item. And it
 fuses vector search with a **keyword** pass via Reciprocal Rank Fusion, so exact names, handles,
@@ -326,6 +328,8 @@ loop:
 The more you use it, the more it knows your themes, recurring questions, and gaps, and it stops
 re-deriving them every time. (In the repo this runs automatically every few research runs, plus a
 daily scheduled consolidation.)
+
+*[NICE-TO-HAVE GIF: "the flip" — delete the `MEMORY_BACKEND=custom` line in .env, ask one question, then `SELECT memory_type, content FROM brain_memory ORDER BY created_at DESC;` showing freshly extracted memories. Mirrors the video's Ch 6 moment; `vhs`-scriptable on the sandbox.]*
 
 > **🔧 The LLM is a config switch, not a dependency.** Set `LLM_PROVIDER` in `oracle/.env` to
 > **`anthropic`** (default, and the richest agent experience), **`openai`**, or **`ollama`**, and
@@ -406,6 +410,8 @@ An LLM reads your content and writes synthesized **topic pages**: cross-linked, 
 posts, improving as you add content. And the refresh works in both directions. It recompiles the
 pages your new content touches, and when new content clusters outside every existing topic it
 **proposes and compiles new pages**. The knowledge base grows on its own.
+
+*[NICE-TO-HAVE GIF: `wiki.py` compiling ~10 pages, then `wiki.py --refresh` immediately no-oping ("nothing changed, nothing recompiled") — the incremental claim, visible. `vhs`-scriptable on the sandbox.]*
 
 Credit where the idea comes from: this layer implements Andrej Karpathy's
 [LLM wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) concept. Instead of
