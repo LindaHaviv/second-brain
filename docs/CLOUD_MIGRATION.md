@@ -95,3 +95,21 @@ cd ../.. && ./.venv/bin/python scripts/consolidate.py  # re-consolidate semantic
 `db.py` auto-detects the wallet env and connects over mTLS — so **all** the loaders, the agent,
 the wiki, and the MCP server work against the cloud DB unchanged. Flip the env vars and you're on
 cloud; remove them and you're back to local.
+
+### The memory package on Autonomous (first run)
+On the default memory backend, the first agent run against the cloud auto-creates the
+`BRAIN_*` tables **and a hybrid vector index** — no extra setup. Two things to expect:
+
+1. You may see one `[error] DatabaseError while executing managed schema DDL; details
+   suppressed` line during that first run. It's a **benign retry inside the package's
+   schema setup** — verify everything landed with:
+   ```sql
+   SELECT index_name, status FROM user_indexes WHERE table_name = 'BRAIN_RECORD_CHUNKS';
+   -- expect: BRAIN_RECORD_CHUNKS_CONTENT_HVX_I  DOMAIN  VALID
+   ```
+2. Do that first run as a deliberate **warm-up** (one throwaway question) rather than
+   inside something time-sensitive — schema + index creation adds ~a minute, once.
+
+After the flip, the daily `sync.py` automatically adds the **OAMP privacy sweep** as its
+final step (run `scripts/oamp_sweep.py` by hand to check it), and `tests/eval_oamp.py`
+on the local sandbox is the pre-flight before any package version upgrade.
