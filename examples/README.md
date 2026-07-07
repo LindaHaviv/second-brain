@@ -13,6 +13,7 @@ The distinction that keeps this repo navigable:
 |---|---|---|
 | [`obsidian-starter/`](obsidian-starter/) | anywhere on your machine (it becomes your vault / drop folder) | a minimal notes folder with the frontmatter conventions pre-documented — works with `scripts/obsidian.py` |
 | [`example_loader.py`](example_loader.py) | `scripts/<your_source>.py` | a heavily-commented skeleton for writing a loader for ANY source — the whole contract is one table |
+| [`langgraph_oamp.py`](langgraph_oamp.py) | your own agent project | a LangGraph agent with Oracle AI Agent Memory (OAMP) as its memory core — recall before the model runs, remember after; the same pattern fits the OpenAI Agents SDK or Claude Agent SDK |
 
 ## The loader contract (why a skeleton is enough)
 
