@@ -112,7 +112,9 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 > `oracle/.env` switches to the from-scratch build (`semantic_memory.py`, `conversation.py`) —
 > the learning track. The episodic run log and procedural tool-ranking are this build's
 > extensions of the memory core and run on both backends. Using LangGraph or another framework?
-> See `examples/langgraph_oamp.py` for OAMP as a framework agent's memory.
+> See `examples/langgraph_oamp.py` for OAMP as a framework agent's memory. Deeper reading on the
+> package's latest capabilities:
+> [What's New in Oracle AI Agent Memory](https://blogs.oracle.com/developers/whats-new-in-oracle-ai-agent-memory-custom-extraction-hybrid-search-and-more-control).
 
 > **🔧 Swap the models — your choice.** Two pluggable pieces, so you're not locked in:
 > - **Embeddings are already open-source and local.** The MiniLM ONNX model runs *inside* Oracle, so

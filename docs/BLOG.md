@@ -344,8 +344,10 @@ daily scheduled consolidation.)
 > privacy guard straight into the extractor, so "never memorize financials" is enforced inside the
 > managed core too), and **`OracleDBEmbedder`** — the package drives the same in-database MiniLM
 > model this build already uses, so memory search still makes zero embedding API calls. The
-> package publishes long-memory benchmarks (94.4 on LongMemEval), and its release notes cover the
-> rest — background extraction, context cards, metadata filters, TTL retention, update APIs.
+> package publishes long-memory benchmarks (94.4 on LongMemEval), and
+> [What's New in Oracle AI Agent Memory](https://blogs.oracle.com/developers/whats-new-in-oracle-ai-agent-memory-custom-extraction-hybrid-search-and-more-control)
+> covers the rest — background extraction, context cards, metadata filters, TTL retention,
+> update APIs — with an end-to-end support-copilot notebook.
 >
 > **The from-scratch build stays in the repo as the learning track** (`MEMORY_BACKEND=custom`):
 > the same types as hand-built tables, so you can *see* the model the package manages for you.
@@ -715,7 +717,9 @@ Everything this build touches has a free, official path to go deeper:
 - **[Oracle AI Agent Memory Package (OAMP)](https://docs.oracle.com/en/database/oracle/agent-memory/)**:
   the official memory core — the **default backend** in this build (`oamp_memory.py`;
   `MEMORY_BACKEND=custom` switches to the from-scratch learning track). The repo also ships a
-  LangGraph example (`examples/langgraph_oamp.py`) wiring OAMP into a framework agent.
+  LangGraph example (`examples/langgraph_oamp.py`) wiring OAMP into a framework agent. For the
+  latest capabilities (custom extraction, hybrid search, context cards, TTL), read
+  [What's New in Oracle AI Agent Memory](https://blogs.oracle.com/developers/whats-new-in-oracle-ai-agent-memory-custom-extraction-hybrid-search-and-more-control).
 - **[Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/)**:
   the managed alternative to Step 6's custom server.
 - Feature docs used in this build:
