@@ -480,8 +480,8 @@ including an Always Free Arm VM on Oracle Cloud.
 
 > **🔌 This build uses a custom MCP server, and here's why.** It's a **custom MCP server**
 > (Python): you keep full control of the tools, it speaks the OAuth *custom-connector* flow that
-> **claude.ai web/mobile and ChatGPT** use, it's **database-agnostic**, and it works with the
-> **local container**, no cloud required. That's the right fit for a portable, teach-the-internals
+> **claude.ai web/mobile and ChatGPT** use, the pattern would rebuild over any database, and it
+> works with the **local container**, no cloud required. That's the right fit for a portable, teach-the-internals
 > build. Oracle *also* offers a fully **managed** MCP server built into **Autonomous AI Database**
 > (cloud): no infrastructure to run, tools defined as **Select AI Agent** (PL/SQL) tools, access
 > **governed by database identity** with native auditing. If your brain lives in Autonomous AI
