@@ -17,17 +17,20 @@ from content import search_hybrid, get_post, get_wiki_page
 from procedural import seed_tools, select_tools
 from semantic_memory import semantic_recall, consolidate
 
-# MEMORY BACKEND — oamp (default) = Oracle's official AI Agent Memory package as the
-# managed core for conversational + semantic memory; custom = this repo's from-scratch
-# implementations (the learning track). Episodic (memory.py) and procedural
-# (procedural.py) are the repo's EXTENSIONS of the core and run on both backends.
-MEMORY_BACKEND = os.environ.get("MEMORY_BACKEND", "oamp").lower()
+# MEMORY BACKEND — custom (default) = this repo's from-scratch conversational + semantic
+# memory, the LEARNING TRACK: every table hand-built and readable, the same way the
+# Oracle x DeepLearning.AI course teaches the layer, and verified on all three LLM
+# providers (including the $0 Ollama path). MEMORY_BACKEND=oamp flips to Oracle's
+# official AI Agent Memory package (oamp_memory.py) — the SHIP PATH: managed threads,
+# automatic extraction, hybrid retrieval, maintained by Oracle. Episodic (memory.py)
+# and procedural (procedural.py) are the repo's EXTENSIONS of the core on both backends.
+MEMORY_BACKEND = os.environ.get("MEMORY_BACKEND", "custom").lower()
 if MEMORY_BACKEND == "oamp":
     try:
         import oamp_memory
     except ImportError:
         print("[memory] oracleagentmemory not installed — falling back to the custom "
-              "backend (pip install -r requirements.txt, or set MEMORY_BACKEND=custom)")
+              "backend (pip install -r requirements.txt to use MEMORY_BACKEND=oamp)")
         MEMORY_BACKEND = "custom"
 
 MODEL = "claude-opus-4-8"

@@ -257,12 +257,14 @@ docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE
 - [x] **Many sources, one model** — YouTube (+ transcripts), Notion, **Instagram** (API *or*
   export — captions + reel transcripts), **LinkedIn**, **ChatGPT/Claude** exports — all into one
   `posts` table (`scripts/`)
-- [x] **All four agent-memory types** — episodic, semantic, conversational, procedural — with
-  Oracle's official [AI Agent Memory package](https://docs.oracle.com/en/database/oracle/agent-memory/)
-  (`oracleagentmemory`) as the **default memory core** (auto-extraction, hybrid retrieval,
-  privacy guard passed as custom extraction instructions; `oamp_memory.py`), a from-scratch
-  build as the learning track (`MEMORY_BACKEND=custom`), and episodic + procedural as this
-  build's extensions of the core (+ a [LangGraph example](examples/langgraph_oamp.py))
+- [x] **All four agent-memory types, two ways** — episodic, semantic, conversational,
+  procedural. The default is the **learning track**: hand-built tables you can read with SQL
+  (the same way Oracle's DeepLearning.AI course teaches the layer). One switch
+  (`MEMORY_BACKEND=oamp`) flips to the **ship path**: Oracle's official
+  [AI Agent Memory package](https://docs.oracle.com/en/database/oracle/agent-memory/)
+  (`oracleagentmemory` — auto-extraction, hybrid retrieval, the privacy guard passed as
+  custom extraction instructions; `oamp_memory.py`). Episodic + procedural are this build's
+  extensions of the core on both (+ a [LangGraph example](examples/langgraph_oamp.py))
 - [x] **Knowledge wiki layer** — LLM-compiled, self-improving topic pages (`wiki.py`) + a Duality
   view; the strongest relational + JSON + vector showcase
 - [x] **Hybrid search** — vector + keyword (Reciprocal Rank Fusion)

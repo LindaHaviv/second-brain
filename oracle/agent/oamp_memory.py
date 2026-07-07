@@ -1,7 +1,9 @@
-"""Oracle AI Agent Memory (OAMP) — the official package as the DEFAULT memory core.
+"""Oracle AI Agent Memory (OAMP) — the official package as the SHIP-PATH memory core.
 
-This is the recommended path: `pip install oracleagentmemory` turns the same database
-this repo already uses into a managed memory core. What it takes over, and what stays:
+Set MEMORY_BACKEND=oamp to use it: `pip install oracleagentmemory` (already in the
+requirements) turns the same database this repo already uses into a managed memory
+core — the recommended path once you've learned the model and want Oracle maintaining
+it. What it takes over, and what stays:
 
   conversational memory -> OAMP threads + context summaries   (BRAIN_THREAD / BRAIN_MESSAGE)
   semantic memory       -> OAMP durable memories, extracted   (BRAIN_MEMORY)
@@ -10,9 +12,11 @@ this repo already uses into a managed memory core. What it takes over, and what 
   procedural tool stats -> stays custom (procedural.py)       (TOOL_REGISTRY)
 
 OAMP has no run-log or tool-ranking record types — those two are this repo's EXTENSION
-of the memory core, living in the same database. Switch back to the from-scratch
-implementations (the learning track: semantic_memory.py + conversation.py) with
-MEMORY_BACKEND=custom in oracle/.env.
+of the memory core, living in the same database. The default backend (MEMORY_BACKEND
+unset, or =custom) is the from-scratch learning track (semantic_memory.py +
+conversation.py) — hand-built tables, verified on every LLM provider including the
+$0 Ollama path; OAMP extraction is verified here with claude-sonnet-5 (small local
+models may fail its structured-output format — see _EXTRACT_DEFAULTS below).
 
 Everything below reuses the repo's existing configuration:
   - the in-DB MINILM embedder (zero embedding API calls — same story as search)

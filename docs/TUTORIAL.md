@@ -103,16 +103,18 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 
 ![The research agent answering from your own content, citing your videos, and recording the run to agent_memory](images/agent-answer.png)
 
-> **🧠 Memory backend.** By default the agent's conversational + semantic memory runs on
+> **🧠 Memory backend: learn first, then ship.** By default the agent's conversational +
+> semantic memory runs on the **learning track** — hand-built tables (`semantic_memory`,
+> `conversations`) you can read with SQL, the same way Oracle's DeepLearning.AI course teaches
+> the layer, and verified on every LLM provider including the $0 Ollama path. When you want a
+> maintained memory core instead, set `MEMORY_BACKEND=oamp` in `oracle/.env` to flip to
 > **Oracle's official AI Agent Memory package** (`oracleagentmemory`, installed with the
-> requirements): threads and durable memories are managed for you — extracted automatically
-> from each exchange by an LLM, retrieved with hybrid (lexical + vector) search, and stored as
-> plain tables (`brain_*`) you can read with SQL. The repo's privacy guard is passed into the
-> extractor as custom instructions. Prefer to see the plumbing? `MEMORY_BACKEND=custom` in
-> `oracle/.env` switches to the from-scratch build (`semantic_memory.py`, `conversation.py`) —
-> the learning track. The episodic run log and procedural tool-ranking are this build's
-> extensions of the memory core and run on both backends. Using LangGraph or another framework?
-> See `examples/langgraph_oamp.py` for OAMP as a framework agent's memory. Deeper reading on the
+> requirements): threads and durable memories managed for you — extracted automatically from
+> each exchange by an LLM, retrieved with hybrid (lexical + vector) search, stored as plain
+> `brain_*` tables, with the repo's privacy guard passed into the extractor as custom
+> instructions. The episodic run log and procedural tool-ranking are this build's extensions of
+> the memory core and run on both backends. Using LangGraph or another framework? See
+> `examples/langgraph_oamp.py` for OAMP as a framework agent's memory. Deeper reading on the
 > package's latest capabilities:
 > [What's New in Oracle AI Agent Memory](https://blogs.oracle.com/developers/whats-new-in-oracle-ai-agent-memory-custom-extraction-hybrid-search-and-more-control).
 
@@ -450,9 +452,9 @@ content scope** by default, so private data stays local. See
   | Type | Table (default backend) | Your agent should… |
   |---|---|---|
   | **Episodic** (experience) | `agent_memory` | `memory.record()` every run: task, tool, outcome. Cheap, always-on — this is what distillation feeds on. |
-  | **Semantic** (facts) | `brain_memory` (OAMP) | *recall* durable facts before acting (`oamp_memory.recall_facts()`), so it starts from lessons, not from zero. Never write it directly — the package's extractor distills them from your exchanges. On the custom track: `semantic_memory` + the consolidation step. |
+  | **Semantic** (facts) | `semantic_memory` | *recall* distilled facts before acting (`semantic_recall()`), so it starts from lessons, not from zero. Never write it directly — consolidation promotes episodic runs into facts. On the ship path (`MEMORY_BACKEND=oamp`): `brain_memory`, distilled automatically via `oamp_memory.recall_facts()`. |
   | **Procedural** (how-to) | `procedural_memory` | select tools by meaning (`procedural.select_tools()`) instead of loading them all — matters as the toolset grows. |
-  | **Conversational** (session) | `brain_thread` + `brain_message` (OAMP) | record each exchange (`oamp_memory.record_exchange()`); OAMP keeps summaries and context cards. On the custom track: `conversations` with a recent-window load. |
+  | **Conversational** (session) | `conversations` | persist multi-turn dialogue with a recent-window load. On the ship path: `brain_thread` + `brain_message` via `oamp_memory.record_exchange()`, with OAMP summaries and context cards. |
 
   Most batch agents need just the first two: recall facts, do the work, record the run. That
   minimal loop is enough for the self-improvement flywheel — tonight's runs become tomorrow's
