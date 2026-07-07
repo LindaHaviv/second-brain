@@ -638,9 +638,10 @@ Replicating this as *your* second brain is the point. Seven steps keep yours pri
    (would the privacy classifier still agree with your reviewed labels?), `tests/eval_verify.py`
    (plant fabrications, confirm the accuracy gate still catches them), and
    `tests/eval_grounding.py` (do research answers cite the sources they should?). Running the
-   OAMP ship path? Add `tests/eval_oamp.py` — six probes (extraction smoke, privacy-guard leak
-   test, recall, scope isolation, deletion, upgrade canary) that catch the package's silent
-   failure modes; run it on every package or extraction-model change. The habit that
+   OAMP ship path? Add `tests/eval_oamp.py` — seven probes (extraction smoke, privacy-guard leak
+   test, recall, scope isolation, deletion, upgrade canary, and a planted-leak enforcement test
+   for the structural sweep) that catch the package's silent failure modes; run it on every
+   package or extraction-model change. The habit that
    makes them work: whenever a query should find something and does not, fix it, then add it to
    the golden set so it can never quietly break again.
 

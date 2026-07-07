@@ -5,6 +5,7 @@ pure-function unit tests. No LLM calls, so it's fast and deterministic.
   pytest tests/test_brain.py        # also works
 """
 import asyncio
+import os
 import pathlib
 import sys
 import unittest
@@ -164,6 +165,14 @@ def test_oamp_privacy_deny_patterns():
                  "a video about pricing strategies in tech",
                  "published a tutorial about database constraints"):
         assert not violates_privacy(fine), f"false positive: {fine!r}"
+    # OAMP_DENY_EXTRA extends the list without code edits — and must not break the defaults
+    os.environ["OAMP_DENY_EXTRA"] = r"\bproject codename\b"
+    try:
+        assert violates_privacy("the project codename is nightingale")
+        assert violates_privacy("my rate for the deal is $9,876,543")
+        assert not violates_privacy("a video about tech careers")
+    finally:
+        del os.environ["OAMP_DENY_EXTRA"]
 
 
 # --- regression tests for the 2026-07 code-review remediation --------------------------------
