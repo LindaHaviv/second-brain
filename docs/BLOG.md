@@ -703,8 +703,9 @@ Everything this build touches has a free, official path to go deeper:
 - **[Agent Memory: Building Memory-Aware Agents](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**:
   the free **Oracle × DeepLearning.AI course**. Its reference architecture is exactly what you
   built in Step 4 — long-term memory types (episodic, semantic, procedural) as database tables
-  with a memory manager over them, and the database as the **agent memory core**; take it to
-  master the concepts behind the code.
+  with a memory manager over them, and the database as the **agent memory core**. The course
+  builds that layer by hand (the same philosophy as this repo's `MEMORY_BACKEND=custom` learning
+  track); the OAMP package is the productized version of the same model — this build ships both.
 - **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)**:
   Oracle's open workshops + notebooks, from RAG to memory-augmented agents. Start with the
   hands-on **[Agent Memory Workshop](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/workshops/agent_memory_workshop)**
