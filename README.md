@@ -76,7 +76,7 @@ whole build fits in one), an Arm VM that can host the MCP server, 200 GB of bloc
 > read and write concurrently. Markdown where it shines (authoring, portability); a database where
 > the work is (retrieval, relationships, memory, governance).
 
-## Prerequisites
+## Step 0 — Prerequisites
 
 - macOS (this guide is Apple Silicon / `arm64`; on Intel, drop the `platform:` line in
   `oracle/docker-compose.yml`).
@@ -84,7 +84,7 @@ whole build fits in one), an Arm VM that can host the MCP server, 200 GB of bloc
   **Anthropic API key** (default), an OpenAI key, or a **free local model via Ollama**
   (`LLM_PROVIDER` in `oracle/.env` — search itself needs no key at all).
 
-## Quickstart
+## Step 1 — Quickstart: stand up the database (~15 min)
 
 ```bash
 # 1. Container engine (headless — no Docker Desktop)
@@ -116,7 +116,7 @@ That gives you a live Oracle 26ai with the content schema, the Duality view, the
   print(db.connect().cursor().execute(\"select count(*) from user_objects\").fetchone())"
 ```
 
-## Collect + search your content
+## Step 2 — Collect + search your content
 
 ```bash
 # Collect: pull a public channel's metadata (any public channel works — swap in yours later)
@@ -135,7 +135,7 @@ Swap in any channel, or ingest other platforms via their data exports — see
 **[docs/EXPORT_GUIDE.md](docs/EXPORT_GUIDE.md)**. Every platform lands in the same `posts`
 model, so the pipeline is the same.
 
-## Converse — the research agent (needs an LLM)
+## Step 3 — Converse: the research agent (needs an LLM)
 
 ```bash
 # oracle/.env:  ANTHROPIC_API_KEY=sk-ant-...   (default)
@@ -146,7 +146,7 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 The agent searches your content, answers grounded in it (citing your videos), and records
 each research run to `agent_memory`.
 
-## Beyond the quickstart
+## Step 4 — Beyond the quickstart: make it a real second brain
 
 Once the basics work, this scales into a real second brain — the full path is in
 **[docs/TUTORIAL.md](docs/TUTORIAL.md)**:
@@ -220,7 +220,7 @@ labels), `eval_verify.py` (a fabrication probe for the accuracy gate), and `eval
 (do answers cite the sources they should?). Tests prove the code runs; evals prove the system
 still finds and says the right things.
 
-## Take it to the cloud
+## Step 5 — Take it to the cloud (optional)
 
 Everything above runs free on your laptop. The same code runs on an **Always Free Autonomous AI
 Database** so the brain is always-on, backed up, and reachable from anywhere:
@@ -258,15 +258,17 @@ docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE
   export — captions + reel transcripts), **LinkedIn**, **ChatGPT/Claude** exports — all into one
   `posts` table (`scripts/`)
 - [x] **All four agent-memory types, two ways** — episodic, semantic, conversational,
-  procedural. The default is the **learning track**: hand-built tables you can read with SQL
-  (the same way Oracle's DeepLearning.AI course teaches the layer). One switch
-  (`MEMORY_BACKEND=oamp`) flips to the **ship path**: Oracle's official
+  procedural. The default is Oracle's official
   [AI Agent Memory package](https://docs.oracle.com/en/database/oracle/agent-memory/)
-  (`oracleagentmemory` — auto-extraction, hybrid retrieval, the privacy guard as custom
-  extraction instructions **plus a structural deny-list sweep that enforces it**, and global
-  consolidated facts merged into recall; `oamp_memory.py`). Episodic + procedural are this
-  build's extensions of the core on both (+ a [LangGraph example](examples/langgraph_oamp.py),
-  + `tests/eval_oamp.py` — 7 probes to run on every package upgrade)
+  (`oracleagentmemory` — maintained + benchmarked, auto-extraction, hybrid retrieval, the
+  privacy guard as custom extraction instructions **plus a structural deny-list sweep that
+  enforces it**, and global consolidated facts merged into recall; `oamp_memory.py`).
+  `MEMORY_BACKEND=custom` switches to the **learning track**: the same layer hand-built as
+  tables you can read with SQL (how Oracle's DeepLearning.AI course teaches it) — and the
+  **fully-local path**, auto-selected when you configure Ollama. Episodic + procedural are
+  this build's extensions of the core on both (+ a
+  [LangGraph example](examples/langgraph_oamp.py), + `tests/eval_oamp.py` — 7 probes to run
+  on every package upgrade)
 - [x] **Knowledge wiki layer** — LLM-compiled, self-improving topic pages (`wiki.py`) + a Duality
   view; the strongest relational + JSON + vector showcase
 - [x] **Hybrid search** — vector + keyword (Reciprocal Rank Fusion)

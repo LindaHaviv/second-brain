@@ -175,6 +175,19 @@ def test_oamp_privacy_deny_patterns():
         del os.environ["OAMP_DENY_EXTRA"]
 
 
+def test_memory_backend_resolver():
+    """Default = the package (the honest recommendation); ollama auto-selects the
+    hand-built track (its extraction fails silently on small local models); an
+    explicit MEMORY_BACKEND always wins, both ways."""
+    from research_agent import _resolve_backend
+    assert _resolve_backend(None, "anthropic") == "oamp"
+    assert _resolve_backend(None, "openai") == "oamp"
+    assert _resolve_backend(None, "ollama") == "custom"     # the guard
+    assert _resolve_backend("custom", "anthropic") == "custom"   # explicit wins
+    assert _resolve_backend("oamp", "ollama") == "oamp"          # explicit wins
+    assert _resolve_backend("OAMP", "anthropic") == "oamp"       # case-insensitive
+
+
 # --- regression tests for the 2026-07 code-review remediation --------------------------------
 
 def test_record_clamps_long_values():

@@ -103,20 +103,22 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 
 ![The research agent answering from your own content, citing your videos, and recording the run to agent_memory](images/agent-answer.png)
 
-> **🧠 Memory backend: learn first, then ship.** By default the agent's conversational +
-> semantic memory runs on the **learning track** — hand-built tables (`semantic_memory`,
-> `conversations`) you can read with SQL, the same way Oracle's DeepLearning.AI course teaches
-> the layer, and verified on every LLM provider including the $0 Ollama path. When you want a
-> maintained memory core instead, set `MEMORY_BACKEND=oamp` in `oracle/.env` to flip to
-> **Oracle's official AI Agent Memory package** (`oracleagentmemory`, installed with the
-> requirements): threads and durable memories managed for you — extracted automatically from
-> each exchange by an LLM, retrieved with hybrid (lexical + vector) search, stored as plain
-> `brain_*` tables. The episodic run log and procedural tool-ranking are this build's
-> extensions of the memory core and run on both backends, and on the ship path `recall_facts`
-> still merges your globally consolidated facts in — the package's per-exchange memories plus
-> the learning track's "what it all adds up to."
+> **🧠 Memory backend: the default is Oracle's official package.** Out of the box the agent's
+> conversational + semantic memory runs on **Oracle's official AI Agent Memory package**
+> (`oracleagentmemory`, installed with the requirements): threads and durable memories managed
+> for you — extracted automatically from each exchange by an LLM, retrieved with hybrid
+> (lexical + vector) search, stored as plain `brain_*` tables. That's the honest
+> recommendation: maintained and benchmarked, so this layer never needs your gardening.
+> `MEMORY_BACKEND=custom` switches to the **learning track** — the same layer as hand-built
+> tables (`semantic_memory`, `conversations`) you can read with SQL, the way Oracle's
+> DeepLearning.AI course teaches it — and it's also the **fully-local path**: the package's
+> extraction fails silently on small local models, so with `LLM_PROVIDER=ollama` the repo
+> selects the hand-built track automatically. The episodic run log and procedural tool-ranking
+> are this build's extensions of the memory core and run on both backends, and on the package
+> backend `recall_facts` still merges your globally consolidated facts in — the package's
+> per-exchange memories plus the learning track's "what it all adds up to."
 >
-> **Ship-path security is defense in depth, and it's tested.** The repo's privacy guard goes
+> **Package security is defense in depth, and it's tested.** The repo's privacy guard goes
 > into the extractor as custom instructions — but instructions are prompts, and our eval caught
 > partial compliance (a dollar amount dropped, a contract term memorized). So a **structural
 > sweep** (`oamp_memory.enforce_privacy`, a regex deny-list you adapt to your categories)
@@ -461,9 +463,9 @@ content scope** by default, so private data stays local. See
   | Type | Table (default backend) | Your agent should… |
   |---|---|---|
   | **Episodic** (experience) | `agent_memory` | `memory.record()` every run: task, tool, outcome. Cheap, always-on — this is what distillation feeds on. |
-  | **Semantic** (facts) | `semantic_memory` | *recall* distilled facts before acting (`semantic_recall()`), so it starts from lessons, not from zero. Never write it directly — consolidation promotes episodic runs into facts. On the ship path (`MEMORY_BACKEND=oamp`): `brain_memory`, distilled automatically via `oamp_memory.recall_facts()`. |
+  | **Semantic** (facts) | `semantic_memory` | *recall* distilled facts before acting (`semantic_recall()`), so it starts from lessons, not from zero. Never write it directly — consolidation promotes episodic runs into facts. On the package backend (the default): `brain_memory`, distilled automatically via `oamp_memory.recall_facts()`. |
   | **Procedural** (how-to) | `procedural_memory` | select tools by meaning (`procedural.select_tools()`) instead of loading them all — matters as the toolset grows. |
-  | **Conversational** (session) | `conversations` | persist multi-turn dialogue with a recent-window load. On the ship path: `brain_thread` + `brain_message` via `oamp_memory.record_exchange()`, with OAMP summaries and context cards. |
+  | **Conversational** (session) | `conversations` | persist multi-turn dialogue with a recent-window load. On the package backend (the default): `brain_thread` + `brain_message` via `oamp_memory.record_exchange()`, with OAMP summaries and context cards. |
 
   Most batch agents need just the first two: recall facts, do the work, record the run. That
   minimal loop is enough for the self-improvement flywheel — tonight's runs become tomorrow's

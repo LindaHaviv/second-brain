@@ -1,4 +1,4 @@
-"""Daily privacy sweep of the OAMP memory store (ship path only).
+"""Daily privacy sweep of the OAMP memory store (the default backend).
 
   ./.venv/bin/python scripts/oamp_sweep.py
 

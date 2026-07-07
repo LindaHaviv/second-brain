@@ -34,8 +34,7 @@ are for you) and keep them separate:
   quietly *re-derive* private facts back into "durable memory" even after you remove the source. So
   the consolidation and wiki steps must read **only** the content scope, and the memory-distiller is
   told never to record private facts. Otherwise separation leaks right back in.
-- **Prompt instructions are not guarantees — enforce structurally and test it.** On the OAMP ship
-  path the privacy rule goes into the extractor as a custom instruction, and our eval caught it
+- **Prompt instructions are not guarantees — enforce structurally and test it.** On the OAMP path (the default backend) the privacy rule goes into the extractor as a custom instruction, and our eval caught it
   getting *partial* compliance (a dollar amount excluded, a contract term memorized). The repo
   therefore also runs a **structural deny-list sweep** (`oamp_memory.enforce_privacy`) over every
   extracted memory — inline after each exchange and in the daily sync — and ships

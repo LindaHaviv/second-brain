@@ -17,20 +17,35 @@ from content import search_hybrid, get_post, get_wiki_page
 from procedural import seed_tools, select_tools
 from semantic_memory import semantic_recall, consolidate
 
-# MEMORY BACKEND — custom (default) = this repo's from-scratch conversational + semantic
-# memory, the LEARNING TRACK: every table hand-built and readable, the same way the
-# Oracle x DeepLearning.AI course teaches the layer, and verified on all three LLM
-# providers (including the $0 Ollama path). MEMORY_BACKEND=oamp flips to Oracle's
-# official AI Agent Memory package (oamp_memory.py) — the SHIP PATH: managed threads,
-# automatic extraction, hybrid retrieval, maintained by Oracle. Episodic (memory.py)
-# and procedural (procedural.py) are the repo's EXTENSIONS of the core on both backends.
-MEMORY_BACKEND = os.environ.get("MEMORY_BACKEND", "custom").lower()
+# MEMORY BACKEND — the honest recommendation: run Oracle's official AI Agent Memory
+# package (oamp_memory.py) — maintained, benchmarked, automatic extraction, hybrid
+# retrieval — so that's the default. The from-scratch LEARNING TRACK (MEMORY_BACKEND=
+# custom) stays first-class: it's how the Oracle x DeepLearning.AI course teaches the
+# layer, and it's the FULLY-LOCAL path — the package's LLM extraction fails silently on
+# small local models, so when LLM_PROVIDER=ollama the resolver picks custom for you
+# (explicit MEMORY_BACKEND always wins). Episodic (memory.py) and procedural
+# (procedural.py) are the repo's EXTENSIONS of the core on both backends.
+def _resolve_backend(explicit, provider):
+    """Pure resolver (unit-tested): explicit setting wins; otherwise oamp — except on
+    ollama, where extraction isn't reliable on small local models, so custom."""
+    if explicit:
+        return explicit.lower()
+    return "custom" if provider == "ollama" else "oamp"
+
+
+MEMORY_BACKEND = _resolve_backend(os.environ.get("MEMORY_BACKEND"),
+                                  os.environ.get("LLM_PROVIDER", "anthropic").lower())
+if MEMORY_BACKEND == "custom" and not os.environ.get("MEMORY_BACKEND"):
+    if os.environ.get("LLM_PROVIDER", "").lower() == "ollama":
+        print("[memory] LLM_PROVIDER=ollama -> using the hand-built memory track "
+              "(the package's extraction needs a larger model; set MEMORY_BACKEND=oamp "
+              "to override)")
 if MEMORY_BACKEND == "oamp":
     try:
         import oamp_memory
     except ImportError:
         print("[memory] oracleagentmemory not installed — falling back to the custom "
-              "backend (pip install -r requirements.txt to use MEMORY_BACKEND=oamp)")
+              "backend (pip install -r requirements.txt to use the default oamp path)")
         MEMORY_BACKEND = "custom"
 
 MODEL = "claude-opus-4-8"

@@ -300,22 +300,24 @@ kind of episodic memory; this build gives it its own table):
 | **Conversational** | `conversations` | the current multi-turn context |
 | **Procedural** | `procedural_memory` | the agent's tools, retrieved by relevance per question |
 
-That's the **learning track**, and it's what a fresh clone runs: every table hand-built, so you
-see the model from the inside — the same way Oracle's own DeepLearning.AI course teaches this
-layer. When you're ready to ship, one switch (`MEMORY_BACKEND=oamp`) hands the semantic and
-conversational rows to Oracle's official package (next box), which manages them as `brain_*`
-tables with automatic extraction. Episodic and procedural are this build's extensions of the
-core on both backends.
+Those are the **hand-built learning-track tables** (`MEMORY_BACKEND=custom`) — the same way
+Oracle's own DeepLearning.AI course teaches this layer, and the tables the fully-local Ollama
+path uses (the repo selects them automatically when you configure Ollama). **What a fresh clone
+runs by default, though, is Oracle's official package** (next box): it manages the semantic and
+conversational rows as `brain_*` tables with automatic extraction — the honest recommendation,
+because Oracle maintains and benchmarks it so you don't have to. Episodic and procedural are
+this build's extensions of the core on both backends.
 
 Before answering, the agent **recalls** relevant past runs and learned facts, and **ranks its own
 toolset** against the question. That's procedural memory: with four tools it's a hint; at forty
 it's how you'd pick which tools to send at all. After answering, it **records** the run.
 
-And the distillation step runs itself. On the learning track, a scheduled job **consolidates**
-episodic memory into semantic facts — visible plumbing you can read. On the ship path, OAMP's
-extractor turns each exchange into durable semantic memories automatically (with this build's
-privacy guard passed in as custom extraction instructions). Either way, "what happened" becomes
-"what I now know about this creator." That's the self-improving loop:
+And the distillation step runs itself. On the default (the package), OAMP's extractor turns
+each exchange into durable semantic memories automatically (with this build's privacy guard
+passed in as custom extraction instructions). On the learning track, a scheduled job
+**consolidates** episodic memory into semantic facts — visible plumbing you can read. Either
+way, "what happened" becomes "what I now know about this creator." That's the self-improving
+loop:
 
 ```
  answer  →  record the run  →  recall + consolidate  →  answer better next time
@@ -336,12 +338,12 @@ daily scheduled consolidation.)
 > The embeddings are an open-source MiniLM running inside Oracle, so search needs **no API key at
 > all** (you proved that at the Step 3 checkpoint).
 
-> **📦 Ready to ship? Flip to Oracle's official memory package.** The
+> **📦 The default memory core is Oracle's official package — the honest recommendation.** The
 > **Oracle AI Agent Memory Package** (`pip install oracleagentmemory` — already in the repo's
-> requirements) is the maintained, production path for this layer, one switch away
-> (`MEMORY_BACKEND=oamp`): conversation threads with context summaries (conversational memory)
-> and durable memories that an LLM **extracts automatically** from each exchange (semantic
-> memory) — stored in the same database, as plain tables you can read with SQL. Three 26.6
+> requirements) is what a fresh clone runs: maintained and benchmarked by Oracle, so this layer
+> is one you never have to garden. Conversation threads with context summaries (conversational
+> memory) and durable memories that an LLM **extracts automatically** from each exchange
+> (semantic memory) — stored in the same database, as plain tables you can read with SQL. Three 26.6
 > features do real work in this build: **hybrid retrieval** (`SearchStrategy.HYBRID` — semantic
 > recall plus exact matching in one Oracle-managed index), **custom extraction instructions**
 > (this build passes its privacy guard straight into the extractor, so "never memorize
@@ -353,20 +355,21 @@ daily scheduled consolidation.)
 > covers the rest — background extraction, context cards, metadata filters, TTL retention,
 > update APIs — with an end-to-end support-copilot notebook.
 >
-> **Why isn't it the first-run default?** Two honest reasons. Learning: the hand-built track is
-> the tutorial — you should watch the model work in tables you understand before handing it to a
-> package (Oracle's own course teaches it the same way). And verification: the package's LLM
-> extraction is verified here with Claude models, while the hand-built track is verified on every
-> provider including the all-free Ollama path.
+> **So why keep a hand-built track at all?** Two honest reasons. Learning: seeing the model work
+> in tables you built is how you'll debug any memory system forever — it's why Oracle's own
+> course teaches the layer by hand. And the fully-local path: the package's LLM extraction fails
+> **silently** on small local models (we verified this), so when you configure Ollama the repo
+> automatically selects the hand-built track — your $0 build keeps remembering.
+> (`MEMORY_BACKEND` overrides the automatic choice in either direction.)
 >
 > **And one security lesson we paid for so you don't have to.** Extraction instructions are a
 > *prompt*, and prompts get partial compliance: our eval caught the extractor correctly dropping
-> a planted dollar amount while memorizing a contract term. So the ship path is defense in depth:
+> a planted dollar amount while memorizing a contract term. So the package path is defense in depth:
 > the hardened instructions filter at extraction, and a **structural privacy sweep**
 > (`oamp_memory.enforce_privacy` — a regex deny-list you adapt to your own categories) re-checks
 > every extracted memory and deletes violators through the package's lifecycle API — inline after
-> each exchange and in the daily sync. Instructions suggest; the sweep enforces. And the ship
-> path keeps the learning track's best idea: `recall_facts` merges the package's per-exchange
+> each exchange and in the daily sync. Instructions suggest; the sweep enforces. And the default
+> keeps the learning track's best idea: `recall_facts` merges the package's per-exchange
 > memories with your globally consolidated facts, so the agent gets both "what this conversation
 > taught us" and "what it all adds up to." Two memory types are this build's **extensions of
 > the core** on either backend — the **episodic run log** (what the agent did, with outcomes and
@@ -638,7 +641,7 @@ Replicating this as *your* second brain is the point. Seven steps keep yours pri
    (would the privacy classifier still agree with your reviewed labels?), `tests/eval_verify.py`
    (plant fabrications, confirm the accuracy gate still catches them), and
    `tests/eval_grounding.py` (do research answers cite the sources they should?). Running the
-   OAMP ship path? Add `tests/eval_oamp.py` — seven probes (extraction smoke, privacy-guard leak
+   package (the default)? Add `tests/eval_oamp.py` — seven probes (extraction smoke, privacy-guard leak
    test, recall, scope isolation, deletion, upgrade canary, and a planted-leak enforcement test
    for the structural sweep) that catch the package's silent failure modes; run it on every
    package or extraction-model change. The habit that
@@ -736,8 +739,9 @@ Everything this build touches has a free, official path to go deeper:
   the **[agent-memory notebooks](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/notebooks/agent_memory)**
   for the OAMP package with OpenAI / Claude Agent SDK / LangGraph examples.
 - **[Oracle AI Agent Memory Package (OAMP)](https://docs.oracle.com/en/database/oracle/agent-memory/)**:
-  the official memory core — this build's **ship path** (`MEMORY_BACKEND=oamp`, wired in
-  `oamp_memory.py`; the first-run default is the from-scratch learning track). The repo also
+  the official memory core — this build's **default backend** (wired in `oamp_memory.py`;
+  `MEMORY_BACKEND=custom` switches to the from-scratch learning track, and the repo
+  auto-selects it when you configure Ollama). The repo also
   ships a LangGraph example (`examples/langgraph_oamp.py`) wiring OAMP into a framework agent.
   For the latest capabilities (custom extraction, hybrid search, context cards, TTL), read
   [What's New in Oracle AI Agent Memory](https://blogs.oracle.com/developers/whats-new-in-oracle-ai-agent-memory-custom-extraction-hybrid-search-and-more-control).

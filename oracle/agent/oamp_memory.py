@@ -1,9 +1,9 @@
-"""Oracle AI Agent Memory (OAMP) — the official package as the SHIP-PATH memory core.
+"""Oracle AI Agent Memory (OAMP) — the official package as the DEFAULT memory core.
 
-Set MEMORY_BACKEND=oamp to use it: `pip install oracleagentmemory` (already in the
-requirements) turns the same database this repo already uses into a managed memory
-core — the recommended path once you've learned the model and want Oracle maintaining
-it. What it takes over, and what stays:
+This is the honest recommendation and what a fresh clone runs (unless you configure
+Ollama — see the resolver in research_agent.py): `oracleagentmemory` turns the same
+database this repo already uses into a managed memory core, maintained and benchmarked
+by Oracle. What it takes over, and what stays:
 
   conversational memory -> OAMP threads + context summaries   (BRAIN_THREAD / BRAIN_MESSAGE)
   semantic memory       -> OAMP durable memories, extracted   (BRAIN_MEMORY)
@@ -12,11 +12,12 @@ it. What it takes over, and what stays:
   procedural tool stats -> stays custom (procedural.py)       (TOOL_REGISTRY)
 
 OAMP has no run-log or tool-ranking record types — those two are this repo's EXTENSION
-of the memory core, living in the same database. The default backend (MEMORY_BACKEND
-unset, or =custom) is the from-scratch learning track (semantic_memory.py +
-conversation.py) — hand-built tables, verified on every LLM provider including the
-$0 Ollama path; OAMP extraction is verified here with claude-sonnet-5 (small local
-models may fail its structured-output format — see _EXTRACT_DEFAULTS below).
+of the memory core, living in the same database. MEMORY_BACKEND=custom switches to the
+from-scratch learning track (semantic_memory.py + conversation.py) — hand-built tables,
+and the fully-local path: it's verified on every LLM provider including $0 Ollama,
+while OAMP extraction is verified here with claude-sonnet-5 (small local models fail
+its structured-output format silently — which is why the resolver auto-picks custom
+when LLM_PROVIDER=ollama).
 
 Everything below reuses the repo's existing configuration:
   - the in-DB MINILM embedder (zero embedding API calls — same story as search)
