@@ -130,17 +130,33 @@ def _llm():
     return Llm(model=model, **kwargs)
 
 
+def _db_handle(conn):
+    """Prefer the repo's connection POOL over a single session — OAMP runs its
+    per-type context-card searches concurrently only with a pool, and a pool is the
+    package's recommended production setup. Falls back to the caller's connection
+    (single-session mode) when pooling is disabled (DB_POOL=0, e.g. the evals)."""
+    import os as _os
+    if _os.environ.get("DB_POOL", "1") == "0":
+        return conn
+    try:
+        import db
+        return db._get_pool()
+    except Exception:
+        return conn
+
+
 def get_client(conn):
-    """One OracleAgentMemory client per process, over the repo's existing connection.
-    Schema is auto-created on first use (CREATE_IF_NECESSARY) — no extra setup step."""
+    """One OracleAgentMemory client per process, over the repo's pool (or the given
+    connection). Schema is auto-created on first use (CREATE_IF_NECESSARY)."""
     global _client
     if _client is None:
         from oracleagentmemory.core import (
             OracleAgentMemory, SchemaPolicy, SearchStrategy, MemoryExtractionConfig)
         from oracleagentmemory.core.embedders import OracleDBEmbedder
+        handle = _db_handle(conn)
         _client = OracleAgentMemory(
-            connection=conn,
-            embedder=OracleDBEmbedder(connection=conn, model="MINILM",
+            connection=handle,
+            embedder=OracleDBEmbedder(connection=handle, model="MINILM",
                                       embedding_dimension=_MINILM_DIM,
                                       max_input_tokens=_MINILM_TOKENS),
             llm=_llm(),
