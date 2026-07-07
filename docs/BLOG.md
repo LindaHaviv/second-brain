@@ -339,11 +339,13 @@ daily scheduled consolidation.)
 > uses out of the box: conversation threads with context summaries (conversational memory) and
 > durable memories that an LLM **extracts automatically** from each exchange (semantic memory) —
 > stored in the same database, as plain tables you can read with SQL. Three 26.6 features do real
-> work in this build: **hybrid retrieval** (`SearchStrategy.HYBRID` — lexical + vector in one
-> Oracle-managed index), **custom extraction instructions** (this build passes its privacy guard
-> straight into the extractor, so "never memorize financials" is enforced inside the managed core
-> too), and **schema controls** (`schema_policy`, `schema_owner` for read-only runtime users).
-> It uses the same in-database MiniLM embedder — still zero embedding API calls.
+> work in this build: **hybrid retrieval** (`SearchStrategy.HYBRID` — semantic recall plus exact
+> matching in one Oracle-managed index), **custom extraction instructions** (this build passes its
+> privacy guard straight into the extractor, so "never memorize financials" is enforced inside the
+> managed core too), and **`OracleDBEmbedder`** — the package drives the same in-database MiniLM
+> model this build already uses, so memory search still makes zero embedding API calls. The
+> package publishes long-memory benchmarks (94.4 on LongMemEval), and its release notes cover the
+> rest — background extraction, context cards, metadata filters, TTL retention, update APIs.
 >
 > **The from-scratch build stays in the repo as the learning track** (`MEMORY_BACKEND=custom`):
 > the same types as hand-built tables, so you can *see* the model the package manages for you.
