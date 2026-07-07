@@ -326,8 +326,9 @@ loop:
 ```
 
 The more you use it, the more it knows your themes, recurring questions, and gaps, and it stops
-re-deriving them every time. (In the repo this runs automatically every few research runs, plus a
-daily scheduled consolidation.)
+re-deriving them every time. (On the default backend the package extracts after every exchange;
+the global consolidation runs daily either way — and on the learning track it also triggers
+automatically every few research runs.)
 
 *[NICE-TO-HAVE GIF: "the flip" — delete the `MEMORY_BACKEND=custom` line in .env, ask one question, then `SELECT memory_type, content FROM brain_memory ORDER BY created_at DESC;` showing freshly extracted memories. Mirrors the video's Ch 6 moment; `vhs`-scriptable on the sandbox.]*
 
@@ -447,7 +448,7 @@ built both the memory (Step 4) and the wiki (Step 5), you can see the whole syst
 |---|---|---|
 | **Ingest** | every new post | embeddings generated in-DB on insert; everything downstream sees it |
 | **Episodic record** | every answer | the agent's experience; the next recall is richer |
-| **Consolidation** (episodic → semantic) | every few runs + daily | durable facts; the agent stops re-deriving your themes |
+| **Distillation** (exchanges + runs → durable facts) | per exchange (package) · daily consolidation (both) | durable facts; the agent stops re-deriving your themes |
 | **Procedural ranking** | every question | tool selection; a hint at four tools, essential at forty |
 | **Wiki refresh + growth** | daily | touched pages recompile; new content clusters earn **new** pages |
 

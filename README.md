@@ -183,6 +183,7 @@ sync.py:  pick up new chat-export zips (ingest_exports.py watches your downloads
           → pull API sources (Instagram, Notion) → Claude Code sessions (local, automatic)
           → classify private vs content (safety net re-runs after fresh imports)
           → refresh + GROW the wiki → consolidate memory
+          → OAMP privacy sweep (auto-added on the package backend)
 ```
 
 Run it by hand anytime (`./.venv/bin/python scripts/sync.py`) or schedule it daily — the
@@ -195,9 +196,10 @@ tool stores it on the spot, no export needed.
 "Self-improving" here means two specific mechanisms — and, deliberately, not a third:
 
 - **The knowledge self-organizes.** The wiki doesn't just refresh pages whose sources changed —
-  it *proposes new pages* when enough content clusters around a topic no page covers yet. Nightly
-  consolidation distills raw agent runs (`agent_memory`) into durable facts (`semantic_memory`).
-  Nobody asks for either; the daily sync triggers both.
+  it *proposes new pages* when enough content clusters around a topic no page covers yet. On the
+  default backend the package extracts durable memories from every exchange as it happens, and
+  nightly consolidation distills raw agent runs (`agent_memory`) into global facts
+  (`semantic_memory`) — recall reads both. Nobody asks for any of it; the daily sync keeps it fed.
 - **The agents compound experience.** Every run follows **recall → act → record**: an agent
   recalls consolidated facts before acting, does the work, and records the outcome. Tonight's
   runs become tomorrow's recalled facts — the research agent literally stops re-deriving things
@@ -216,9 +218,11 @@ claims into durable facts — so the loop compounds knowledge, not mistakes.
 And because quality can regress silently, the repo ships **evals** alongside the tests (plain
 Python + JSON golden sets, no framework): `tests/eval_retrieval.py` (golden queries that must keep
 ranking — free, in-database), `eval_classifier.py` (privacy-classifier drift vs your reviewed
-labels), `eval_verify.py` (a fabrication probe for the accuracy gate), and `eval_grounding.py`
-(do answers cite the sources they should?). Tests prove the code runs; evals prove the system
-still finds and says the right things.
+labels), `eval_verify.py` (a fabrication probe for the accuracy gate), `eval_grounding.py`
+(do answers cite the sources they should?), and `eval_oamp.py` (seven probes for the memory
+package — extraction smoke, privacy leak, isolation, enforcement — run on every package
+upgrade). Tests prove the code runs; evals prove the system still finds and says the right
+things.
 
 ## Step 5 — Take it to the cloud (optional)
 
@@ -235,18 +239,18 @@ Database** so the brain is always-on, backed up, and reachable from anywhere:
 
 ```
 oracle/            the database: docker-compose, schema (Duality + 4 memory types + wiki),
-                   setup SQL; the agents (db / content / memory / research_agent / idea_agent /
-                   wiki) + the MCP server (mcp_server stdio, mcp_http hosted)
+                   setup SQL; the agents (db / content / memory / oamp_memory / research_agent /
+                   idea_agent / wiki) + the MCP server (mcp_server stdio, mcp_http hosted)
 scripts/           loaders (youtube, notion, instagram, instagram_export, chatgpt, claude_chats,
                    linkedin, linkedin_harvest, obsidian, gdrive) + pipeline (classify_private, sync, consolidate,
-                   wiki) + ops (apply_schema, load_model_cloud, copy_local_to_cloud, lint_wiki,
-                   review)
+                   oamp_sweep) + ops (apply_schema, load_model_cloud, copy_local_to_cloud,
+                   lint_wiki, review)
 tests/             regression suite (test_brain.py) + quality evals (eval_retrieval /
-                   eval_classifier / eval_verify / eval_grounding, with JSON golden sets)
+                   eval_classifier / eval_verify / eval_grounding / eval_oamp, with golden sets)
 deploy/            hosted-MCP container (Dockerfile; fly.toml lives at repo root)
 sources/           canonical content as Markdown + frontmatter (source of truth)
 docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE ·
-                   ARCHITECTURE · CLOUD_MIGRATION · HOSTED_MCP
+                   CLOUD_MIGRATION · HOSTED_MCP
 ```
 
 `sources/` is the canonical layer; the database is a derived, rebuildable view of it.
