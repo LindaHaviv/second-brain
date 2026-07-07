@@ -78,7 +78,7 @@ same code to Oracle Cloud when you want it always-on.
 *The brain, three layers, one database:*
 1. **Content**: everything you've made, as rows you can read back as JSON documents.
 2. **A compiled wiki**: synthesized topic pages over that content (self-maintaining).
-3. **Agent memory**: what your agents learn, in all four flavors.
+3. **Agent memory**: what your agents learn, in four flavors.
 
 *On top of it:*
 4. **An MCP server**: the brain as a tool for **any** AI client, including Claude, ChatGPT, and
