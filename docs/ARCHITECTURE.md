@@ -2,8 +2,10 @@
 
 How to take the brain from "local on my laptop" to a **hosted, secure, headless** system
 that holds a lot of personal content and is reachable from Claude, ChatGPT, and any device —
-done with best practices. This is the target to build toward; it does not all have to happen
-at once.
+done with best practices. This started as the target; **the repo now implements the core of
+it** (fail-closed OAuth + allowlist, connection pooling, rate limiting, read/write tool
+scoping — see `oracle/agent/mcp_http.py` and [SECURITY.md](../SECURITY.md)). Kept as the map
+of the full posture.
 
 ## Target shape
 
@@ -30,8 +32,8 @@ authenticated door** every client uses. No client talks to the DB directly.
 | Component | Recommended | Notes |
 |---|---|---|
 | **Database** | **Oracle Autonomous Database 26ai** (Always Free to start; scale up later) | managed: encryption, backups, patching, mTLS. Same engine as local. |
-| **MCP server** | FastMCP over **Streamable HTTP**, containerized | host on OCI compute, Fly.io, or Cloud Run. Reference: `mhaviv/brain-mcp-server`. |
-| **Ingestion/sync** | scheduled jobs (cron / serverless / a small worker) | per-source delta pulls + redaction. See PLAN.md sync layer. |
+| **MCP server** | FastMCP over **Streamable HTTP**, containerized | host on OCI compute, Fly.io, or Cloud Run. Implemented here: `oracle/agent/mcp_http.py` + [HOSTED_MCP.md](HOSTED_MCP.md). |
+| **Ingestion/sync** | scheduled jobs (cron / serverless / a small worker) | per-source delta pulls + redaction. Implemented here: `scripts/sync.py` (LaunchAgent-ready). |
 | **Secrets** | a secrets manager (OCI Vault / Fly secrets / cloud KMS) | NOT `.env` files on the server. |
 
 **Two clean deployment patterns:**

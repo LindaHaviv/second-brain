@@ -12,9 +12,10 @@ oracle/
 ├── bootstrap.sh           first-time setup in one command (schema + model)
 ├── download-model.sh      fetch the MiniLM ONNX model for in-DB embeddings
 ├── .env.example           copy to .env; CHANGE_ME_* placeholders work locally
-└── agent/                 the Python side: db/content/memory modules, the research
-                           and idea agents, the MCP server (stdio + hosted HTTP),
-                           and runnable demo_*.py scripts
+└── agent/                 the Python side: db/content modules, the memory layer
+                           (oamp_memory — the package default — plus the hand-built
+                           learning track), the research and idea agents, the MCP
+                           server (stdio + hosted HTTP), and runnable demo_*.py scripts
 ```
 
 Start with the step-by-step workshop in [../docs/TUTORIAL.md](../docs/TUTORIAL.md) —
