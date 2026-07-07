@@ -352,8 +352,8 @@ automatically every few research runs.)
 > requirements) is what a fresh clone runs: maintained and benchmarked by Oracle, so this layer
 > is one you never have to garden. Conversation threads with context summaries (conversational
 > memory) and durable memories that an LLM **extracts automatically** from each exchange
-> (semantic memory) — stored in the same database, as plain tables you can read with SQL. Three 26.6
-> features do real work in this build: **hybrid retrieval** (`SearchStrategy.HYBRID` — semantic
+> (semantic memory) — stored in the same database, as plain tables you can read with SQL. Three of
+> its features do real work in this build: **hybrid retrieval** (`SearchStrategy.HYBRID` — semantic
 > recall plus exact matching in one Oracle-managed index), **custom extraction instructions**
 > (this build passes its privacy guard straight into the extractor, so "never memorize
 > financials" is enforced inside the managed core too), and **`OracleDBEmbedder`** — the package
@@ -594,7 +594,9 @@ safety net.
 
 Everything above runs locally, but a brain you can only reach at your desk is half a brain. Lift
 it to **Oracle Autonomous AI Database** (the Always Free tier covers this build: two Autonomous
-AI Databases at 1 OCPU + 20 GB each, forever, no expiry): same engine,
+AI Databases at 1 OCPU + 20 GB each, with no time limit — Oracle does auto-stop an Always Free
+instance idle for 7 days and can reclaim one inactive for 90, but this build's daily sync is
+exactly the activity that keeps it awake): same engine,
 managed, backed up, always-on, and it's what makes the hosted MCP and the phone story real. The
 app connects over a wallet with **no code changes**; you load the same ONNX model, copy the data,
 and you're running in the cloud. This is how mine runs; the repo's

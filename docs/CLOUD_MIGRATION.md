@@ -12,6 +12,9 @@ mTLS wallet when wallet env vars are set, with **no other code changes.** You do
 ## Phase 1 — Provision the database (OCI console)
 1. Sign in to **cloud.oracle.com** — or **create a free account** there if you don't have one
    (the **Always Free** tier is enough for everything in this guide; no paid upgrade needed).
+   One tier rule worth knowing: Oracle **auto-stops** an Always Free instance that sits idle for
+   7 days (one click to restart) and can reclaim one left inactive for ~90 days — the daily sync
+   in this repo is exactly the activity that keeps yours awake.
 2. **Autonomous Database → Create Autonomous Database.**
    - Workload type: **Transaction Processing** (or "AI").
    - **Always Free**: on.
