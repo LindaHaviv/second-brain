@@ -261,7 +261,7 @@ docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE
 - [x] **Many sources, one model** — YouTube (+ transcripts), Notion, **Instagram** (API *or*
   export — captions + reel transcripts), **LinkedIn**, **ChatGPT/Claude** exports — all into one
   `posts` table (`scripts/`)
-- [x] **All four agent-memory types, two ways** — episodic, semantic, conversational,
+- [x] **Four agent-memory types, two ways** — episodic, semantic, conversational,
   procedural. The default is Oracle's official
   [AI Agent Memory package](https://docs.oracle.com/en/database/oracle/agent-memory/)
   (`oracleagentmemory` — maintained + benchmarked, auto-extraction, hybrid retrieval, the
