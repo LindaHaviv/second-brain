@@ -403,6 +403,12 @@ first (auth on every request, allowlist, `MCP_READONLY` if it shouldn't accept w
 
 ---
 
+> **🤖 Beyond the chat apps:** the same hosted server works with any MCP client —
+> including always-on self-hosted assistants like OpenClaw. That's an advanced,
+> security-sensitive setup: see the **[HOSTED_MCP guide](HOSTED_MCP.md)** for the
+> hardening checklist (short version: recent version, private gateway, and connect
+> it to a READ-ONLY brain).
+
 ## Lab 8 — Go always-on (cloud)
 
 👤 **Who needs this:** anyone who wants the brain backed up and running 24/7 (and reachable when your

@@ -138,3 +138,40 @@ Dockerfile that does `COPY yourprivate/*.py ./agent/` after copying `oracle/agen
 own `Dockerfile.dockerignore` admitting that directory. Your workflows stay in your private
 repo; the public repo stays a teaching artifact. (This split is how the reference deployment
 runs its own video→diagram intake.)
+
+
+## Other MCP clients: always-on assistants (OpenClaw)
+
+Because the hosted server speaks standard streamable-HTTP MCP with OAuth, it works
+with more than the two big chat apps. One popular advanced option is
+[OpenClaw](https://github.com/openclaw/openclaw) — a self-hosted, always-on
+assistant gateway (WhatsApp/Telegram/etc.). Your brain plugs in as a native
+remote MCP server:
+
+```bash
+openclaw mcp add second-brain --url https://<your-app>/mcp \
+  --transport streamable-http --auth oauth
+openclaw mcp login second-brain      # browser approval, paste the code back
+openclaw mcp tools                   # confirm what it can see
+```
+
+**Treat this as an ADVANCED, security-sensitive setup.** OpenClaw runs with real
+privileges and ingests untrusted content (messages, web pages, skills), which
+makes prompt injection part of its threat model — and anything it can write to,
+injected content can write to. Non-negotiables if you connect it to your brain:
+
+1. Run a **recent stable version** and keep the gateway loopback-only (or behind
+   a private network like Tailscale); run its `openclaw security audit --fix`.
+2. Connect with a **read-only brain**: use this server's `MCP_READONLY` mode (or
+   a separate read-only deployment) so the assistant can search and fetch but
+   never write. Belt-and-suspenders: scope it client-side too with
+   `"toolFilter": {"exclude": ["ingest_note", "save_chat"]}`.
+3. Note its token storage is a file on disk, not an OS keychain — full-disk
+   encryption matters on the machine running it.
+4. Be conservative with third-party skills from its registry.
+
+Conceptual fit, in one line: OpenClaw's markdown-plus-index memory is the
+assistant's *working memory*; your database is the durable, governed knowledge
+core it draws on. Runtime and memory core are different layers — this build is
+the core, and any client is welcome at the door it can authenticate through.
+(Config syntax evolves fast — defer to [their MCP docs](https://docs.openclaw.ai/cli/mcp).)
