@@ -125,6 +125,8 @@ requirements**:
   vector search, consolidation rewrites facts transactionally, and the MCP server, the daily
   sync, and multiple agents can read and write the same brain at the same time.
 
+*[NICE-TO-HAVE IMAGE: the four database requirements as a stacked ladder — "search by meaning = vectors need a home / privacy = a rule the engine enforces / pages = secretly a graph / memory = state, written concurrently." Same asset as the video's Diagram 2 — export the PNG from that Excalidraw scene.]*
+
 So the framing isn't *markdown or a database*. It's **markdown where it shines** (authoring,
 portability), **a database where the work is** (retrieval, relationships, memory, governance).
 Your notes feed the brain; the database is what makes it think.
@@ -301,6 +303,8 @@ kind of episodic memory; this build gives it its own table):
 | **Semantic** | `semantic_memory` | durable facts distilled from those runs |
 | **Conversational** | `conversations` | the current multi-turn context |
 | **Procedural** | `procedural_memory` | the agent's tools, retrieved by relevance per question |
+
+*[NICE-TO-HAVE IMAGE: the four memory types as a stacked ladder — "episodic = what happened / semantic = what I know now / conversational = this thread / procedural = which tool to grab" — with a "distills automatically" arrow beside the stack. Same asset as the video's Diagram 4.]*
 
 Those are the **hand-built learning-track tables** (`MEMORY_BACKEND=custom`) — the same way
 Oracle's own DeepLearning.AI course teaches this layer, and the tables the fully-local Ollama
@@ -497,6 +501,8 @@ client can auto-allow them, while the write tools are marked as writes so the cl
 > Reciprocal Rank Fusion.* So a demo can *see* a result that matched by **both** meaning and exact
 > keyword. The retrieval isn't hidden; it's on the page.
 
+*[NICE-TO-HAVE IMAGE: hub diagram — one brain in the center, generic chat-app shapes (no brand logos) all plugged into the same MCP door. Same asset as the video's Diagram 6.]*
+
 Want it on your phone and in ChatGPT? **Host** the same server over HTTP. That puts your brain on
 the public internet, so lock it down first (OAuth + an allowlist; see Security below), and if
 you've loaded your own data, do Step 7's privacy scoping **before** you host. Once it's up, both
@@ -558,6 +564,8 @@ memory consolidation.
 So private material is excluded from retrieval **and** from the self-improving loop. That means
 the brain can't quietly re-derive it into "durable memory" after you've set it aside. A
 classify-on-ingest pass tags private and off-topic items automatically.
+
+*[NICE-TO-HAVE IMAGE: the visibility gate — one `visibility` flag on every row, and every read path (search, wiki compiler, consolidation, MCP tools) shown filtering through the same gate; private rows visibly excluded from the self-improving loop. New asset — not in the video plan (the video demos this live instead).]*
 
 **Current by loop.** New content is only useful if the *derived* layers keep up. One scheduled job
 enforces the order **pull sources → classify → refresh the wiki → consolidate memory**, so your
