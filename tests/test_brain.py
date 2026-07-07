@@ -148,6 +148,24 @@ def test_schema_statement_split():
     assert stmts == ["CREATE TABLE t (a NUMBER)", "INSERT INTO t VALUES (1)"], stmts
 
 
+def test_oamp_privacy_deny_patterns():
+    """The structural sweep's deny-list (pure — no DB, no LLM, no package import needed):
+    private business detail must match; ordinary tech-content phrasing — including '$0'
+    and 'pricing' talk with no numbers — must not. Extend the list? Extend this first."""
+    from oamp_memory import violates_privacy
+    for leak in ("my rate for the deal is $9,876,543",
+                 "the fee of 5000 was agreed by email",
+                 "their contract has a 999-day exclusivity clause",
+                 "four deliverables per quarter",
+                 "wire it to the account number on the invoice"):
+        assert violates_privacy(leak), f"should flag: {leak!r}"
+    for fine in ("the Always Free tier includes two full databases",
+                 "this build runs at $0 with no accounts anywhere",
+                 "a video about pricing strategies in tech",
+                 "published a tutorial about database constraints"):
+        assert not violates_privacy(fine), f"false positive: {fine!r}"
+
+
 # --- regression tests for the 2026-07 code-review remediation --------------------------------
 
 def test_record_clamps_long_values():

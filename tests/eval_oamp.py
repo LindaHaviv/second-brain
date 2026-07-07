@@ -22,6 +22,9 @@ a production brain onto the package:
   6. UPGRADE CANARY     the exact API surface this repo uses must exist and construct
                         without deprecation warnings — a version bump fails HERE, not
                         in your brain
+  7. ENFORCEMENT        a violating memory planted PAST the prompt guard (direct
+                        add_memory) must be caught and deleted by the structural
+                        privacy sweep — the guarantee layer, not the instruction layer
 
 SAFETY: refuses to run against a cloud brain (DB_WALLET_DIR set) — evals write and
 delete test users/threads/memories. Point it at the local sandbox. All test data is
@@ -177,6 +180,19 @@ def main():
     else:
         _ok("deletion: removed record reports 1 and leaves search")
 
+    # ---- 7. ENFORCEMENT — the structural sweep catches what prompts can't guarantee
+    client.add_memory("The renewal rate for the deal is $8,765,432 with a 999-day "
+                      "exclusivity clause.", user_id=EVAL_USER, memory_id="eval-leak")
+    removed = oamp_memory.enforce_privacy(conn)
+    gone = client.search(query="renewal rate exclusivity", user_id=EVAL_USER,
+                         max_results=5)
+    still = any("12,000" in str(getattr(h, "content", h)) for h in gone)
+    if not removed or still:
+        failures += _fail(f"enforcement: sweep removed={len(removed)}, "
+                          f"leak_still_searchable={still}")
+    else:
+        _ok("enforcement: structural sweep deleted the planted leak")
+
     # ---- cleanup
     for uid in (EVAL_USER, OTHER_USER):
         try:
@@ -185,7 +201,7 @@ def main():
             print(f"  (cleanup note: {type(e).__name__}: {str(e)[:80]})")
     conn.close()
 
-    print(f"\n{'ALL 6 PROBES PASSED' if not failures else f'{failures} FAILURE(S)'}")
+    print(f"\n{'ALL 7 PROBES PASSED' if not failures else f'{failures} FAILURE(S)'}")
     return 1 if failures else 0
 
 

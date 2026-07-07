@@ -262,9 +262,11 @@ docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE
   (the same way Oracle's DeepLearning.AI course teaches the layer). One switch
   (`MEMORY_BACKEND=oamp`) flips to the **ship path**: Oracle's official
   [AI Agent Memory package](https://docs.oracle.com/en/database/oracle/agent-memory/)
-  (`oracleagentmemory` — auto-extraction, hybrid retrieval, the privacy guard passed as
-  custom extraction instructions; `oamp_memory.py`). Episodic + procedural are this build's
-  extensions of the core on both (+ a [LangGraph example](examples/langgraph_oamp.py))
+  (`oracleagentmemory` — auto-extraction, hybrid retrieval, the privacy guard as custom
+  extraction instructions **plus a structural deny-list sweep that enforces it**, and global
+  consolidated facts merged into recall; `oamp_memory.py`). Episodic + procedural are this
+  build's extensions of the core on both (+ a [LangGraph example](examples/langgraph_oamp.py),
+  + `tests/eval_oamp.py` — 7 probes to run on every package upgrade)
 - [x] **Knowledge wiki layer** — LLM-compiled, self-improving topic pages (`wiki.py`) + a Duality
   view; the strongest relational + JSON + vector showcase
 - [x] **Hybrid search** — vector + keyword (Reciprocal Rank Fusion)

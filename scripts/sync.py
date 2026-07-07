@@ -40,6 +40,11 @@ STEPS = [
     ("Consolidate",  [str(ROOT / "scripts" / "consolidate.py")],        None),
 ]
 
+# ship path only: sweep the package's extracted memories against the structural
+# privacy deny-list (the prompt guard filters; this enforces). No-op on custom.
+if os.environ.get("MEMORY_BACKEND", "custom").lower() == "oamp":
+    STEPS.append(("OAMP privacy sweep", [str(ROOT / "scripts" / "oamp_sweep.py")], None))
+
 
 def _tags_look_reset():
     """True when chat posts exist but NONE are tagged business/archived — the signature of a

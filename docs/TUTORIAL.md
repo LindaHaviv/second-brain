@@ -111,11 +111,20 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 > **Oracle's official AI Agent Memory package** (`oracleagentmemory`, installed with the
 > requirements): threads and durable memories managed for you — extracted automatically from
 > each exchange by an LLM, retrieved with hybrid (lexical + vector) search, stored as plain
-> `brain_*` tables, with the repo's privacy guard passed into the extractor as custom
-> instructions. The episodic run log and procedural tool-ranking are this build's extensions of
-> the memory core and run on both backends. Using LangGraph or another framework? See
-> `examples/langgraph_oamp.py` for OAMP as a framework agent's memory. Deeper reading on the
-> package's latest capabilities:
+> `brain_*` tables. The episodic run log and procedural tool-ranking are this build's
+> extensions of the memory core and run on both backends, and on the ship path `recall_facts`
+> still merges your globally consolidated facts in — the package's per-exchange memories plus
+> the learning track's "what it all adds up to."
+>
+> **Ship-path security is defense in depth, and it's tested.** The repo's privacy guard goes
+> into the extractor as custom instructions — but instructions are prompts, and our eval caught
+> partial compliance (a dollar amount dropped, a contract term memorized). So a **structural
+> sweep** (`oamp_memory.enforce_privacy`, a regex deny-list you adapt to your categories)
+> re-checks every extracted memory and deletes violators — inline after each exchange, and as a
+> `sync.py` step. Run `tests/eval_oamp.py` (7 probes: extraction smoke, privacy leak,
+> recall, scope isolation, deletion, upgrade canary, enforcement — two adopted from Oracle's
+> own support-copilot notebook) on every package or extraction-model change. Using LangGraph
+> or another framework? See `examples/langgraph_oamp.py`. Deeper reading:
 > [What's New in Oracle AI Agent Memory](https://blogs.oracle.com/developers/whats-new-in-oracle-ai-agent-memory-custom-extraction-hybrid-search-and-more-control).
 
 > **🔧 Swap the models — your choice.** Two pluggable pieces, so you're not locked in:

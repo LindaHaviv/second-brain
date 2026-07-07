@@ -357,7 +357,18 @@ daily scheduled consolidation.)
 > the tutorial — you should watch the model work in tables you understand before handing it to a
 > package (Oracle's own course teaches it the same way). And verification: the package's LLM
 > extraction is verified here with Claude models, while the hand-built track is verified on every
-> provider including the all-free Ollama path. Two memory types are this build's **extensions of
+> provider including the all-free Ollama path.
+>
+> **And one security lesson we paid for so you don't have to.** Extraction instructions are a
+> *prompt*, and prompts get partial compliance: our eval caught the extractor correctly dropping
+> a planted dollar amount while memorizing a contract term. So the ship path is defense in depth:
+> the hardened instructions filter at extraction, and a **structural privacy sweep**
+> (`oamp_memory.enforce_privacy` — a regex deny-list you adapt to your own categories) re-checks
+> every extracted memory and deletes violators through the package's lifecycle API — inline after
+> each exchange and in the daily sync. Instructions suggest; the sweep enforces. And the ship
+> path keeps the learning track's best idea: `recall_facts` merges the package's per-exchange
+> memories with your globally consolidated facts, so the agent gets both "what this conversation
+> taught us" and "what it all adds up to." Two memory types are this build's **extensions of
 > the core** on either backend — the **episodic run log** (what the agent did, with outcomes and
 > rewards) and **procedural** memory (which tools earn their place, ranked per question) — because
 > the package doesn't cover those record types, and the point of memory-in-a-database is that you

@@ -28,6 +28,7 @@ Inspect it like everything else in this build — it's just tables:
   SELECT memory_type, content FROM brain_memory ORDER BY created_at DESC;
 """
 import os
+import re
 import uuid
 
 _MINILM_DIM = 384
@@ -58,6 +59,60 @@ _EXTRACT_DEFAULTS = {
     "openai": "openai/gpt-5.2",
     "ollama": "ollama/llama3.2",
 }
+
+# DEFENSE IN DEPTH: the prompt guard above gets PARTIAL compliance (tests/eval_oamp.py
+# probe 2 caught a contract term surviving extraction before the guard was hardened), so
+# extracted memories are ALSO swept against these structural deny patterns — an enforced
+# check, not an instruction. Adapt to your own private categories (same advice as the
+# classifier rubric) and extend without code edits via OAMP_DENY_EXTRA (comma-separated
+# regexes). False positives delete a benign memory — the right failure direction for a
+# privacy control.
+_DENY_PATTERNS = [
+    r"\$\s?(?!0(?:\.0+)?\b)\d[\d,]*(?:\.\d+)?\s?[km]?\b",         # money amounts (not $0)
+    r"\b(?:rate|fee|price|pricing|quote|invoice|payment|payout|"   # money words near a number
+    r"budget|earnings|income|salary|compensation)\b.{0,40}\d",
+    r"\b(?:exclusivity|usage rights|deliverables?|sow|nda|non-disclosure|"
+    r"contract (?:term|clause)|deal terms?)\b",
+    r"\b(?:iban|routing number|account number|wire transfer)\b",
+]
+
+
+def violates_privacy(text):
+    """Pure check: the deny pattern `text` matches, or None. Unit-tested in test_brain."""
+    low = (text or "").lower()
+    pats = _DENY_PATTERNS + [p for p in os.environ.get("OAMP_DENY_EXTRA", "").split(",") if p.strip()]
+    for pat in pats:
+        if re.search(pat, low):
+            return pat
+    return None
+
+
+def enforce_privacy(conn, hours=None):
+    """Sweep extracted memories against the deny patterns and DELETE violators via the
+    package's own lifecycle API. `hours` limits the scan to recent rows (the inline
+    sweep after each exchange); None scans everything (the daily sync sweep).
+    Returns the removed contents so callers can report."""
+    client = get_client(conn)
+    sql = f"select record_id, content from {STORE_ID}_memory"
+    binds = {}
+    if hours:
+        sql += " where created_at > sysdate - :h/24"
+        binds["h"] = hours
+    with conn.cursor() as cur:
+        cur.execute(sql, **binds)
+        rows = [(rid, c.read() if hasattr(c, "read") else c) for rid, c in cur.fetchall()]
+    removed = []
+    for rid, content in rows:
+        if violates_privacy(content):
+            try:
+                client.delete_memory(rid)
+                removed.append(content[:120])
+            except Exception as e:
+                print(f"[oamp] sweep could not delete {rid}: {type(e).__name__}")
+    if removed:
+        print(f"[oamp] privacy sweep removed {len(removed)} memory(ies)")
+    return removed
+
 
 _client = None
 _thread = None
@@ -99,12 +154,26 @@ def get_client(conn):
 
 def recall_facts(conn, query, k=5):
     """Durable memories relevant to `query`, shaped like semantic_memory.semantic_recall
-    (category + fact) so the agent prompt renders identically on either backend."""
+    (category + fact) so the agent prompt renders identically on either backend.
+
+    HYBRID BY DESIGN: OAMP extracts per-exchange (what THIS conversation taught us);
+    the repo's global consolidation distills across ALL runs + content (what it all
+    adds up to). The ship path keeps both — package memories first, then the top
+    consolidated global facts, deduped. Best of the managed core and the editorial layer."""
     results = get_client(conn).search(
         query=query, user_id=USER_ID, exact_user_match=True, max_results=k,
         record_types=["memory", "fact", "preference", "guideline"])
-    return [{"category": getattr(r, "record_type", None) or "memory",
-             "fact": getattr(r, "content", None) or str(r)} for r in results]
+    facts = [{"category": getattr(r, "record_type", None) or "memory",
+              "fact": getattr(r, "content", None) or str(r)} for r in results]
+    try:   # the global consolidated layer (semantic_memory table) still enriches recall
+        from semantic_memory import semantic_recall
+        seen = {f["fact"][:60].lower() for f in facts}
+        for g in semantic_recall(conn, query, k=3):
+            if g["fact"][:60].lower() not in seen:
+                facts.append({"category": f"global/{g['category']}", "fact": g["fact"]})
+    except Exception:
+        pass   # no consolidated facts yet (fresh brain) — package memories alone are fine
+    return facts
 
 
 def record_exchange(conn, question, answer):
@@ -122,6 +191,9 @@ def record_exchange(conn, question, answer):
             {"role": "user", "content": question},
             {"role": "assistant", "content": answer},
         ])
+        # defense in depth: sweep what the extractor just wrote (recent rows only) —
+        # the prompt guard filters at extraction, this ENFORCES after it
+        enforce_privacy(conn, hours=1)
         return _thread.thread_id
     except Exception as e:
         print(f"[oamp] exchange not recorded: {type(e).__name__}: {str(e)[:120]}")
