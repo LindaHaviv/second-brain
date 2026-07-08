@@ -342,54 +342,29 @@ automatically every few research runs.)
 > The embeddings are an open-source MiniLM running inside Oracle, so search needs **no API key at
 > all** (you proved that at the Step 3 checkpoint).
 
-> **📦 The default memory core is Oracle's official package — the honest recommendation.** The
-> **Oracle AI Agent Memory Package** (`pip install oracleagentmemory` — already in the repo's
-> requirements) is what a fresh clone runs: maintained and benchmarked by Oracle, so this layer
-> is one you never have to garden. Conversation threads with context summaries (conversational
-> memory) and durable memories that an LLM **extracts automatically** from each exchange
-> (semantic memory) — stored in the same database, as plain tables you can read with SQL. Three of
-> its features do real work in this build: **hybrid retrieval** (`SearchStrategy.HYBRID` — semantic
-> recall plus exact matching in one Oracle-managed index), **custom extraction instructions**
-> (this build passes its privacy guard straight into the extractor, so "never memorize
-> financials" is enforced inside the managed core too), and **`OracleDBEmbedder`** — the package
-> drives the same in-database MiniLM model this build already uses, so memory search still makes
-> zero embedding API calls. The package publishes long-memory benchmarks (94.4 on LongMemEval),
-> and
-> [What's New in Oracle AI Agent Memory](https://blogs.oracle.com/developers/whats-new-in-oracle-ai-agent-memory-custom-extraction-hybrid-search-and-more-control)
-> covers the rest — background extraction, context cards, metadata filters, TTL retention,
-> update APIs — with an end-to-end support-copilot notebook.
+> **📦 The default is Oracle's official package — here's what it does for you.** A fresh clone
+> runs the **Oracle AI Agent Memory Package** (`pip install oracleagentmemory`, already in the
+> repo's requirements): it stores conversation threads and the durable memories it **extracts
+> automatically** from each exchange, in the same database, as plain tables you can read with SQL.
+> Three of its features do real work in this build:
 >
-> **So why keep a hand-built track at all?** Two honest reasons. Learning: seeing the model work
-> in tables you built is how you'll debug any memory system forever — it's why Oracle's own
-> course teaches the layer by hand. And the fully-local path: the package's LLM extraction fails
-> **silently** on small local models (we verified this), so when you configure Ollama the repo
-> automatically selects the hand-built track — your $0 build keeps remembering.
-> (`MEMORY_BACKEND` overrides the automatic choice in either direction.)
+> | Feature | What it does here |
+> |---|---|
+> | **`SearchStrategy.HYBRID`** | semantic recall + exact matching in one Oracle-managed index |
+> | **Custom extraction instructions** | your privacy guard rides *inside* the managed extractor, so "never memorize financials" applies there too |
+> | **`OracleDBEmbedder`** | drives the same in-DB MiniLM model, so memory search makes **zero** embedding API calls |
 >
-> **And one security lesson we paid for so you don't have to.** Extraction instructions are a
-> *prompt*, and prompts get partial compliance: our eval caught the extractor correctly dropping
-> a planted dollar amount while memorizing a contract term. So the package path is defense in depth:
-> the hardened instructions filter at extraction, and a **structural privacy sweep**
-> (`oamp_memory.enforce_privacy` — a regex deny-list you adapt to your own categories) re-checks
-> every extracted memory and deletes violators through the package's lifecycle API — inline after
-> each exchange and in the daily sync. Instructions suggest; the sweep enforces. And the default
-> keeps the learning track's best idea: `recall_facts` merges the package's per-exchange
-> memories with your globally consolidated facts, so the agent gets both "what this conversation
-> taught us" and "what it all adds up to." Two memory types are this build's **extensions of
-> the core** on either backend — the **episodic run log** (what the agent did, with outcomes and
-> rewards) and **procedural** memory (which tools earn their place, ranked per question) — because
-> the package doesn't cover those record types, and the point of memory-in-a-database is that you
-> can add your own. Either way, the memory lives in your Oracle AI Database. See the
-> [Oracle AI Agent Memory Package](https://docs.oracle.com/en/database/oracle/agent-memory/).
->
-> **Go deeper on agent memory:** the free **[Oracle × DeepLearning.AI "Agent Memory" course](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)** and
-> the **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)** (workshops +
-> notebooks: RAG → agents → memory-augmented agents) are the best places to learn the concepts
-> behind this build. Start with the hands-on
-> **[Agent Memory Workshop](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/workshops/agent_memory_workshop)**
-> (build a research-paper assistant with six memory types and a before/after memory comparison),
-> then the **[agent-memory notebooks](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/notebooks/agent_memory)**
-> for the OAMP package.
+> Oracle maintains and benchmarks it (94.4 on LongMemEval), so it's a layer you never have to
+> garden. [What's New in Oracle AI Agent Memory](https://blogs.oracle.com/developers/whats-new-in-oracle-ai-agent-memory-custom-extraction-hybrid-search-and-more-control)
+> covers the rest — background extraction, context cards, metadata filters, TTL — and the
+> [package docs](https://docs.oracle.com/en/database/oracle/agent-memory/) have the full API.
+
+> **📦 Why keep the hand-built track too?** Two reasons, and the repo picks for you. **Learning:**
+> seeing memory work in tables you built is how you'll debug any memory system — it's why Oracle's
+> own course teaches the layer by hand. **Fully-local:** the package's automatic extraction is
+> built for capable models, so a small local model can't drive it reliably; configure Ollama and
+> the repo automatically switches to the hand-built track so your $0 build keeps remembering.
+> (`MEMORY_BACKEND` overrides the choice either way.)
 
 ![The agent answering with citations to your own posts, then building on the previous turn as agent_memory grows](images/agent-answer.png)
 
@@ -612,6 +587,13 @@ them on:
   re-derive private facts back into "durable memory." Keep the most private data local and
   unadvertised, classify at ingest, re-check after each import. (Teach the pattern; don't publish
   exactly what *you* keep private.)
+- **Re-check what gets memorized — don't just instruct it.** Memory extraction runs on a *prompt*,
+  and any LLM following a prompt gives partial compliance, not a guarantee: in one eval a planted
+  dollar amount was correctly dropped, but a contract term slipped through. So this build adds
+  defense in depth — a **structural privacy sweep** (`oamp_memory.enforce_privacy`, a deny-list you
+  adapt to your own categories) re-checks every extracted memory and deletes violators through the
+  package's lifecycle API, after each exchange and in the daily sync. Instructions suggest; the
+  sweep enforces.
 - **Never commit secrets.** `.env`, the cloud wallet, and your raw content are gitignored. Keep them
   that way, keep real copies in a password manager, and rotate anything exposed.
 - **Least privilege, no public database.** The app runs as a limited DB user (not admin), and the
