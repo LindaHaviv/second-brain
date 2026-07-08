@@ -47,7 +47,7 @@ And it runs wherever you want it. The same code works on the **free container on
 and on an **Always Free Autonomous AI Database in Oracle Cloud**. Free here is unusually real:
 the **Always Free** tier includes **two Autonomous AI Databases** (1 Oracle CPU and 20 GB each,
 plenty for a personal brain), an Always Free compute VM that can host the MCP server, and 10 TB of
-monthly outbound transfer — with **no time limit**: not a 12-month trial, not credits that run out. This walkthrough starts local so you can watch every piece work, then
+monthly outbound transfer, with **no time limit**: not a 12-month trial, not credits that run out. This walkthrough starts local so you can watch every piece work, then
 lifts to the cloud at the end. Mine lives in the cloud; that's what makes it reachable from my
 phone, anywhere.
 
@@ -291,7 +291,7 @@ search your content, read a post, read a wiki page, search the live web. It grou
 
 What makes it a **second brain** rather than a search box is **memory**. We model the long-term
 memory types the agent-memory literature describes, each a table in the same database
-(conversational memory — stored, time-stamped interaction history — is formally the simplest
+(conversational memory, stored as time-stamped interaction history, is formally the simplest
 kind of episodic memory; this build gives it its own table):
 
 | Memory | Table | What it holds |
@@ -301,13 +301,13 @@ kind of episodic memory; this build gives it its own table):
 | **Conversational** | `conversations` | the current multi-turn context |
 | **Procedural** | `procedural_memory` | the agent's tools, retrieved by relevance per question |
 
-![The four memory types as a stacked ladder — episodic = what happened, semantic = what I know now, conversational = this thread, procedural = which tool to grab — with a "distills automatically" arrow beside the stack](images/four-memories.png)
+![The four memory types as a stacked ladder: episodic = what happened, semantic = what I know now, conversational = this thread, procedural = which tool to grab, with a "distills automatically" arrow beside the stack](images/four-memories.png)
 
-Those are the **hand-built learning-track tables** (`MEMORY_BACKEND=custom`) — the same way
+Those are the **hand-built learning-track tables** (`MEMORY_BACKEND=custom`), the same way
 Oracle's own DeepLearning.AI course teaches this layer, and the tables the fully-local Ollama
 path uses (the repo selects them automatically when you configure Ollama). **What a fresh clone
 runs by default, though, is Oracle's official package** (next box): it manages the semantic and
-conversational rows as `brain_*` tables with automatic extraction — the honest recommendation,
+conversational rows as `brain_*` tables with automatic extraction. That's the honest recommendation,
 because Oracle maintains and benchmarks it so you don't have to. Episodic and procedural are
 this build's extensions of the core on both backends.
 
@@ -318,7 +318,7 @@ it's how you'd pick which tools to send at all. After answering, it **records** 
 And the distillation step runs itself. On the default (the package), OAMP's extractor turns
 each exchange into durable semantic memories automatically (with this build's privacy guard
 passed in as custom extraction instructions). On the learning track, a scheduled job
-**consolidates** episodic memory into semantic facts — visible plumbing you can read. Either
+**consolidates** episodic memory into semantic facts, visible plumbing you can read. Either
 way, "what happened" becomes "what I now know about this creator." That's the self-improving
 loop:
 
@@ -328,7 +328,7 @@ loop:
 
 The more you use it, the more it knows your themes, recurring questions, and gaps, and it stops
 re-deriving them every time. (On the default backend the package extracts after every exchange;
-the global consolidation runs daily either way — and on the learning track it also triggers
+the global consolidation runs daily either way, and on the learning track it also triggers
 automatically every few research runs.)
 
 > **🔧 The LLM is a config switch, not a dependency.** Set `LLM_PROVIDER` in `oracle/.env` to
@@ -342,7 +342,7 @@ automatically every few research runs.)
 > The embeddings are an open-source MiniLM running inside Oracle, so search needs **no API key at
 > all** (you proved that at the Step 3 checkpoint).
 
-> **📦 The default is Oracle's official package — here's what it does for you.** A fresh clone
+> **📦 The default is Oracle's official package. Here's what it does for you.** A fresh clone
 > runs the **Oracle AI Agent Memory Package** (`pip install oracleagentmemory`, already in the
 > repo's requirements): it stores conversation threads and the durable memories it **extracts
 > automatically** from each exchange, in the same database, as plain tables you can read with SQL.
@@ -356,11 +356,11 @@ automatically every few research runs.)
 >
 > Oracle maintains and benchmarks it (94.4 on LongMemEval), so it's a layer you never have to
 > garden. [What's New in Oracle AI Agent Memory](https://blogs.oracle.com/developers/whats-new-in-oracle-ai-agent-memory-custom-extraction-hybrid-search-and-more-control)
-> covers the rest — background extraction, context cards, metadata filters, TTL — and the
+> covers the rest (background extraction, context cards, metadata filters, TTL), and the
 > [package docs](https://docs.oracle.com/en/database/oracle/agent-memory/) have the full API.
 
 > **📦 Why keep the hand-built track too?** Two reasons, and the repo picks for you. **Learning:**
-> seeing memory work in tables you built is how you'll debug any memory system — it's why Oracle's
+> seeing memory work in tables you built is how you'll debug any memory system. It's why Oracle's
 > own course teaches the layer by hand. **Fully-local:** the package's automatic extraction is
 > built for capable models, so a small local model can't drive it reliably; configure Ollama and
 > the repo automatically switches to the hand-built track so your $0 build keeps remembering.
@@ -469,7 +469,7 @@ client can auto-allow them, while the write tools are marked as writes so the cl
 > Reciprocal Rank Fusion.* So a demo can *see* a result that matched by **both** meaning and exact
 > keyword. The retrieval isn't hidden; it's on the page.
 
-![One brain, every AI: five generic chat clients all converging on the single MCP door, which leads to your brain — swap the model, keep the memory](images/one-brain-every-ai.png)
+![One brain, every AI: five generic chat clients all converging on the single MCP door, which leads to your brain (swap the model, keep the memory)](images/one-brain-every-ai.png)
 
 Want it on your phone and in ChatGPT? **Host** the same server over HTTP. That puts your brain on
 the public internet, so lock it down first (OAuth + an allowlist; see Security below), and if
@@ -510,11 +510,11 @@ The system is **collector-agnostic**, so the only thing it needs is rows in that
 fields to `title`, `caption` (the text), `url`, `published_at`, and the platform; the embedding is
 generated in-DB on insert.
 
-The repo ships loaders for **Obsidian** (point it at your vault — or any local drop
-folder — and the daily sync keeps the brain current with it: markdown notes, and even
+The repo ships loaders for **Obsidian** (point it at your vault, or any local drop
+folder, and the daily sync keeps the brain current with it: markdown notes, and even
 PDFs/EPUBs as searchable reference material that never pollutes your wiki), **Notion**, **YouTube**
 (+ transcripts), **Instagram** (API or export, with captions *and* reel transcripts),
-**LinkedIn**, **Google Drive** (share specific folders — Docs become notes, PDFs searchable reference), and **AI chats** (Claude/ChatGPT exports).
+**LinkedIn**, **Google Drive** (share specific folders: Docs become notes, PDFs searchable reference), and **AI chats** (Claude/ChatGPT exports).
 Any one is a copyable template, and the repo's
 [EXPORT_GUIDE](https://github.com/LindaHaviv/second-brain/blob/main/docs/EXPORT_GUIDE.md) shows
 exactly where to click to get each platform's export.
@@ -533,7 +533,7 @@ So private material is excluded from retrieval **and** from the self-improving l
 the brain can't quietly re-derive it into "durable memory" after you've set it aside. A
 classify-on-ingest pass tags private and off-topic items automatically.
 
-![The visibility gate: content rows flow through the visibility=content check into every read path (search, wiki compiler, memory distiller, MCP tools) while the private row stops at the gate — excluded from search and the self-improving loop](images/visibility-gate.png)
+![The visibility gate: content rows flow through the visibility=content check into every read path (search, wiki compiler, memory distiller, MCP tools) while the private row stops at the gate, excluded from search and the self-improving loop](images/visibility-gate.png)
 
 **Current by loop.** New content is only useful if the *derived* layers keep up. One scheduled job
 enforces the order **pull sources → classify → refresh the wiki → consolidate memory**, so your
@@ -587,10 +587,10 @@ them on:
   re-derive private facts back into "durable memory." Keep the most private data local and
   unadvertised, classify at ingest, re-check after each import. (Teach the pattern; don't publish
   exactly what *you* keep private.)
-- **Re-check what gets memorized — don't just instruct it.** Memory extraction runs on a *prompt*,
+- **Re-check what gets memorized, don't just instruct it.** Memory extraction runs on a *prompt*,
   and any LLM following a prompt gives partial compliance, not a guarantee: in one eval a planted
   dollar amount was correctly dropped, but a contract term slipped through. So this build adds
-  defense in depth — a **structural privacy sweep** (`oamp_memory.enforce_privacy`, a deny-list you
+  defense in depth: a **structural privacy sweep** (`oamp_memory.enforce_privacy`, a deny-list you
   adapt to your own categories) re-checks every extracted memory and deletes violators through the
   package's lifecycle API, after each exchange and in the daily sync. Instructions suggest; the
   sweep enforces.
@@ -631,7 +631,7 @@ Replicating this as *your* second brain is the point. Seven steps keep yours pri
    (would the privacy classifier still agree with your reviewed labels?), `tests/eval_verify.py`
    (plant fabrications, confirm the accuracy gate still catches them), and
    `tests/eval_grounding.py` (do research answers cite the sources they should?). Running the
-   package (the default)? Add `tests/eval_oamp.py` — seven probes (extraction smoke, privacy-guard leak
+   package (the default)? Add `tests/eval_oamp.py`: seven probes (extraction smoke, privacy-guard leak
    test, recall, scope isolation, deletion, upgrade canary, and a planted-leak enforcement test
    for the structural sweep) that catch the package's silent failure modes; run it on every
    package or extraction-model change. The habit that
@@ -718,10 +718,10 @@ Everything this build touches has a free, official path to go deeper:
 
 - **[Agent Memory: Building Memory-Aware Agents](https://www.deeplearning.ai/courses/agent-memory-building-memory-aware-agents)**:
   the free **Oracle × DeepLearning.AI course**. Its reference architecture is exactly what you
-  built in Step 4 — long-term memory types (episodic, semantic, procedural) as database tables
+  built in Step 4: long-term memory types (episodic, semantic, procedural) as database tables
   with a memory manager over them, and the database as the **agent memory core**. The course
   builds that layer by hand (the same philosophy as this repo's `MEMORY_BACKEND=custom` learning
-  track); the OAMP package is the productized version of the same model — this build ships both.
+  track); the OAMP package is the productized version of the same model. This build ships both.
 - **[Oracle AI Developer Hub](https://github.com/oracle-devrel/oracle-ai-developer-hub)**:
   Oracle's open workshops + notebooks, from RAG to memory-augmented agents. Start with the
   hands-on **[Agent Memory Workshop](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/workshops/agent_memory_workshop)**
@@ -729,7 +729,7 @@ Everything this build touches has a free, official path to go deeper:
   the **[agent-memory notebooks](https://github.com/oracle-devrel/oracle-ai-developer-hub/tree/main/notebooks/agent_memory)**
   for the OAMP package with OpenAI / Claude Agent SDK / LangGraph examples.
 - **[Oracle AI Agent Memory Package (OAMP)](https://docs.oracle.com/en/database/oracle/agent-memory/)**:
-  the official memory core — this build's **default backend** (wired in `oamp_memory.py`;
+  the official memory core, this build's **default backend** (wired in `oamp_memory.py`;
   `MEMORY_BACKEND=custom` switches to the from-scratch learning track, and the repo
   auto-selects it when you configure Ollama). The repo also
   ships a LangGraph example (`examples/langgraph_oamp.py`) wiring OAMP into a framework agent.
