@@ -7,7 +7,7 @@ and deletes violators through the package's lifecycle API. The extraction-time p
 guard filters; this ENFORCES — prompts get partial compliance (proven by
 tests/eval_oamp.py probe 2), so the sweep is what makes "never memorize financials"
 a guarantee instead of an instruction. sync.py runs this automatically whenever
-MEMORY_BACKEND=oamp; harmless no-op otherwise.
+the resolved backend is oamp (the default); harmless no-op otherwise.
 """
 import os
 import pathlib
@@ -18,8 +18,12 @@ import db  # noqa: E402
 
 
 def main():
-    if os.environ.get("MEMORY_BACKEND", "custom").lower() != "oamp":
-        print("oamp sweep: MEMORY_BACKEND is not 'oamp' — nothing to sweep")
+    # Mirrors research_agent._resolve_backend: unset -> oamp, except ollama -> custom.
+    backend = (os.environ.get("MEMORY_BACKEND") or (
+        "custom" if os.environ.get("LLM_PROVIDER", "anthropic").lower() == "ollama"
+        else "oamp")).lower()
+    if backend != "oamp":
+        print("oamp sweep: memory backend is not 'oamp' — nothing to sweep")
         return
     import oamp_memory
     conn = db.connect()

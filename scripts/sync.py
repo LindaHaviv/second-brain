@@ -42,7 +42,11 @@ STEPS = [
 
 # ship path only: sweep the package's extracted memories against the structural
 # privacy deny-list (the prompt guard filters; this enforces). No-op on custom.
-if os.environ.get("MEMORY_BACKEND", "custom").lower() == "oamp":
+# Mirrors research_agent._resolve_backend: unset -> oamp, except ollama -> custom.
+_MEMORY_BACKEND = (os.environ.get("MEMORY_BACKEND") or (
+    "custom" if os.environ.get("LLM_PROVIDER", "anthropic").lower() == "ollama"
+    else "oamp")).lower()
+if _MEMORY_BACKEND == "oamp":
     STEPS.append(("OAMP privacy sweep", [str(ROOT / "scripts" / "oamp_sweep.py")], None))
 
 
