@@ -35,8 +35,15 @@ if (not os.environ.get("AUTHKIT_DOMAIN") and not TOKEN
         "refusing to start with NO auth configured — set AUTHKIT_DOMAIN (OAuth) or "
         "MCP_AUTH_TOKEN (bearer), or MCP_ALLOW_ANON=1 for a local-only experiment.")
 
-# a bearer token on a public URL must not be guessable: enforce a floor when it is
-# the only auth (OAuth deployments may still set a strong token for API clients).
+# ...and the escape hatch itself refuses on a real deployment: a copied-over env var must
+# not silently serve the brain with no auth on a public host.
+if os.environ.get("MCP_ALLOW_ANON") == "1" and os.environ.get("FLY_APP_NAME"):
+    raise SystemExit("MCP_ALLOW_ANON=1 is local-only — refusing on a Fly deployment "
+                     "(unset it and configure AUTHKIT_DOMAIN or MCP_AUTH_TOKEN).")
+
+# a bearer token on a public URL must not be guessable: enforce a floor when it is the
+# only auth. NOTE: bearer is mounted ONLY when AUTHKIT_DOMAIN is unset — with OAuth on,
+# MCP_AUTH_TOKEN authenticates nothing (fails closed; don't rely on it for API clients).
 if TOKEN and not os.environ.get("AUTHKIT_DOMAIN") and len(TOKEN) < 32:
     raise SystemExit(
         "MCP_AUTH_TOKEN is too short for a public deployment (min 32 chars). "
@@ -174,6 +181,10 @@ class Gateway(BaseHTTPMiddleware):
         if _HTTP_EXT is not None:
             # Extension hook: private routes (see http_ext in your private deploy) get first
             # look at the request; None means "not mine" and the public gateway continues.
+            # SECURITY: this runs BEFORE rate limiting and BEFORE BearerAuth/OAuth — any
+            # route an extension handles is served with NO auth unless the extension
+            # authenticates it itself. Every http_ext route MUST self-auth (check its own
+            # token/OAuth) and should call the passed rate_limit callback.
             _ip = _client_ip(request)
             ext_resp = await _HTTP_EXT.maybe_handle(request, lambda: _bucket.allow(_ip))
             if ext_resp is not None:

@@ -40,7 +40,7 @@ AGENT_ID = "research"
 
 # Same rule as semantic_memory.py's consolidator — the guard moves INTO the managed core.
 # Written adversarially on purpose: the first version of this rule let a contract term
-# ("999-day exclusivity clause") through extraction while correctly dropping the dollar
+# (a fictional-fixture "999-day exclusivity clause") through extraction while correctly dropping the dollar
 # amount — tests/eval_oamp.py probe 2 exists to catch exactly that regression.
 _PRIVACY_GUARD = (
     "HARD RULE — private business information must NEVER become a memory, not even "

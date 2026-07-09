@@ -58,6 +58,9 @@ def main():
     ap.add_argument("--include-private", action="store_true",
                     help="ALSO copy private scopes + business tables to the cloud "
                          "(default: content only — private data stays local)")
+    ap.add_argument("--allow-untagged", action="store_true",
+                    help="proceed even if some rows were never classified (untagged rows "
+                         "count as public content — only use after reviewing them)")
     args = ap.parse_args()
     tables = (["platforms"] + PRIVATE_TABLES + TABLES[1:]) if args.include_private else TABLES
     preds = {} if args.include_private else CONTENT_ONLY
@@ -71,6 +74,20 @@ def main():
         dsn=os.environ.get("LOCAL_DB_DSN", "localhost:1521/FREEPDB1"))
     cloud = db.connect()
     lc, cc = local.cursor(), cloud.cursor()
+
+    # PREFLIGHT (fail closed): the content-only filter treats NULL visibility as 'content',
+    # so rows that were never classified would ship to the internet-reachable cloud brain.
+    # Refuse until classify_private.py has run (or the operator explicitly accepts).
+    if not args.include_private:
+        lc.execute("SELECT COUNT(*) FROM posts WHERE visibility IS NULL")
+        untagged = lc.fetchone()[0]
+        if untagged and not args.allow_untagged:
+            sys.exit(
+                f"REFUSING to copy: {untagged} post(s) have no visibility tag yet, and "
+                "untagged rows count as public 'content'. Run\n"
+                "    python scripts/classify_private.py --apply\n"
+                "first (then re-run this copy), or pass --allow-untagged if you have "
+                "reviewed them and they are all safe to publish to the cloud brain.")
 
     print("clearing target tables...")
     for t in reversed(tables):

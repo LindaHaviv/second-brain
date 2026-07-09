@@ -27,4 +27,24 @@ fi
 echo "downloading model (~120MB)..."
 curl -fsSL "$ZIP" -o models/all_MiniLM_L12_v2_augmented.zip
 unzip -o models/all_MiniLM_L12_v2_augmented.zip -d models >/dev/null
-echo "done: models/all_MiniLM_L12_v2.onnx"
+
+# Integrity check: this file gets loaded INTO your database (dbms_vector.load_onnx_model),
+# so verify it's the exact model this repo was built and tested against — not whatever a
+# compromised mirror/redirect happened to serve. If Oracle publishes a new model version,
+# verify it deliberately, then update this pin.
+EXPECTED_SHA256="3929907d138051f818619fce3ba054185f748f2739d7a4dbc26e2502dd2499ea"
+ACTUAL_SHA256=$( (shasum -a 256 models/all_MiniLM_L12_v2.onnx 2>/dev/null || sha256sum models/all_MiniLM_L12_v2.onnx) | awk '{print $1}')
+if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+  echo "ERROR: model checksum mismatch — refusing to keep it."
+  echo "  expected: $EXPECTED_SHA256"
+  echo "  actual:   $ACTUAL_SHA256"
+  echo "If Oracle released a new model version, verify it from their docs, then update"
+  echo "EXPECTED_SHA256 in this script. (Override once with MODEL_SHA256_SKIP=1 if you"
+  echo "have independently verified the file.)"
+  if [ "${MODEL_SHA256_SKIP:-}" != "1" ]; then
+    rm -f models/all_MiniLM_L12_v2.onnx models/all_MiniLM_L12_v2_augmented.zip
+    exit 1
+  fi
+  echo "MODEL_SHA256_SKIP=1 set — keeping unverified file at YOUR risk."
+fi
+echo "done (checksum verified): models/all_MiniLM_L12_v2.onnx"

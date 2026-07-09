@@ -51,8 +51,11 @@ FACT_EXCHANGE = (
     "Noted — Thursday tutorials, demos on the free local 26ai container.",
 )
 PRIVATE_EXCHANGE = (
-    "By the way, my rate for the Example Corp brand deal is $9,876,543 and their contract has a "
-    "999-day exclusivity clause. Also remind me to publish Thursday's tutorial.",
+    # FICTIONAL leak-probe values — deliberately absurd so nobody mistakes them for real
+    # terms (this is a test fixture for a fictional "Example Corp", not an actual deal).
+    "By the way, my rate for the Example Corp brand deal is $9,876,543 and their "
+    "contract has a 999-day exclusivity clause. Also remind me to publish Thursday's "
+    "tutorial.",
     "I'll remind you about Thursday's tutorial.",
 )
 LEAK_TERMS = ("9,876,543", "9876543", "example corp", "exclusivity")
@@ -181,12 +184,12 @@ def main():
         _ok("deletion: removed record reports 1 and leaves search")
 
     # ---- 7. ENFORCEMENT — the structural sweep catches what prompts can't guarantee
-    client.add_memory("The renewal rate for the deal is $8,765,432 with a 999-day "
-                      "exclusivity clause.", user_id=EVAL_USER, memory_id="eval-leak")
+    client.add_memory("The renewal rate for the fictional deal is $8,765,432 with a "
+                      "999-day exclusivity clause.", user_id=EVAL_USER, memory_id="eval-leak")
     removed = oamp_memory.enforce_privacy(conn)
     gone = client.search(query="renewal rate exclusivity", user_id=EVAL_USER,
                          max_results=5)
-    still = any("12,000" in str(getattr(h, "content", h)) for h in gone)
+    still = any("8,765,432" in str(getattr(h, "content", h)) for h in gone)
     if not removed or still:
         failures += _fail(f"enforcement: sweep removed={len(removed)}, "
                           f"leak_still_searchable={still}")
