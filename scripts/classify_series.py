@@ -1,10 +1,11 @@
-"""Tag a content series — the demo's example is **Tech Walks**, interviews with a guest while
-walking. Notion episodes are titled "Tech Walks:" (tagged directly); the published video posts
-(Instagram/YouTube/LinkedIn) often DON'T say "Tech Walks", so this classifies them by style and
-sets posts.series='tech_walk'.
+"""Tag a content series by STYLE — for series whose published posts don't name the series.
 
-  ./.venv/bin/python scripts/classify_series.py            # preview
-  ./.venv/bin/python scripts/classify_series.py --apply    # tag series='tech_walk'
+The example rubric below classifies a guest-interview series (creator interviewing a named
+guest), but the pattern works for any series: adapt the rubric to YOUR series' defining
+criterion and pass its label with --label.
+
+  ./.venv/bin/python scripts/classify_series.py --label interview            # preview
+  ./.venv/bin/python scripts/classify_series.py --label interview --apply    # tag them
 """
 import sys, os, json, argparse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "oracle", "agent"))
@@ -20,23 +21,22 @@ LABELS_SCHEMA = {
         "required": ["id", "label"]}}},
     "required": ["items"],
 }
-RUBRIC = """You label a tech creator's published posts as their "Tech Walks" series or not.
+RUBRIC = """You label a tech creator's published posts as part of their guest-INTERVIEW series or not.
 
-The ONE defining criterion: a Tech Walk is the creator **interviewing or featuring ANOTHER PERSON (a guest)**.
-It is always the creator IN CONVERSATION WITH / INTERVIEWING someone else — never solo.
+The ONE defining criterion: an interview episode is the creator **interviewing or featuring ANOTHER
+PERSON (a guest)**. It is always the creator IN CONVERSATION WITH someone else — never solo.
 
-A TECH WALK (label "tech_walk") = the creator is interviewing / featuring a **named guest** (founder / CEO /
+AN EPISODE (label "match") = the creator is interviewing / featuring a **named guest** (founder / CEO /
 exec / engineer / creator). Signs: "with <name>", "<name> explains…", "join us as <name>…",
-"<topic> by <guest>", a specific person + their company (e.g. "<Name> (Company)", "with <Name>",
-"<Name> explains…"). ANY named guest counts — adapt these cues to the guests in your own series.
+"<topic> by <guest>", a specific person + their company. ANY named guest counts — adapt these cues
+to the guests in your own series.
 
-NOT a tech walk (label "other") = anything that is JUST THE CREATOR, with no guest — even if they're walking
-or it's a vlog: solo explainers ("AI Engineer vs ML Engineer", "<X> in 60 seconds", "crash course"),
-personal vlogs ("come with me to re:Invent", "exploring the Spheres", "visiting the Summit"),
-motivational one-liners, product-news, promos/CTAs. Being a "walk" or vlog does NOT make it a tech
-walk — only a GUEST does. If no other person is clearly being interviewed/featured, choose "other".
+NOT an episode (label "other") = anything that is JUST THE CREATOR, with no guest — even a vlog:
+solo explainers ("<X> in 60 seconds", "crash course"), personal vlogs ("come with me to…"),
+motivational one-liners, product-news, promos/CTAs. Only a GUEST makes it an episode. If no other
+person is clearly being interviewed/featured, choose "other".
 
-Return STRICT JSON list of {"id":<int>,"label":"tech_walk"|"other"}."""
+Return STRICT JSON list of {"id":<int>,"label":"match"|"other"}."""
 
 
 def classify(client, batch):
@@ -48,6 +48,8 @@ def classify(client, batch):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--label", default="interview",
+                    help="the series label to tag matches with (e.g. your series' name, snake_case)")
     args = ap.parse_args()
     client = None   # provider via LLM_PROVIDER
     conn = db.connect(); cur = conn.cursor()
@@ -62,20 +64,21 @@ def main():
     hits = []
     for i in range(0, len(rows), 25):
         try:
-            hits += [r for r in classify(client, rows[i:i+25]) if r.get("label") == "tech_walk"]
+            hits += [r for r in classify(client, rows[i:i+25]) if r.get("label") == "match"]
         except Exception as e:
             print(f"  batch {i}: {str(e)[:70]}")
     byid = {r["id"]: r["title"] for r in rows}
     ids = [int(h["id"]) for h in hits]
-    print(f"\n{len(ids)} classified TECH WALK (of {len(rows)}):")
+    print(f"\n{len(ids)} classified as series {args.label!r} (of {len(rows)}):")
     for i in ids:
         print(f"  - {byid.get(i,'')[:65]}")
     if args.apply and ids:
         b = {f"i{j}": v for j, v in enumerate(ids)}
         inlist = ",".join(f":i{j}" for j in range(len(ids)))
-        cur.execute(f"update posts set series='tech_walk' where post_id in ({inlist})", **b)
+        b["lbl"] = args.label
+        cur.execute(f"update posts set series=:lbl where post_id in ({inlist})", **b)
         conn.commit()
-        print(f"\ntagged {cur.rowcount} posts series='tech_walk'.")
+        print(f"\ntagged {cur.rowcount} posts series={args.label!r}.")
     elif ids:
         print("\ndry-run — re-run with --apply to tag them.")
     conn.close()

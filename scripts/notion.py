@@ -32,6 +32,18 @@ notion = Client(auth=os.environ["NOTION_TOKEN"])
 # full LOCAL vault (never point this at the hosted/cloud content brain).
 INCLUDE_BUSINESS = os.environ.get("BRAIN_INCLUDE_BUSINESS") == "1"
 
+# YOUR tracker schemas live in oracle/.env (gitignored) — the defaults below are generic
+# examples. NOTION_DEAL_PROPS: comma-separated property names of YOUR deal tracker (a page
+# matching >=2 of them is treated as private business data and skipped). NOTION_DEAL_DATES:
+# date property names to try for a deal's publish date. NOTION_SERIES_CHECKBOX: a boolean
+# column whose checked pages get series=<its name, snake_cased>.
+DEAL_PROPS = {p.strip() for p in os.environ.get(
+    "NOTION_DEAL_PROPS", "Payment Status,Rate,Fee,Deliverables,Contract").split(",") if p.strip()}
+DEAL_DATE_PROPS = [p.strip() for p in os.environ.get(
+    "NOTION_DEAL_DATES", "Published Date,Deadline").split(",") if p.strip()]
+SERIES_CHECKBOX = os.environ.get("NOTION_SERIES_CHECKBOX", "").strip()
+SERIES_FROM_CHECKBOX = SERIES_CHECKBOX.lower().replace(" ", "_")[:20] or None
+
 
 def connect():
     return db.connect()
@@ -130,20 +142,20 @@ def main():
             # Brand-deals DB carries financials/PII. By default it is PRIVATE (business) and stays
             # OUT of the content brain entirely — set BRAIN_INCLUDE_BUSINESS=1 only to load it into
             # a full LOCAL vault (never into the hosted/cloud content brain).
-            is_deal = len({"Payment Status", "Rate", "Fee", "Deliverables", "Contract"}
-                          & set(props.keys())) >= 2
+            is_deal = len(DEAL_PROPS & set(props.keys())) >= 2
             if is_deal and not INCLUDE_BUSINESS:
                 skipped_business += 1
                 continue
-            # explicit series label from the tracker — the source of truth for e.g. Tech Walks.
-            # Set a `Series` select (value like "Tech Walk") or a `Tech Walk` checkbox in Notion.
+            # explicit series label from the tracker — the source of truth for a named series.
+            # Set a `Series` select in Notion, or name a boolean column via NOTION_SERIES_CHECKBOX.
             sv = sel(props, "Series")
             series = (sv.strip().lower().replace(" ", "_")[:20] if sv
-                      else ("tech_walk" if (props.get("Tech Walk") or {}).get("checkbox") else None))
+                      else (SERIES_FROM_CHECKBOX if SERIES_CHECKBOX
+                            and (props.get(SERIES_CHECKBOX) or {}).get("checkbox") else None))
             if is_deal:
                 kind, sponsored, brand, visibility = "deal", 1, title, "business"
                 stage, pay = sel(props, "Stage"), sel(props, "Payment Status")
-                pub = date_of(props, "Published Date", "Deadline")
+                pub = date_of(props, *DEAL_DATE_PROPS)
                 caption = f"Brand deal | brand: {title} | stage: {stage} | payment: {pay}"
                 body = ""
             else:
