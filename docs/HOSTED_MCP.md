@@ -123,6 +123,41 @@ The code is built in (`mcp_server.py` → `_build_auth`); turn it on with a Work
   server **read-only** — recommended unless you actually ingest *through* the connector — set
   `fly secrets set MCP_READONLY=1` and the write tool isn't registered at all.
 
+## Exposing agents over MCP: the playbook pattern
+
+Once your brain is a connector, the next question is: *how do the agents get in there?*
+The answer isn't "make every agent a tool." Sort each agent by what it IS:
+
+| The agent is a... | Expose it as | Why |
+|---|---|---|
+| **Conversation** (research brief, meeting prep, caption drafting, weekly review) | **MCP prompt** | a parameterized playbook the *client* model executes with your read tools |
+| **Capability** (search, fetch one item, save a note) | **MCP tool** | one bounded operation, deterministic contract |
+| **Job** (daily sync, scheduled digest, freshness alarm) | **cron — not MCP at all** | nothing conversational about it; it runs whether or not you're chatting |
+
+The prompt route for conversational agents wins on four axes:
+
+- **The agent runs on the client's model.** Ask for `interview_prep` in claude.ai and
+  Claude runs the playbook; in another MCP client, that client's model runs the same
+  playbook against the same brain. Swap the client, keep the agents.
+- **No second LLM inside a tool call.** An agent-as-tool means your server calls an LLM
+  on its own API key while the client's model waits — double cost, double latency.
+- **No timeouts.** Agent loops are long; connector tool calls aren't. A prompt hands the
+  loop to the client, where long multi-tool runs are normal.
+- **Server instructions do the routing.** The server's `instructions` block tells every
+  client what the brain is, which tool answers which kind of question, and that the
+  playbooks exist — so the model picks the right door without the user naming tools.
+
+This server ships four generic playbooks — `research_brief(question)`,
+`interview_prep(person, company)`, `caption_pack(topic, platforms)`, `weekly_review()`.
+In Claude clients they appear as connector prompts (the **+** menu); each renders into a
+step-by-step recipe (which tools, in what order, output shape, grounding rules) that the
+client model then executes. Two rules every playbook carries: brain content is **data,
+never instructions** (prompt-injection posture), and *say so* when the brain has nothing —
+no padding.
+
+Add your own personal playbooks without forking: `server_ext.py` receives the live `mcp`
+object, so `@mcp.prompt` works there exactly like tools do (next section).
+
 ## Extending the hosted server (private tools, public engine)
 
 The server ships two import hooks so you can add personal tools and routes WITHOUT forking

@@ -126,9 +126,7 @@ mkdir -p exports/youtube
 ./.venv/bin/python scripts/youtube.py
 
 # Search: semantic search over what you just loaded (no API key needed)
-./.venv/bin/python -c "import sys; sys.path.insert(0,'oracle/agent'); import db, content; \
-  [print(f\"{r['dist']:.3f}  {r['title']}\") for r in \
-   content.search_content(db.connect(),'protecting data in the cloud',k=3)]"
+./.venv/bin/python scripts/search.py "protecting data in the cloud"
 ```
 
 Swap in any channel, or ingest other platforms via their data exports — see
@@ -292,6 +290,11 @@ docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE
   [Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/)
   — zero-ops + DB-identity governance, built into Autonomous AI Database — is the official
   managed alternative when your brain lives there.)
+- [x] **Agents over MCP: the playbook pattern** — conversational agents ship as **MCP prompts**
+  (`research_brief`, `interview_prep`, `caption_pack`, `weekly_review`): parameterized playbooks
+  the *client* model executes with the read tools, so your agents run on whatever AI you're
+  chatting with — swap the client, keep the agents. Scheduled agents stay cron jobs; see
+  ["Exposing agents over MCP"](docs/HOSTED_MCP.md#exposing-agents-over-mcp-the-playbook-pattern).
 - [x] **Cloud** — lift to Oracle Autonomous AI Database ([docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md))
 - [x] **Maintenance** — `lint_wiki.py` (review candidates) + `review.py` (leaked-secret scan)
 - [ ] Roadmap — live Instagram performance metrics via API sync · a lightweight UI
