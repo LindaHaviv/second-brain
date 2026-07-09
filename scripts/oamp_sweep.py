@@ -17,12 +17,16 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "oracle"
 import db  # noqa: E402
 
 
-def main():
-    # Mirrors research_agent._resolve_backend: unset -> oamp, except ollama -> custom.
-    backend = (os.environ.get("MEMORY_BACKEND") or (
-        "custom" if os.environ.get("LLM_PROVIDER", "anthropic").lower() == "ollama"
+def resolve_memory_backend(env):
+    """Mirrors research_agent._resolve_backend: unset -> oamp, except ollama -> custom.
+    Parity is enforced by tests/test_brain.py::test_backend_resolution_parity."""
+    return (env.get("MEMORY_BACKEND") or (
+        "custom" if env.get("LLM_PROVIDER", "anthropic").lower() == "ollama"
         else "oamp")).lower()
-    if backend != "oamp":
+
+
+def main():
+    if resolve_memory_backend(os.environ) != "oamp":
         print("oamp sweep: memory backend is not 'oamp' — nothing to sweep")
         return
     import oamp_memory

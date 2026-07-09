@@ -42,11 +42,15 @@ STEPS = [
 
 # ship path only: sweep the package's extracted memories against the structural
 # privacy deny-list (the prompt guard filters; this enforces). No-op on custom.
-# Mirrors research_agent._resolve_backend: unset -> oamp, except ollama -> custom.
-_MEMORY_BACKEND = (os.environ.get("MEMORY_BACKEND") or (
-    "custom" if os.environ.get("LLM_PROVIDER", "anthropic").lower() == "ollama"
-    else "oamp")).lower()
-if _MEMORY_BACKEND == "oamp":
+def resolve_memory_backend(env):
+    """Mirrors research_agent._resolve_backend: unset -> oamp, except ollama -> custom.
+    Parity is enforced by tests/test_brain.py::test_backend_resolution_parity."""
+    return (env.get("MEMORY_BACKEND") or (
+        "custom" if env.get("LLM_PROVIDER", "anthropic").lower() == "ollama"
+        else "oamp")).lower()
+
+
+if resolve_memory_backend(os.environ) == "oamp":
     STEPS.append(("OAMP privacy sweep", [str(ROOT / "scripts" / "oamp_sweep.py")], None))
 
 

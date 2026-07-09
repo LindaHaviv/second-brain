@@ -188,6 +188,26 @@ def test_memory_backend_resolver():
     assert _resolve_backend("OAMP", "anthropic") == "oamp"       # case-insensitive
 
 
+def test_backend_resolution_parity():
+    """sync.py and oamp_sweep.py must resolve the backend exactly like the agent does,
+    or the daily privacy sweep silently skips on configs where extraction runs."""
+    from research_agent import _resolve_backend
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import oamp_sweep
+    import sync
+    cases = [({}, "anthropic"), ({}, "openai"), ({}, "ollama"),
+             ({"MEMORY_BACKEND": "custom"}, "anthropic"),
+             ({"MEMORY_BACKEND": "oamp"}, "ollama"),
+             ({"MEMORY_BACKEND": "OAMP"}, "anthropic")]
+    for env, provider in cases:
+        e = dict(env)
+        if provider != "anthropic":     # anthropic is both defaults' fallback
+            e["LLM_PROVIDER"] = provider
+        want = _resolve_backend(env.get("MEMORY_BACKEND"), provider)
+        assert sync.resolve_memory_backend(e) == want, (env, provider)
+        assert oamp_sweep.resolve_memory_backend(e) == want, (env, provider)
+
+
 # --- regression tests for the 2026-07 code-review remediation --------------------------------
 
 def test_record_clamps_long_values():
