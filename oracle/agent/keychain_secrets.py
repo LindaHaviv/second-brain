@@ -19,6 +19,7 @@ If `keyring` isn't installed or an item is missing, values are left as-is and
 a warning is printed — nothing breaks for users who prefer plain .env values.
 """
 import os
+import sys
 
 SERVICE = "second-brain"
 _PREFIX = "keychain:"
@@ -33,10 +34,11 @@ def resolve(value):
         import keyring
         secret = keyring.get_password(SERVICE, item)
     except Exception as e:
-        print(f"(secrets: keyring unavailable for '{item}': {e})")
+        print(f"(secrets: keyring unavailable for '{item}': {e})", file=sys.stderr)
         return value
     if secret is None:
-        print(f"(secrets: no keychain item '{item}' under service '{SERVICE}')")
+        print(f"(secrets: no keychain item '{item}' under service '{SERVICE}')",
+              file=sys.stderr)
         return value
     return secret
 
