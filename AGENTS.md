@@ -23,6 +23,11 @@ MCP server. Everything below is what a maintainer would tell you on day one.
    `visibility='content'`. If you write a new query over `posts`/`content_chunks`,
    include the visibility filter. Private/business items must stay out of search, the
    wiki compiler, memory consolidation, AND anything you add.
+   The column's values: `'content'` = searchable everywhere; anything else
+   (`'business'`, `'archived'`, or a label of the user's choosing) is excluded from
+   every read path, and the cloud-copy script ships only `'content'`. If the user's
+   most valuable questions are ABOUT their private data, plan a local-only query path
+   for that scope — don't widen the default filters.
 3. **Run the tests after any change:** `./.venv/bin/python tests/test_brain.py`
    (needs the local DB from the Quickstart running). All green before you call it done.
 4. **Run the matching eval when you touch quality-bearing code:**
@@ -55,6 +60,11 @@ MCP server. Everything below is what a maintainer would tell you on day one.
 - **Set up the database:** don't hand-roll SQL; `oracle/bootstrap.sh` applies the
   schema idempotently. The schema files assume the `CCC` schema — restoring into
   another schema name requires stripping the `current_schema` lines.
+- **Need a throwaway schema next to the real one** (safe experiments, drills)?
+  As SYSTEM: `create user X identified by ...; grant connect, resource, create view
+  to X; grant read on directory VEC_MODELS to X; grant create mining model to X;`
+  then apply the schema files with the `current_schema` lines stripped
+  (`sed '/current_schema/Id'`) and load MINILM as X. Drop the user when done.
 - **Deploy the hosted server:** `docs/HOSTED_MCP.md`. Auth is fail-closed by design —
   if the server refuses to start, that's the feature. Never "fix" it with
   `MCP_ALLOW_ANON` on a public host.

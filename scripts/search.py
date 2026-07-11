@@ -28,6 +28,9 @@ def main():
         return
     for r in results:
         print(f"{r['dist']:.3f}  [{r['lvl']:>7}]  {r['title']}")
+        snip = " ".join(str(r.get("snippet") or "").split())
+        if snip:
+            print(f"                  {snip[:160]}")
 
 
 if __name__ == "__main__":

@@ -371,12 +371,14 @@ so "open your coding tool and point it at this repo" is a first-class path, not 
 
 > I want to build my own second brain: a private, searchable home for everything I create and
 > think. Use this repo as a REFERENCE, not a template:
-> https://github.com/LindaHaviv/second-brain. Read its README and architecture first.
+> https://github.com/LindaHaviv/second-brain. Read its README, AGENTS.md, and
+> docs/ARCHITECTURE.md first.
 >
 > Before you write any code, interview me:
 > 1. What do I create, and where does it live? (platforms, notes apps, docs, chats)
 > 2. What are the 5 real questions I'd actually ask my second brain?
-> 3. What must stay private vs. what could ever be shared?
+> 3. What must stay private vs. what could ever be shared — and are any of my 5 questions
+>    about the private stuff? (If so, plan a local-only scope for them.)
 >
 > Then propose MY architecture: which parts of the reference apply to me, which don't, and what
 > I need that it doesn't have. Plan only — don't build anything yet.
@@ -389,13 +391,18 @@ so "open your coding tool and point it at this repo" is a first-class path, not 
 > real question before we call it done.
 >
 > Only after I've asked it something and gotten a real answer do we add source #2.
+>
+> (Useful pointers: a folder of markdown is the fastest first source — `scripts/obsidian.py`
+> + `OBSIDIAN_VAULT` handles any such folder, and a `visibility:` frontmatter key is the
+> privacy switch.)
 
 **3. The Verifier Prompt** — the quality gate, for anything your brain helps you write:
 
 > Act as my verifier, not my writer. I'll paste a draft plus the brief it was written from.
 > 1. Turn the brief into a checklist of requirements.
 > 2. Grade the draft against each item — pass or fail, quoting the line that fails.
-> 3. Mark any claim you can't confirm from the brief as "unverified."
+> 3. Mark any claim you can't confirm from the brief as "unverified," and any claim the
+>    brief contradicts as "contradicted" — contradicted claims are automatic fails.
 > 4. Don't rewrite anything. End with a verdict — ship or fix first — and the single
 >    highest-impact fix.
 >
