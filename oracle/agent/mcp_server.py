@@ -336,13 +336,16 @@ def source_status() -> dict:
     Reading 'sources': newest_item_days = days since the newest item was PUBLISHED
     (export-style sources grow only when a new export is ingested); last_loaded_days =
     days since a loader wrote/updated rows (null = not touched recently — for
-    daily-synced sources a small number means the sync is alive)."""
+    daily-synced sources a small number means the sync is alive).
+    Counts reflect searchable content only — private items are excluded, same as
+    overview()."""
     conn = None
     try:
         conn = db.connect()
         cur = conn.cursor()
         cur.execute("""SELECT platform_id, COUNT(*), MAX(published_at), MAX(ORA_ROWSCN)
-                       FROM posts GROUP BY platform_id ORDER BY platform_id""")
+                       FROM posts WHERE NVL(visibility,'content') = 'content'
+                       GROUP BY platform_id ORDER BY platform_id""")
         out = []
         for p, n, newest, scn in cur.fetchall():
             touched = None
