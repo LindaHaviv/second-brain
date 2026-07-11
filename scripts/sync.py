@@ -40,8 +40,6 @@ STEPS = [
     ("Consolidate",  [str(ROOT / "scripts" / "consolidate.py")],        None),
 ]
 
-# ship path only: sweep the package's extracted memories against the structural
-# privacy deny-list (the prompt guard filters; this enforces). No-op on custom.
 def resolve_memory_backend(env):
     """Mirrors research_agent._resolve_backend: unset -> oamp, except ollama -> custom.
     Parity is enforced by tests/test_brain.py::test_backend_resolution_parity."""
@@ -50,6 +48,8 @@ def resolve_memory_backend(env):
         else "oamp")).lower()
 
 
+# ship path only: sweep the package's extracted memories against the structural
+# privacy deny-list (the prompt guard filters; this enforces). No-op on custom.
 if resolve_memory_backend(os.environ) == "oamp":
     STEPS.append(("OAMP privacy sweep", [str(ROOT / "scripts" / "oamp_sweep.py")], None))
 
@@ -77,9 +77,9 @@ def _tags_look_reset():
 
 
 def _write_status(results):
-    """Append this run's per-step outcomes to exports/sync_status.json (last 30 runs kept).
-    The loop-health report reads this — a step that fails or skips REPEATEDLY should
-    become a headline, not a log line."""
+    """Append this run's per-step outcomes to exports/sync_status.json (last 30 runs kept),
+    so a weekly report (yours to write — see README's loop-engineering section) can escalate
+    a step that fails or skips REPEATEDLY into a headline instead of a log line."""
     import datetime
     import json
     path = ROOT / "exports" / "sync_status.json"
@@ -113,9 +113,12 @@ def main():
     steps = list(STEPS)
     if _tags_look_reset():
         print("!! chat visibility tags look RESET (fresh import?) — classifying before rebuild")
-        steps.insert(2, ("Classify (safety net)",
-                         [str(ROOT / "scripts" / "classify_private.py"), "--apply"],
-                         LLM_KEY))
+        # insert right before the wiki refresh: AFTER every ingest step (so freshly
+        # imported chats get tagged) and BEFORE anything derived is rebuilt
+        wiki_at = next(i for i, s in enumerate(steps) if s[0] == "Wiki refresh")
+        steps.insert(wiki_at, ("Classify (safety net)",
+                               [str(ROOT / "scripts" / "classify_private.py"), "--apply"],
+                               LLM_KEY))
     failed = []
     for label, argv, need in steps:
         if need and not os.environ.get(need):

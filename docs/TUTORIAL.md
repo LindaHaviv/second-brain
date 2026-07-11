@@ -314,7 +314,7 @@ Two of those steps are **automatic ingesters** worth knowing about before you ru
 - **The Claude Code step** reads your local `~/.claude/projects` transcripts (if you use Claude
   Code) so your AI-coding sessions become searchable too. No Claude Code? It's a quiet no-op.
 
-API loaders (Instagram, Notion) and the Obsidian vault loader run only when their credential/path is configured, so on a fresh
+API loaders (Instagram, Notion, Google Drive) and the Obsidian vault loader run only when their credential/path is configured, so on a fresh
 build `sync.py` is safe: it just refreshes the wiki and consolidates memory.
 
 **Schedule it (macOS LaunchAgent)** — save this as
@@ -397,10 +397,15 @@ machine); register it in Claude Desktop (**Settings → Developer → Edit Confi
 ```
 
 Now ask Claude *"search my brain for what I've covered on AI inference"* or *"show my wiki topics."*
-Tools: `search`, `fetch`, `wiki`, `topics`, `recent`, `by_series`, `overview`, plus write tools —
+Tools: `search`, `fetch`, `wiki`, `topics`, `recent`, `by_series`, `overview`, `source_status`
+(when did each source last sync), plus write tools —
 `ingest_note` (*"save this idea to my brain"*) and `save_chat` (*"save this conversation to my
 brain"* — real-time capture, no data export needed). Read tools are annotated `readOnlyHint` and
 the write tools gated, so clients can auto-allow reads and ask before writes.
+
+The server also ships **agent playbooks as MCP prompts** — `research_brief`, `interview_prep`,
+`caption_pack`, `weekly_review`. Pick one in your client and it hands the model a ready-to-run
+recipe that uses the tools above — conversation-type agents you never deploy or maintain.
 
 ![The same question answered in Claude and in ChatGPT by the same connector — one brain, any chat](images/mcp-search.png)
 

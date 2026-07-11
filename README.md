@@ -203,7 +203,7 @@ tool stores it on the spot, no export needed.
   runs become tomorrow's recalled facts — the research agent literally stops re-deriving things
   it worked out last month. The more you use it, the better it answers.
 - **Nothing self-modifies.** No agent rewrites its own code or prompts, and no model decides what
-  runs when — scheduling and routing stay deterministic (a 100-line `sync.py` and cron-style
+  runs when — scheduling and routing stay deterministic (a small `sync.py` and cron-style
   timers). The behavior improves because the *memory it stands on* grows, which means every
   improvement is inspectable with plain SQL: `SELECT * FROM semantic_memory ORDER BY created_at`.
 
@@ -337,6 +337,48 @@ you do:
 6. **Personal agents go in a private companion repo** — make the gitignored `private/` dir its own
    private git repo for agents that encode *your* workflow (they can import the public engine
    directly). Publish patterns; keep personalization private.
+
+## Build yours with your AI (three prompts)
+
+Don't copy this second brain — my sources aren't your sources. Hand this repo to your AI as the
+map, and use these prompts to make it build *yours*. Use them in order.
+
+**1. The Architect Prompt** — plan first, no code:
+
+> I want to build my own second brain: a private, searchable home for everything I create and
+> think. Use this repo as a REFERENCE, not a template:
+> https://github.com/LindaHaviv/second-brain. Read its README and architecture first.
+>
+> Before you write any code, interview me:
+> 1. What do I create, and where does it live? (platforms, notes apps, docs, chats)
+> 2. What are the 5 real questions I'd actually ask my second brain?
+> 3. What must stay private vs. what could ever be shared?
+>
+> Then propose MY architecture: which parts of the reference apply to me, which don't, and what
+> I need that it doesn't have. Plan only — don't build anything yet.
+
+**2. The First-Source Prompt** — build small, prove it:
+
+> From the plan we agreed on, build ONE source end-to-end: ingest → store → search → answer one
+> of my 5 real questions with it. Nothing else. Rules: secrets go in environment variables or a
+> keychain, never in chat or code; private data stays on my machine; show me the answer to my
+> real question before we call it done.
+>
+> Only after I've asked it something and gotten a real answer do we add source #2.
+
+**3. The Verifier Prompt** — the quality gate, for anything your brain helps you write:
+
+> Act as my verifier, not my writer. I'll paste a draft plus the brief it was written from.
+> 1. Turn the brief into a checklist of requirements.
+> 2. Grade the draft against each item — pass or fail, quoting the line that fails.
+> 3. Mark any claim you can't confirm from the brief as "unverified."
+> 4. Don't rewrite anything. End with a verdict — ship or fix first — and the single
+>    highest-impact fix.
+>
+> You didn't write this draft. Be harder on it than you'd be on your own work.
+
+Tip for the verifier: run it in a *different* AI than the one that wrote the draft — models grade
+their own family's work too kindly.
 
 ## Notes
 

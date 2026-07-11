@@ -22,7 +22,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 import db                       # noqa: E402
-from mcp_server import mcp   # same FastMCP server + all tools (search/fetch/wiki/topics/recent/by_series/overview/ingest_note)
+from mcp_server import mcp   # same FastMCP server + all tools (see mcp_server.py's registry)
 
 TOKEN = os.environ.get("MCP_AUTH_TOKEN")
 

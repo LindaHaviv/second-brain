@@ -82,8 +82,8 @@ are for you) and keep them separate:
   (Borrowed from Oracle's managed MCP, which bakes the same guard into its Select AI Agent tool
   instructions.)
 - **Separate reads from writes.** The MCP tools are split by capability: the read tools
-  (`search`/`fetch`/`wiki`/`topics`/`recent`/`by_series`/`overview`) are annotated **`readOnlyHint`** so clients can
-  auto-allow them, while the one write tool (`ingest_note`) is annotated as a write so a client can
+  (`search`/`fetch`/`wiki`/`topics`/`recent`/`by_series`/`overview`/`source_status`) are annotated **`readOnlyHint`** so clients can
+  auto-allow them, while the write tools (`ingest_note`, `save_chat`) are annotated as writes so a client can
   **gate/ask before** calling it. Anything destructive or that touches an external system (e.g.
   updating Notion) should stay **human-in-the-loop**.
 - **Ship read-only when you can.** Set **`MCP_READONLY=1`** and the write tool isn't registered at

@@ -2,7 +2,8 @@
 read, and add to the brain over a local stdio connection. Everything stays on your machine.
 
 Exposes the standard connector contract: search / fetch, plus wiki / topics (synthesized
-knowledge pages), recent, and ingest_note — and AGENT PLAYBOOKS as MCP prompts
+knowledge pages), recent, by_series, overview, source_status, and two write tools
+(ingest_note, save_chat) — and AGENT PLAYBOOKS as MCP prompts
 (research_brief, interview_prep, caption_pack, weekly_review): recipes the client model
 executes with the read tools, so agents run on whatever AI you're chatting with.
 
@@ -364,7 +365,7 @@ def source_status() -> dict:
         # own section with an EXPORT DUE flag, so "what do I need to export?" is answered
         # at a glance. Configure per deployment: EXPORT_SOURCES (csv), EXPORT_DUE_DAYS.
         export_srcs = {s.strip() for s in os.environ.get(
-            "EXPORT_SOURCES", "chatgpt,claude").split(",") if s.strip()}
+            "EXPORT_SOURCES", "chatgpt,claude,linkedin").split(",") if s.strip()}
         due_days = int(os.environ.get("EXPORT_DUE_DAYS", "30"))
         fmt = lambda d: "-" if d is None else ("today" if d == 0 else f"{d}d")
         width = max([len("SOURCE")] + [len(r["platform"]) for r in out])
@@ -491,8 +492,8 @@ def by_series(
             conn.close()
 
 
-# The one WRITE tool. It's marked non-read-only (clients should gate it / ask before calling),
-# and is omitted entirely when MCP_READONLY=1 — so a read-only deployment exposes no way to
+# The WRITE tools. Marked non-read-only (clients should gate them / ask before calling),
+# and omitted entirely when MCP_READONLY=1 — so a read-only deployment exposes no way to
 # mutate the brain. Anything more powerful than this (e.g. editing Notion) stays human-in-the-loop.
 if not READONLY:
     @mcp.tool(annotations={**_WRITE, "title": "Save a note to the brain"})

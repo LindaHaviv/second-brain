@@ -58,7 +58,7 @@ Your server is then at `https://<your-app>.fly.dev` (health: `/health`, MCP: `/m
 - **Claude Code / Claude Desktop / the API:** point them at `https://<your-app>.fly.dev/mcp`
   with header `Authorization: Bearer <MCP_AUTH_TOKEN>`. `search`/`fetch` follow the standard
   connector contract (`{results:[{id,title,url,text}]}`), plus `wiki`, `topics`, `recent`,
-  `by_series`, `overview`, and `ingest_note` (the one write tool).
+  `by_series`, `overview`, `source_status`, and two write tools: `ingest_note` and `save_chat`.
 - **ChatGPT + claude.ai web/mobile:** these connector UIs require **OAuth** (Dynamic Client
   Registration), not a bearer header. This repo supports it via **WorkOS AuthKit** — see below.
 
@@ -119,9 +119,9 @@ The code is built in (`mcp_server.py` → `_build_auth`); turn it on with a Work
 - Keep the DB **ACL** tight (Fly egress IPs). Consider a least-privilege DB user (see hardening).
 - Token is the only credential a client needs — treat it like a password.
 - **Read/write separation.** Read tools are annotated `readOnlyHint` (clients can auto-allow them);
-  the one write tool (`ingest_note`) is annotated as a write so clients gate it. To make the hosted
-  server **read-only** — recommended unless you actually ingest *through* the connector — set
-  `fly secrets set MCP_READONLY=1` and the write tool isn't registered at all.
+  the write tools (`ingest_note`, `save_chat`) are annotated as writes so clients gate them. To make
+  the hosted server **read-only** — recommended unless you actually ingest *through* the connector —
+  set `fly secrets set MCP_READONLY=1` and the write tools aren't registered at all.
 
 ## Exposing agents over MCP: the playbook pattern
 
