@@ -17,6 +17,7 @@ Register in Claude Desktop (Settings -> Developer -> Edit Config), then restart 
 }
 """
 import base64
+import datetime as _dt
 import json
 import os
 import pathlib
@@ -90,6 +91,7 @@ Tool routing:
 - wiki for the user's synthesized take on a broad topic (topics lists what exists).
 - recent for "what's new/latest"; by_series for a named content series; overview for stats
   about the brain itself — not for content questions.
+- source_status for observability: "when did my sources last sync / is anything stale".
 - Write tools (if present) always ask the user first: ingest_note saves an idea,
   save_chat archives this conversation.
 
@@ -316,6 +318,45 @@ def overview() -> dict:
         return content.stats(conn)
     except Exception as e:
         _unavailable("overview", e)
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+@mcp.tool(annotations={**_READ, "title": "Source sync status"})
+def source_status() -> list:
+    """LIVE freshness per source: when each platform last received new content and when its
+    loader last touched the rows — the brain reporting on its own upkeep.
+    WHEN TO USE: "when did my sources last sync", "is my brain up to date", "is anything
+    stale" — observability questions about the SYSTEM. For questions about the content
+    itself, use search()/overview() instead.
+    Reading the result: newest_item_days = days since the newest item was PUBLISHED
+    (export-style sources grow only when a new export is ingested); last_loaded_days =
+    days since a loader wrote/updated rows (null when nothing touched them recently —
+    for daily-synced sources a small number means the sync is alive)."""
+    conn = None
+    try:
+        conn = db.connect()
+        cur = conn.cursor()
+        cur.execute("""SELECT platform_id, COUNT(*), MAX(published_at), MAX(ORA_ROWSCN)
+                       FROM posts GROUP BY platform_id ORDER BY platform_id""")
+        out = []
+        for p, n, newest, scn in cur.fetchall():
+            touched = None
+            if scn is not None:
+                try:
+                    cur.execute("SELECT SCN_TO_TIMESTAMP(:s) FROM dual", s=int(scn))
+                    t = cur.fetchone()[0]
+                    touched = t.replace(tzinfo=None) if t.tzinfo else t
+                except Exception:
+                    touched = None   # SCN older than undo retention = not touched recently
+            days = lambda ts: None if ts is None else max(0, (_dt.datetime.now() - ts).days)
+            out.append({"platform": p, "items": n,
+                        "newest_item_days": days(newest),
+                        "last_loaded_days": days(touched)})
+        return out
+    except Exception as e:
+        _unavailable("source_status", e)
     finally:
         if conn is not None:
             conn.close()

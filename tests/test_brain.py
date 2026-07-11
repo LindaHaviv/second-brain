@@ -324,7 +324,7 @@ def test_mcp_public_layout_is_generic():
                          cwd=str(pathlib.Path(__file__).resolve().parent.parent))
     tools = out.stdout.strip().split(",")
     assert tools == ["by_series", "fetch", "ingest_note", "overview", "recent",
-                     "save_chat", "search", "topics", "wiki"], tools
+                     "save_chat", "search", "source_status", "topics", "wiki"], tools
 
 
 def test_rate_limiter_per_ip_isolation():
