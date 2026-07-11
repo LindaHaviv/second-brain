@@ -444,7 +444,7 @@ Finally, make the brain a tool any AI client can call. A small **MCP server** ex
 last synced), and two write tools: `ingest_note` (capture an idea
 from any chat) and `save_chat` (save the conversation itself into the brain). It also ships
 agent playbooks as **MCP prompts** (`research_brief`, `interview_prep`, `caption_pack`,
-`weekly_review`) — ready-to-run recipes your client's model executes with those tools.
+`weekly_review`): ready-to-run recipes your client's model executes with those tools.
 Run it **locally
 over stdio** first. In
 Claude Desktop: Settings, then Developer, then Edit Config, and add this block (replace `<repo>`
