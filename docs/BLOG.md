@@ -440,7 +440,8 @@ If you're a visual learner, here's another way to see it:
 
 Finally, make the brain a tool any AI client can call. A small **MCP server** exposes the standard
 `search`/`fetch` connector contract, the same shape **Claude *and* ChatGPT** expect, plus `wiki`,
-`topics`, `recent`, `by_series`, `overview`, and two write tools: `ingest_note` (capture an idea
+`topics`, `recent`, `by_series`, `overview`, `source_status` (ask any chat when your sources
+last synced), and two write tools: `ingest_note` (capture an idea
 from any chat) and `save_chat` (save the conversation itself into the brain). Run it **locally
 over stdio** first. In
 Claude Desktop: Settings, then Developer, then Edit Config, and add this block (replace `<repo>`
