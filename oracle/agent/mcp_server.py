@@ -324,16 +324,19 @@ def overview() -> dict:
 
 
 @mcp.tool(annotations={**_READ, "title": "Source sync status"})
-def source_status() -> list:
+def source_status() -> dict:
     """LIVE freshness per source: when each platform last received new content and when its
     loader last touched the rows — the brain reporting on its own upkeep.
     WHEN TO USE: "when did my sources last sync", "is my brain up to date", "is anything
     stale" — observability questions about the SYSTEM. For questions about the content
     itself, use search()/overview() instead.
-    Reading the result: newest_item_days = days since the newest item was PUBLISHED
+    PRESENTING: show the 'panel' field to the user VERBATIM in a code block — it is the
+    system's status display and must look identical in every client. Add commentary
+    after it if useful; never reformat the panel itself.
+    Reading 'sources': newest_item_days = days since the newest item was PUBLISHED
     (export-style sources grow only when a new export is ingested); last_loaded_days =
-    days since a loader wrote/updated rows (null when nothing touched them recently —
-    for daily-synced sources a small number means the sync is alive)."""
+    days since a loader wrote/updated rows (null = not touched recently — for
+    daily-synced sources a small number means the sync is alive)."""
     conn = None
     try:
         conn = db.connect()
@@ -354,7 +357,15 @@ def source_status() -> list:
             out.append({"platform": p, "items": n,
                         "newest_item_days": days(newest),
                         "last_loaded_days": days(touched)})
-        return out
+        fmt = lambda d: "-" if d is None else ("today" if d == 0 else f"{d}d")
+        width = max([len("SOURCE")] + [len(r["platform"]) for r in out])
+        lines = [f"SECOND BRAIN — SOURCE STATUS   {_dt.date.today().isoformat()}",
+                 f"{'SOURCE':<{width}}  {'ITEMS':>6}  {'NEWEST':>7}  {'LOADED':>7}",
+                 "-" * (width + 26)]
+        for r in out:
+            lines.append(f"{r['platform']:<{width}}  {r['items']:>6}  "
+                         f"{fmt(r['newest_item_days']):>7}  {fmt(r['last_loaded_days']):>7}")
+        return {"panel": "\n".join(lines), "sources": out}
     except Exception as e:
         _unavailable("source_status", e)
     finally:
