@@ -341,7 +341,10 @@ you do:
 ## Build yours with your AI (three prompts)
 
 Don't copy this second brain — my sources aren't your sources. Hand this repo to your AI as the
-map, and use these prompts to make it build *yours*. Use them in order.
+map, and use these prompts to make it build *yours*. Use them in order. Your coding agent gets
+its own briefing: **[AGENTS.md](AGENTS.md)** tells Claude Code / Cursor / any agent the house
+rules — the privacy constraints it must preserve, and which tests and evals gate every change —
+so "open your coding tool and point it at this repo" is a first-class path, not a hack.
 
 **1. The Architect Prompt** — plan first, no code:
 

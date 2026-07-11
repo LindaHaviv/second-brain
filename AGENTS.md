@@ -1,0 +1,69 @@
+# Instructions for AI coding agents
+
+You (an AI coding agent — Claude Code, Cursor, Codex, or similar) have been handed this
+repo to set up, adapt, or extend a **second brain**: one Oracle database holding your
+user's content, searchable by meaning, with a self-compiling wiki, agent memory, and an
+MCP server. Everything below is what a maintainer would tell you on day one.
+
+## What to read first
+
+- `README.md` — the build, in order. The Quickstart IS the setup procedure; run it
+  top to bottom rather than improvising your own.
+- `README.md` → "Build yours with your AI" — if your user wants THEIR version (their
+  sources, their questions), start from those three prompts: interview → plan first.
+- `docs/EXPORT_GUIDE.md` + any loader in `scripts/` — the pattern for adding a source.
+- `SECURITY.md` — before anything touches real data or the internet.
+
+## The rules (non-negotiable)
+
+1. **Secrets never enter files or chat.** Credentials live in `oracle/.env` (gitignored)
+   or the OS keychain (`keychain:<item>` values — see `oracle/agent/keychain_secrets.py`).
+   Never print token values, never commit `.env`, never paste keys into your transcript.
+2. **Privacy is structural — keep it that way.** Every read path filters
+   `visibility='content'`. If you write a new query over `posts`/`content_chunks`,
+   include the visibility filter. Private/business items must stay out of search, the
+   wiki compiler, memory consolidation, AND anything you add.
+3. **Run the tests after any change:** `./.venv/bin/python tests/test_brain.py`
+   (needs the local DB from the Quickstart running). All green before you call it done.
+4. **Run the matching eval when you touch quality-bearing code:**
+   - retrieval/search changes → `tests/eval_retrieval.py`
+   - agent answer/verify changes → `tests/eval_grounding.py`, `tests/eval_verify.py`
+   - privacy classifier changes → `tests/eval_classifier.py`
+   - memory backend changes → `tests/eval_oamp.py`
+   The golden sets in `tests/*.json` work on the sample data; encourage your user to
+   grow their own once real content is loaded.
+5. **Every loop earns its keep.** A new source, agent, or scheduled job ships with an
+   eval that proves it works or a report your user will actually read (see README →
+   "Loop engineering"). Don't add silent automation.
+6. **No self-modification patterns.** Agents here never rewrite their own prompts or
+   code at runtime; scheduling stays deterministic (`scripts/sync.py` + cron/launchd).
+   Keep that property — it's what makes the system auditable with plain SQL.
+7. **Don't scrape platforms.** Loaders use official APIs and user-requested exports
+   only. If a platform has neither, the answer is "not yet," not a headless browser.
+
+## Common tasks, the sanctioned way
+
+- **Add a source/loader:** copy the closest loader in `scripts/` (they all normalize
+  into the same `posts` + `content_chunks` shape, embed in-database, and set
+  `visibility` on insert). Delete+reload should be one transaction. Add a golden case
+  or make sure its output lands in the user's freshness/report flow (rule 5).
+- **Change retrieval:** `oracle/agent/content.py` (hybrid = vector + keyword, RRF
+  fusion). Run `eval_retrieval.py` before/after and compare.
+- **Touch the MCP server:** `oracle/agent/mcp_server.py`. Read tools get
+  `readOnlyHint`; write tools must stay gated and unregistered under `MCP_READONLY=1`.
+  `tests/test_brain.py` pins the exact public tool list — update it deliberately.
+- **Set up the database:** don't hand-roll SQL; `oracle/bootstrap.sh` applies the
+  schema idempotently. The schema files assume the `CCC` schema — restoring into
+  another schema name requires stripping the `current_schema` lines.
+- **Deploy the hosted server:** `docs/HOSTED_MCP.md`. Auth is fail-closed by design —
+  if the server refuses to start, that's the feature. Never "fix" it with
+  `MCP_ALLOW_ANON` on a public host.
+
+## Verifying your work (in order of strength)
+
+1. Unit tests green (rule 3).
+2. The relevant eval didn't regress (rule 4).
+3. The feature demonstrated end-to-end: load → search → correct answer with the
+   user's real question, not a synthetic one.
+4. Ask the brain itself: the MCP `overview` / `source_status` tools report what's
+   loaded and how fresh — use them to check your own ingestion landed.
