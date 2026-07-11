@@ -207,6 +207,27 @@ tool stores it on the spot, no export needed.
   timers). The behavior improves because the *memory it stands on* grows, which means every
   improvement is inspectable with plain SQL: `SELECT * FROM semantic_memory ORDER BY created_at`.
 
+## Loop engineering: keeping the loops honest
+
+There's a name for this discipline now — [**loop engineering**](https://addyosmani.com/blog/loop-engineering/)
+(Addy Osmani's term; Boris Cherny: "my job is writing loops"). The essays are about coding
+agents; this repo applies the same idea to a knowledge system: you don't maintain the brain,
+you design the loops that maintain it — **and you keep the loops accountable**:
+
+- **Every loop earns its keep.** A source, agent, or scheduled job ships with an eval proving
+  it works or a report you actually read — otherwise it's a removal candidate, not furniture.
+- **Loops report their spend.** Every LLM call lands in a local ledger tagged by loop
+  (`exports/loop_ledger.jsonl`, written by `llm.py`; `LOOP_LABEL` names the loop, and the sync
+  tags each step automatically). "Is this loop worth it?" gets a denominator.
+- **Failures escalate instead of whispering.** The sync writes per-step outcomes to
+  `exports/sync_status.json`; anything failing or skipping repeatedly should headline your
+  weekly review, not hide in a log. (A missing API token once silently skipped a source here
+  for weeks — this exists so that can't happen quietly again.)
+- **Forgetting is a designed stage.** A memory store that only grows drifts toward noise.
+  `scripts/memory_review.py` is the report-only audit: stale time-bound facts, near-duplicate
+  pairs, volume growth. Review it, retire by hand — deleting memories is the one loop that
+  should never run unattended first.
+
 The privacy filter is part of the loop, not an afterthought: consolidation and the wiki only read
 `visibility = 'content'`, so a private item can never be laundered into a "learned" fact. Accuracy
 is guarded the same way: a verification pass fact-checks every research answer against the run's

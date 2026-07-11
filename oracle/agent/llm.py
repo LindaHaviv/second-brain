@@ -28,6 +28,34 @@ PROVIDER = os.environ.get("LLM_PROVIDER", "anthropic").lower()
 DEFAULTS = {"anthropic": "claude-opus-4-8", "openai": "gpt-5.2", "ollama": "llama3.2"}
 MODEL = os.environ.get("LLM_MODEL") or DEFAULTS.get(PROVIDER, DEFAULTS["anthropic"])
 
+# --- the loop ledger: every LLM call records its tokens, tagged by which loop spent them.
+# Loops should report their cost ("every loop earns its keep" needs a denominator).
+# One JSONL line per call; LOOP_LABEL names the loop (sync exports it per step), else the
+# running script's name. Local file, gitignored; report scripts aggregate it.
+LEDGER = os.environ.get("LOOP_LEDGER") or str(
+    pathlib.Path(__file__).resolve().parent.parent.parent / "exports" / "loop_ledger.jsonl")
+
+
+def loop_label():
+    import sys
+    stem = pathlib.Path(sys.argv[0]).stem if sys.argv and sys.argv[0] else ""
+    return os.environ.get("LOOP_LABEL") or stem or "interactive"
+
+
+def record_usage(model, tokens_in, tokens_out, label=None):
+    """Append one ledger line. Never raises — cost visibility must not break a loop."""
+    try:
+        import datetime
+        line = {"ts": datetime.datetime.now().isoformat(timespec="seconds"),
+                "label": label or loop_label(), "provider": PROVIDER, "model": model,
+                "tokens_in": int(tokens_in or 0), "tokens_out": int(tokens_out or 0)}
+        p = pathlib.Path(LEDGER)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(p, "a") as f:
+            f.write(json.dumps(line) + "\n")
+    except Exception:
+        pass
+
 
 def structured(system, prompt, schema, max_tokens=4096, model=None):
     """One prompt in, schema-validated JSON out — on whichever provider is configured.
@@ -39,6 +67,7 @@ def structured(system, prompt, schema, max_tokens=4096, model=None):
             model=model or MODEL, max_tokens=max_tokens, system=system,
             messages=[{"role": "user", "content": prompt}],
             output_config={"format": {"type": "json_schema", "schema": schema}})
+        record_usage(model or MODEL, r.usage.input_tokens, r.usage.output_tokens)
         return json.loads(next(b.text for b in r.content if b.type == "text"))
 
     if PROVIDER == "openai":
@@ -52,6 +81,8 @@ def structured(system, prompt, schema, max_tokens=4096, model=None):
                       {"role": "user", "content": prompt}],
             response_format={"type": "json_schema",
                              "json_schema": {"name": "out", "strict": True, "schema": schema}})
+        if getattr(r, "usage", None):
+            record_usage(MODEL, r.usage.prompt_tokens, r.usage.completion_tokens)
         return json.loads(r.choices[0].message.content)
 
     if PROVIDER == "ollama":
@@ -62,6 +93,8 @@ def structured(system, prompt, schema, max_tokens=4096, model=None):
         req = urllib.request.Request(f"{host}/api/chat", data=body,
                                      headers={"Content-Type": "application/json"})
         with urllib.request.urlopen(req, timeout=600) as resp:
-            return json.loads(json.loads(resp.read())["message"]["content"])
+            data = json.loads(resp.read())
+        record_usage(MODEL, data.get("prompt_eval_count"), data.get("eval_count"))
+        return json.loads(data["message"]["content"])
 
     raise SystemExit(f"unknown LLM_PROVIDER={PROVIDER!r} (anthropic | openai | ollama)")

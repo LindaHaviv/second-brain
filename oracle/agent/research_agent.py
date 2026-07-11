@@ -12,6 +12,7 @@ import os
 import json
 import anthropic
 
+import llm
 from memory import record, recall
 from content import search_hybrid, get_post, get_wiki_page
 from procedural import seed_tools, select_tools
@@ -140,6 +141,7 @@ def verify_answer(client, messages, answer):
         model=MODEL, max_tokens=12288, system=VERIFY_SYSTEM, messages=check,
         output_config={"format": {"type": "json_schema", "schema": VERIFY_SCHEMA}},
     )
+    llm.record_usage(MODEL, r.usage.input_tokens, r.usage.output_tokens)
     out = json.loads(next(b.text for b in r.content if b.type == "text"))
     return out["revised_answer"], out["claims"]
 
@@ -285,6 +287,7 @@ def run_research(client, conn, question, history=None):
             model=MODEL, max_tokens=4096, thinking={"type": "adaptive"},
             system=SYSTEM, tools=TOOLS, messages=messages, **kwargs,
         )
+        llm.record_usage(MODEL, resp.usage.input_tokens, resp.usage.output_tokens)
         c = getattr(resp, "container", None)
         container_id = c.id if c else container_id
         # web_search is server-side; when it hits its loop limit, re-send to let it continue

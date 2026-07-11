@@ -76,11 +76,39 @@ def _tags_look_reset():
         return False
 
 
+def _write_status(results):
+    """Append this run's per-step outcomes to exports/sync_status.json (last 30 runs kept).
+    The loop-health report reads this — a step that fails or skips REPEATEDLY should
+    become a headline, not a log line."""
+    import datetime
+    import json
+    path = ROOT / "exports" / "sync_status.json"
+    try:
+        history = json.loads(path.read_text()) if path.exists() else []
+    except Exception:
+        history = []
+    history.append({"run_at": datetime.datetime.now().isoformat(timespec="seconds"),
+                    "steps": results})
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(history[-30:], indent=1))
+
+
+def _run_step(label, argv, results):
+    import time
+    t0 = time.time()
+    env = dict(os.environ, LOOP_LABEL=label)   # tag the loop ledger per step
+    rc = subprocess.run([PY, *argv], env=env).returncode
+    results.append({"label": label, "status": "fail" if rc else "ok",
+                    "seconds": round(time.time() - t0, 1)})
+    return rc
+
+
 def main():
+    results = []
     # FIRST: pick up any new chat-export zips (drop-zip-and-forget). Runs before the
     # tags-reset check so a fresh import gets classified in THIS run, not tomorrow's.
     print("=== Chat exports (watch folder) ===", flush=True)
-    subprocess.run([PY, str(ROOT / "scripts" / "ingest_exports.py")])
+    _run_step("Chat exports", [str(ROOT / "scripts" / "ingest_exports.py")], results)
 
     steps = list(STEPS)
     if _tags_look_reset():
@@ -92,11 +120,13 @@ def main():
     for label, argv, need in steps:
         if need and not os.environ.get(need):
             print(f"— skip {label} (no {need})")
+            results.append({"label": label, "status": "skip", "seconds": 0})
             continue
         print(f"\n=== {label} ===", flush=True)
-        if subprocess.run([PY, *argv]).returncode:
+        if _run_step(label, argv, results):
             print(f"  {label} FAILED — continuing")
             failed.append(label)
+    _write_status(results)
     print(f"\nsync complete." + (f" failed: {', '.join(failed)}" if failed else " all steps ok."))
     sys.exit(1 if failed else 0)
 

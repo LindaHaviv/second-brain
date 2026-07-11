@@ -188,6 +188,38 @@ def test_memory_backend_resolver():
     assert _resolve_backend("OAMP", "anthropic") == "oamp"       # case-insensitive
 
 
+def test_loop_ledger_records():
+    """record_usage appends a tagged JSONL line and never raises (cost visibility
+    must not break a loop)."""
+    import json as _json
+    import tempfile
+    import llm
+    old = llm.LEDGER
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            llm.LEDGER = str(pathlib.Path(td) / "ledger.jsonl")
+            llm.record_usage("test-model", 10, 20, label="test-loop")
+            line = _json.loads(pathlib.Path(llm.LEDGER).read_text().splitlines()[0])
+            assert line["label"] == "test-loop" and line["tokens_in"] == 10 \
+                and line["tokens_out"] == 20 and line["model"] == "test-model"
+            llm.LEDGER = "/nonexistent-dir-that-cannot-be-created\0/x"
+            llm.record_usage("m", 1, 1)   # must not raise
+    finally:
+        llm.LEDGER = old
+
+
+def test_memory_stale_detector():
+    """The forgetting audit flags OLD memories in time-bound present tense — not new
+    ones, and not durable facts of any age."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from memory_review import is_stale_candidate
+    assert is_stale_candidate("She is currently preparing the video launch", 90)
+    assert is_stale_candidate("Working on the deal this month", 61)
+    assert not is_stale_candidate("She is currently preparing the launch", 10)  # too new
+    assert not is_stale_candidate("Her content centers on AI education", 400)   # durable
+    assert not is_stale_candidate("", 400)
+
+
 def test_backend_resolution_parity():
     """sync.py and oamp_sweep.py must resolve the backend exactly like the agent does,
     or the daily privacy sweep silently skips on configs where extraction runs."""
