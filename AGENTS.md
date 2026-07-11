@@ -59,6 +59,30 @@ MCP server. Everything below is what a maintainer would tell you on day one.
   if the server refuses to start, that's the feature. Never "fix" it with
   `MCP_ALLOW_ANON` on a public host.
 
+## Enforcement, not just instructions
+
+The rules above are Tier 1: text you read and follow. This repo also ships Tier 2 —
+enforcement that doesn't depend on you remembering:
+
+- **Shipped hook (already active in Claude Code):** the checked-in
+  `.claude/settings.json` carries a PreToolUse hook that BLOCKS any agent edit to a
+  `*.env` file, with the reason returned to you. Claude Code asks the user to approve
+  project hooks on first use — approving is recommended. Other tools (Cursor, etc.):
+  wire the same guard into your tool's equivalent hook mechanism; the command inside
+  the settings file is plain python3 reading the tool call as JSON on stdin.
+- **Opt-in hook (paste into `.claude/settings.local.json` if you want tests enforced,
+  not just requested):** run the suite whenever the agent finishes a turn. Caveat: it
+  needs the local database running, so enable it only after the Quickstart works.
+
+  ```json
+  {"hooks": {"Stop": [{"hooks": [{"type": "command",
+    "command": "./.venv/bin/python tests/test_brain.py"}]}]}}
+  ```
+
+- Everything deeper is enforced below the agent layer entirely: the `visibility`
+  filter runs in the database, auth fails closed, `MCP_READONLY` unregisters write
+  tools. You can't skip those even if you ignore this file — that's the design.
+
 ## Verifying your work (in order of strength)
 
 1. Unit tests green (rule 3).

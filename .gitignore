@@ -36,4 +36,5 @@ node_modules/
 oracle/agent/demo_screenshot.py
 
 # Claude Code tool config (permission history names local file moves — personal)
-.claude/
+.claude/*
+!.claude/settings.json

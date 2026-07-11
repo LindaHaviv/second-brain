@@ -188,6 +188,20 @@ def test_memory_backend_resolver():
     assert _resolve_backend("OAMP", "anthropic") == "oamp"       # case-insensitive
 
 
+def test_shipped_env_guard_hook():
+    """The checked-in .claude/settings.json hook must block *.env edits and allow
+    everything else — including .env.example, which is where agents SHOULD write."""
+    import json as _json
+    import subprocess
+    cfg = _json.loads((ROOT / ".claude" / "settings.json").read_text())
+    cmd = cfg["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
+    for path, want in [("oracle/.env", 2), ("/anywhere/.env", 2),
+                       ("oracle/.env.example", 0), ("scripts/sync.py", 0)]:
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True,
+                           input=_json.dumps({"tool_input": {"file_path": path}}))
+        assert r.returncode == want, (path, r.returncode, r.stderr)
+
+
 def test_loop_ledger_records():
     """record_usage appends a tagged JSONL line and never raises (cost visibility
     must not break a loop)."""

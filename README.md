@@ -207,6 +207,27 @@ tool stores it on the spot, no export needed.
   timers). The behavior improves because the *memory it stands on* grows, which means every
   improvement is inspectable with plain SQL: `SELECT * FROM semantic_memory ORDER BY created_at`.
 
+## How the rules work: three tiers
+
+Every rule in this system lives at one of three depths — and knowing which tier a rule
+belongs in is most of security design:
+
+1. **Instructions** (a model reads them, and might not follow them): [AGENTS.md](AGENTS.md)
+   briefing coding agents, the MCP server's tool-routing instructions, prompt rules like
+   "never memorize financials." Useful, cheap — and *proven* imperfect: our eval suite
+   caught the memory extractor partially ignoring exactly that instruction.
+2. **Constraints** (no model in the loop; can't be ignored): the `visibility` filter the
+   database applies to every read, auth that fails closed, `MCP_READONLY` never
+   *registering* write tools, loaders that skip deal-data rows, embeddings computed inside
+   the INSERT itself — and the checked-in `.claude/settings.json` hook that blocks any
+   coding agent from editing a `.env` file (Claude Code asks you to approve it once).
+3. **Watchdogs** (deterministic checks that run later): the daily privacy sweep that
+   deletes what the extractor was told not to keep, the classify tripwire after chat
+   re-imports, the weekly eval delta, the monthly memory-hygiene review.
+
+The design rule this repo follows: **instructions filter, constraints enforce, watchdogs
+verify.** When a rule matters, don't leave it at tier 1 — push it down a tier.
+
 ## Loop engineering: keeping the loops honest
 
 There's a name for this discipline now — [**loop engineering**](https://addyosmani.com/blog/loop-engineering/)
