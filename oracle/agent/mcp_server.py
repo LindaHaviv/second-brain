@@ -357,14 +357,34 @@ def source_status() -> dict:
             out.append({"platform": p, "items": n,
                         "newest_item_days": days(newest),
                         "last_loaded_days": days(touched)})
+        # Export-style sources only grow when YOU ingest a fresh export — they get their
+        # own section with an EXPORT DUE flag, so "what do I need to export?" is answered
+        # at a glance. Configure per deployment: EXPORT_SOURCES (csv), EXPORT_DUE_DAYS.
+        export_srcs = {s.strip() for s in os.environ.get(
+            "EXPORT_SOURCES", "chatgpt,claude").split(",") if s.strip()}
+        due_days = int(os.environ.get("EXPORT_DUE_DAYS", "30"))
         fmt = lambda d: "-" if d is None else ("today" if d == 0 else f"{d}d")
         width = max([len("SOURCE")] + [len(r["platform"]) for r in out])
-        lines = [f"SECOND BRAIN — SOURCE STATUS   {_dt.date.today().isoformat()}",
-                 f"{'SOURCE':<{width}}  {'ITEMS':>6}  {'NEWEST':>7}  {'LOADED':>7}",
-                 "-" * (width + 26)]
-        for r in out:
+        exp = [r for r in out if r["platform"] in export_srcs]
+        auto = [r for r in out if r["platform"] not in export_srcs]
+        lines = [f"SECOND BRAIN — SOURCE STATUS   {_dt.date.today().isoformat()}"]
+        if exp:
+            lines += ["", f"YOU EXPORT THESE (newest content ≈ last export; due after {due_days}d):",
+                      f"{'SOURCE':<{width}}  {'ITEMS':>6}  {'NEWEST':>7}",
+                      "-" * (width + 17)]
+            for r in exp:
+                d = r["newest_item_days"]
+                flag = "  ← EXPORT DUE" if (d is None or d > due_days) else ""
+                lines.append(f"{r['platform']:<{width}}  {r['items']:>6}  "
+                             f"{fmt(d):>7}{flag}")
+        lines += ["", "AUTOMATIC (the sync loads these):",
+                  f"{'SOURCE':<{width}}  {'ITEMS':>6}  {'NEWEST':>7}  {'TOUCHED':>7}",
+                  "-" * (width + 26)]
+        for r in auto:
             lines.append(f"{r['platform']:<{width}}  {r['items']:>6}  "
                          f"{fmt(r['newest_item_days']):>7}  {fmt(r['last_loaded_days']):>7}")
+        lines += ["", "(TOUCHED = rows changed, block-granular — a hint, not proof a "
+                      "loader ran. NEWEST is content truth.)"]
         return {"panel": "\n".join(lines), "sources": out}
     except Exception as e:
         _unavailable("source_status", e)
