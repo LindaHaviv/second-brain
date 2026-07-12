@@ -159,6 +159,8 @@ def _client_ip(request):
 
 _bucket = _Bucket()
 
+import webui as _WEBUI      # read-only web UI (static shell + /api/*); dark unless UI_ENABLED
+
 try:                       # optional private HTTP routes (never present in the public repo)
     import http_ext as _HTTP_EXT
 except ImportError:
@@ -178,6 +180,13 @@ class Gateway(BaseHTTPMiddleware):
             return JSONResponse({"ok": True})
         if path == "/ready":
             return _readiness()
+        # Read-only web UI (static shell + /api/*). Like http_ext it runs BEFORE auth and
+        # self-authenticates every /api/* call; returns None for paths it doesn't own. Dark
+        # (returns None for everything) unless UI_ENABLED. Owns /, /assets/*, /api/* — never
+        # /mcp, /health, /ready, or the OAuth metadata routes.
+        _ui = await _WEBUI.maybe_handle(request, lambda: _bucket.allow(_client_ip(request)))
+        if _ui is not None:
+            return _ui
         if _HTTP_EXT is not None:
             # Extension hook: private routes (see http_ext in your private deploy) get first
             # look at the request; None means "not mine" and the public gateway continues.

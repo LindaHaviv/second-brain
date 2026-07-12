@@ -235,3 +235,84 @@ def get_post(conn, post_id):
             return None
         cols = [c[0].lower() for c in cur.description]
         return dict(zip(cols, row))
+
+
+def related_posts(conn, post_id, k=8):
+    """Semantic neighbors of one post — "what else have I made like this?" — by cosine
+    distance between STORED embeddings (no re-embedding; the vectors are already in the rows).
+    This is the edge a manual-links tool can't draw: items connect by meaning, not by
+    hand-typed links. Visibility is filtered on BOTH sides: a private anchor returns []
+    (it must not act as a query vector), and private items never appear as neighbors.
+    An anchor with no embedding also returns [] — absence of neighbors, not an error."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT p2.post_id, p2.platform_id, p2.kind, p2.title, p2.url, p2.series,
+                   VECTOR_DISTANCE(p2.content_embedding, p1.content_embedding, COSINE) AS dist
+            FROM   posts p1 JOIN posts p2 ON p2.post_id <> p1.post_id
+            WHERE  p1.post_id = :id
+              AND  p1.content_embedding IS NOT NULL AND p2.content_embedding IS NOT NULL
+              AND  NVL(p1.visibility,'content') = 'content'
+              AND  NVL(p2.visibility,'content') = 'content'
+            ORDER  BY dist
+            FETCH FIRST :k ROWS ONLY
+            """, id=int(post_id), k=int(k))
+        cols = [c[0].lower() for c in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def related_topics(conn, topic, k=8):
+    """Content items semantically nearest to a wiki TOPIC page's own embedding — reaches
+    beyond the page's citations to items the compiler hasn't linked (yet). Same visibility
+    rule as everywhere: only content-scope posts can surface."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.post_id, p.platform_id, p.kind, p.title, p.url, p.series,
+                   VECTOR_DISTANCE(p.content_embedding, w.embedding, COSINE) AS dist
+            FROM   wiki_pages w, posts p
+            WHERE  w.topic = :t AND w.embedding IS NOT NULL
+              AND  p.content_embedding IS NOT NULL
+              AND  NVL(p.visibility,'content') = 'content'
+            ORDER  BY dist
+            FETCH FIRST :k ROWS ONLY
+            """, t=topic, k=int(k))
+        cols = [c[0].lower() for c in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def graph_data(conn):
+    """Everything a knowledge-graph view needs, in one payload: wiki topics as hub nodes,
+    the content items they cite as leaf nodes, topic->topic cross-links (page_links), and
+    citation edges (page_sources). Only CITED posts become nodes, so the payload stays
+    bounded however large the brain grows. The citation join filters visibility — a private
+    item cited by a page must not leak through the graph."""
+    nodes, links = [], []
+    with conn.cursor() as cur:
+        cur.execute("SELECT page_id, topic FROM wiki_pages ORDER BY topic")
+        by_pid = {int(pid): t for pid, t in cur.fetchall()}
+        nodes += [{"id": f"wiki:{t}", "type": "topic", "label": t}
+                  for t in sorted(by_pid.values())]
+        cur.execute("SELECT from_page_id, to_page_id FROM page_links")
+        for f, t in cur.fetchall():
+            if int(f) in by_pid and int(t) in by_pid:
+                links.append({"source": f"wiki:{by_pid[int(f)]}",
+                              "target": f"wiki:{by_pid[int(t)]}", "type": "topic"})
+        cur.execute(
+            "SELECT ps.page_id, p.post_id, p.title, p.platform_id, p.kind, p.series "
+            "FROM page_sources ps JOIN posts p ON p.post_id = ps.post_id "
+            "WHERE NVL(p.visibility,'content') = 'content'")
+        seen = set()
+        for page_id, pid, title, platform, kind, series in cur.fetchall():
+            if int(page_id) not in by_pid:
+                continue
+            if pid not in seen:
+                seen.add(pid)
+                node = {"id": f"item:{pid}", "type": "item",
+                        "label": title or f"item {pid}", "platform": platform, "kind": kind}
+                if series:
+                    node["series"] = series
+                nodes.append(node)
+            links.append({"source": f"wiki:{by_pid[int(page_id)]}",
+                          "target": f"item:{pid}", "type": "citation"})
+    return {"nodes": nodes, "links": links}

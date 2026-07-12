@@ -175,6 +175,38 @@ repo; the public repo stays a teaching artifact. (This split is how the referenc
 runs its own video→diagram intake.)
 
 
+## Memory UI (read-only web view)
+
+The same Fly app can also serve a **browser view of the brain** — an Obsidian-style graph
+(wiki topics + the content they cite, with semantic edges you grow on demand), plus search, a
+wiki reader, a recent feed, and the health panel. It lives in `web/` and is served by
+`oracle/agent/webui.py`, wired into the gateway through the same pre-auth hook as `http_ext`;
+it self-authenticates every `/api/*` call and never touches `/mcp`, `/health`, or `/ready`.
+Every query it runs is limited to `visibility='content'`, exactly like the MCP tools, so the
+private scope stays out of the UI by construction.
+
+Off by default — the app is unchanged until you enable it:
+
+| Secret | Effect |
+|--------|--------|
+| `UI_ENABLED=1` | turn the UI on (unset → `/`, `/assets/*`, `/api/*` all 404) |
+| `UI_AUTH_TOKEN` | ≥32-char bearer; the browser prompts for it once, stores it locally, sends it on every `/api/*` call |
+| `UI_PUBLIC_READ=1` | **explicit** anonymous read — a public showcase deploy only; defensible because the API is read-only and content-scoped. Never a default. |
+| `UI_TITLE` | header/tab name (default "Second Brain") |
+
+Fail-closed like the MCP auth: `UI_ENABLED=1` with neither `UI_AUTH_TOKEN` nor
+`UI_PUBLIC_READ` refuses to start (no open data door), and a token under 32 chars is rejected.
+
+```
+fly secrets set UI_ENABLED=1 \
+  UI_AUTH_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')" -a <app>
+```
+
+The generic UI ships in the public repo (zero personal defaults). A private deploy can enable
+it for daily use behind a token; a public/devrel deploy can enable it read-only. Same UI, two
+deployments — the difference is a secret, not a fork. See `web/README.md`.
+
+
 ## Other MCP clients: always-on assistants (OpenClaw)
 
 Because the hosted server speaks standard streamable-HTTP MCP with OAuth, it works

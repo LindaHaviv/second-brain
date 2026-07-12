@@ -10,6 +10,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # the agent code (mcp_http reuses mcp_server's tools; db/content do the DB work)
 COPY oracle/agent/ ./agent/
+# the read-only web UI (served by webui.py from /app/web when UI_ENABLED; dark otherwise)
+COPY web/ ./web/
 COPY deploy/entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 

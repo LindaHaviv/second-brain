@@ -96,6 +96,89 @@ def test_hybrid_rescues_exact_name():
         c.close()
 
 
+def test_related_posts_visibility_and_shape():
+    """related() must connect by meaning but NEVER across the privacy line: a business-scope
+    sibling must not surface as a neighbor, a business-scope anchor must return [] (it must
+    not act as a query vector), and a no-embedding anchor is an empty result, not an error."""
+    c = db.connect()
+    token = "zqxrelprobe"   # distinctive — won't collide with real content
+    cur = c.cursor()
+    cur.execute("alter session disable parallel dml")
+    cur.execute("merge into platforms p using (select 'test' id from dual) s "
+                "on (p.platform_id=s.id) when not matched then "
+                "insert (platform_id, display_name) values ('test','Test')")
+    ids = {}
+    for name, vis in [("anchor", "content"), ("sibling", "content"), ("hidden", "business")]:
+        out = cur.var(int)
+        cur.execute(
+            "insert into posts (platform_id, kind, title, caption, visibility, "
+            "content_embedding) values ('test','note', :t, 'probe', :v, "
+            "vector_embedding(MINILM using :e as data)) returning post_id into :outid",
+            t=f"{token} {name}", v=vis, e=f"{token} probe text", outid=out)
+        ids[name] = int(out.getvalue()[0])
+    out = cur.var(int)
+    cur.execute("insert into posts (platform_id, kind, title, caption) "
+                "values ('test','note', :t, 'probe') returning post_id into :outid",
+                t=f"{token} noembed", outid=out)
+    ids["noembed"] = int(out.getvalue()[0])
+    c.commit()
+    try:
+        got = content.related_posts(c, ids["anchor"], k=10)
+        got_ids = {r["post_id"] for r in got}
+        assert ids["sibling"] in got_ids, "near-identical content sibling not found"
+        assert ids["hidden"] not in got_ids, "PRIVACY LEAK: business post surfaced as neighbor"
+        assert ids["anchor"] not in got_ids, "anchor returned as its own neighbor"
+        assert all({"post_id", "title", "dist"} <= set(r) for r in got), "bad row shape"
+        assert content.related_posts(c, ids["hidden"], k=5) == [], \
+            "PRIVACY LEAK: business anchor acted as a query vector"
+        assert content.related_posts(c, ids["noembed"], k=5) == [], \
+            "no-embedding anchor should return [] not error"
+    finally:
+        cur.execute("delete from posts where platform_id = 'test'")
+        c.commit()
+        c.close()
+
+
+def test_graph_data_visibility():
+    """The graph payload must not leak private items through citation edges: a business post
+    cited by a wiki page appears in neither nodes nor links. Seeded in a transaction and
+    rolled back — nothing persists."""
+    c = db.connect()
+    token = "zqxgraphprobe"
+    cur = c.cursor()
+    cur.execute("alter session disable parallel dml")
+    cur.execute("merge into platforms p using (select 'test' id from dual) s "
+                "on (p.platform_id=s.id) when not matched then "
+                "insert (platform_id, display_name) values ('test','Test')")
+    try:
+        pg = cur.var(int)
+        cur.execute("insert into wiki_pages (topic, body) values (:t, 'probe body') "
+                    "returning page_id into :outid", t=f"{token} topic", outid=pg)
+        page_id = int(pg.getvalue()[0])
+        ids = {}
+        for name, vis in [("pub", "content"), ("priv", "business")]:
+            out = cur.var(int)
+            cur.execute("insert into posts (platform_id, kind, title, caption, visibility) "
+                        "values ('test','note', :t, 'probe', :v) returning post_id into :outid",
+                        t=f"{token} {name}", v=vis, outid=out)
+            ids[name] = int(out.getvalue()[0])
+            cur.execute("insert into page_sources (page_id, post_id) values (:pg, :po)",
+                        pg=page_id, po=ids[name])
+        g = content.graph_data(c)
+        node_ids = {n["id"] for n in g["nodes"]}
+        link_ends = {(l["source"], l["target"]) for l in g["links"]}
+        assert f"wiki:{token} topic" in node_ids, "seeded topic missing from graph"
+        assert f"item:{ids['pub']}" in node_ids, "cited content post missing from graph"
+        assert f"item:{ids['priv']}" not in node_ids, "PRIVACY LEAK: business post is a node"
+        assert (f"wiki:{token} topic", f"item:{ids['priv']}") not in link_ends, \
+            "PRIVACY LEAK: business post reachable via citation edge"
+        assert (f"wiki:{token} topic", f"item:{ids['pub']}") in link_ends, \
+            "citation edge to content post missing"
+    finally:
+        c.rollback()
+        c.close()
+
+
 def test_get_wiki_page():
     c = db.connect()
     _skip_if_empty(c, "wiki_pages", "compile the wiki first (Lab 5 / Step 5), then re-run")
@@ -121,13 +204,99 @@ def test_memory_recall_shapes():
     c.close()
 
 
+def test_episodic_memory_privacy_filter():
+    """A research memory that mentions a fee/deal must be tagged business at WRITE time and
+    then be unreachable: not via recall(), not in list_recent(). It's stored (structural
+    privacy, not deletion) but filtered from every read — same contract as posts.visibility.
+    This also protects the agent itself: private memories never resurface in its reasoning."""
+    import memory
+    c = db.connect()
+    cur = c.cursor()
+    try:
+        memory.record(c, "test-priv", "zqxbizprobe negotiating a $5,000 brand deal fee",
+                      "agreed the terms", "none", "success", detail="private")
+        memory.record(c, "test-priv", "zqxconprobe notes on vector search",
+                      "explained cosine distance", "search", "success", detail="public")
+        # recall is content-scope: the business memory never comes back, even queried by its token
+        biz = memory.recall(c, "zqxbizprobe", k=10)
+        assert not any("zqxbizprobe" in (r.get("task") or "") for r in biz), \
+            "PRIVACY LEAK: deal memory returned by recall()"
+        con = memory.recall(c, "zqxconprobe", k=10)
+        assert any("zqxconprobe" in (r.get("task") or "") for r in con), "content memory not recalled"
+        tasks = " ".join(r.get("task") or "" for r in memory.list_recent(c, k=50))
+        assert "zqxconprobe" in tasks and "zqxbizprobe" not in tasks, \
+            "PRIVACY LEAK: list_recent surfaced a business memory"
+        # stored, just tagged — structural privacy, not a delete
+        cur.execute("SELECT visibility FROM agent_memory WHERE task LIKE 'zqxbizprobe%'")
+        assert (cur.fetchone() or [None])[0] == "business", "deal memory was not tagged business"
+    finally:
+        cur.execute("DELETE FROM agent_memory WHERE run_id = 'test-priv'")
+        c.commit()
+        c.close()
+
+
+def test_conversation_privacy_filter():
+    """A dialogue turn mentioning a rate must be tagged business and kept out of both the
+    working-memory window (recent_turns) and the Memory view list (list_recent_turns)."""
+    import conversation
+    c = db.connect()
+    cur = c.cursor()
+    sess = "test-conv-priv"
+    try:
+        conversation.record_turn(c, sess, "user", "zqxconvbiz our rate is $2,000 per post")
+        conversation.record_turn(c, sess, "user", "zqxconvok what topics do I cover")
+        window = " ".join(t["content"] for t in conversation.recent_turns(c, sess, n=10))
+        assert "zqxconvok" in window and "zqxconvbiz" not in window, \
+            "PRIVACY LEAK: business turn entered the working-memory window"
+        listed = " ".join(t["content"] for t in conversation.list_recent_turns(c, k=100))
+        assert "zqxconvbiz" not in listed, "PRIVACY LEAK: business turn in list_recent_turns"
+    finally:
+        cur.execute("DELETE FROM conversations WHERE session_id = :s", s=sess)
+        c.commit()
+        c.close()
+
+
+def test_memory_read_functions():
+    """The Memory view's read helpers return the expected shapes over all four memory kinds."""
+    import memory
+    import procedural
+    c = db.connect()
+    try:
+        assert isinstance(memory.list_recent(c, k=3), list)
+        counts = memory.memory_counts(c)
+        assert set(counts) == {"episodic", "semantic", "conversational", "procedural"}, counts
+        assert all(isinstance(v, int) for v in counts.values()), counts
+        assert isinstance(semantic_memory.list_facts(c, k=5), list)
+        assert isinstance(procedural.list_tools(c), list)
+    finally:
+        c.close()
+
+
 def test_mcp_tools_registered():
     async def names():
         tm = getattr(mcp_server.mcp, "_tool_manager", None)
         tools = await (tm.list_tools() if tm else mcp_server.mcp.list_tools())
         return {t.name for t in tools}
     got = asyncio.run(names())
-    assert {"search", "fetch", "wiki", "topics", "recent", "ingest_note"} <= got, got
+    assert {"search", "fetch", "wiki", "topics", "recent", "related",
+            "ingest_note"} <= got, got
+
+
+def test_related_tool_registered_readonly():
+    """related is a READ tool — it must survive MCP_READONLY=1 (which unregisters writes)."""
+    import subprocess
+    import sys as _sys
+    code = (
+        "import os, sys, asyncio; os.environ['MCP_READONLY']='1'\n"
+        "sys.path.insert(0, 'oracle/agent')\n"
+        "import mcp_server\n"
+        "tools = sorted(t.name for t in asyncio.run(mcp_server.mcp._list_tools()))\n"
+        "print(','.join(tools))\n")
+    out = subprocess.run([_sys.executable, "-c", code], capture_output=True, text=True,
+                         cwd=str(pathlib.Path(__file__).resolve().parent.parent))
+    tools = out.stdout.strip().split(",")
+    assert "related" in tools, tools
+    assert "ingest_note" not in tools and "save_chat" not in tools, tools
 
 
 # ---- unit: pure functions -----------------------------------------------------------------
@@ -349,7 +518,88 @@ def test_mcp_public_layout_is_generic():
                          cwd=str(pathlib.Path(__file__).resolve().parent.parent))
     tools = out.stdout.strip().split(",")
     assert tools == ["by_series", "fetch", "ingest_note", "overview", "recent",
-                     "save_chat", "search", "source_status", "topics", "wiki"], tools
+                     "related", "save_chat", "search", "source_status", "topics",
+                     "wiki"], tools
+
+
+def _reload_webui(**env):
+    """Reload webui.py under a controlled env (it reads UI_* at import). Returns the module."""
+    import importlib
+    import os as _os
+    for k in ("UI_ENABLED", "UI_AUTH_TOKEN", "UI_PUBLIC_READ", "UI_TITLE"):
+        _os.environ.pop(k, None)
+    _os.environ.update(env)
+    import webui
+    return importlib.reload(webui)
+
+
+class _FakeReq:
+    def __init__(self, auth=None):
+        self.headers = {"authorization": auth} if auth else {}
+
+
+def test_webui_auth_fails_closed():
+    """The /api gate must reject a missing/wrong bearer, accept the exact one, and honor the
+    explicit public-read escape hatch. The static server must block path traversal."""
+    tok = "x" * 40
+    w = _reload_webui(UI_ENABLED="1", UI_AUTH_TOKEN=tok)
+    assert w._authorized(_FakeReq(f"Bearer {tok}")) is True
+    assert w._authorized(_FakeReq("Bearer wrong")) is False
+    assert w._authorized(_FakeReq(None)) is False
+    assert w._authorized(_FakeReq(tok)) is False          # missing "Bearer " prefix
+    # traversal: a crafted asset path must never escape WEB_DIR
+    assert w._static("/assets/../../oracle/.env") is None
+    assert w._static("/assets/../mcp_server.py") is None
+    # public-read mode: anonymous allowed, but still fail-closed by default above
+    wp = _reload_webui(UI_ENABLED="1", UI_PUBLIC_READ="1")
+    assert wp._authorized(_FakeReq(None)) is True
+    _reload_webui()   # leave webui disabled for the rest of the suite
+
+
+def test_webui_enable_requires_a_gate():
+    """UI_ENABLED with neither a token nor explicit public-read must refuse to start."""
+    try:
+        _reload_webui(UI_ENABLED="1")
+        assert False, "UI_ENABLED with no gate must raise SystemExit"
+    except SystemExit:
+        pass
+    finally:
+        _reload_webui()
+
+
+def test_webui_api_routes_live():
+    """End-to-end over the real ASGI app: static shell open, /api gated (401->200), the graph
+    endpoint returns {nodes,links}, /health still open, and the UI is dark when UI_ENABLED unset."""
+    import importlib
+    import os as _os
+    from starlette.testclient import TestClient
+    _os.environ["MCP_ALLOW_ANON"] = "1"
+    tok = "t" * 40
+    _reload_webui(UI_ENABLED="1", UI_AUTH_TOKEN=tok)
+    import mcp_http
+    importlib.reload(mcp_http)
+    with TestClient(mcp_http.app) as client:
+        assert client.get("/health").status_code == 200           # probe stays open
+        assert client.get("/").status_code == 200                 # static shell, no auth
+        assert client.get("/api/graph").status_code == 401        # gated without token
+        r = client.get("/api/graph", headers={"authorization": f"Bearer {tok}"})
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert "nodes" in body and "links" in body, body
+        assert client.get("/api/ping",
+                          headers={"authorization": f"Bearer {tok}"}).json()["auth"] == "token"
+        mem = client.get("/api/memory", headers={"authorization": f"Bearer {tok}"})
+        assert mem.status_code == 200, mem.text
+        mb = mem.json()
+        assert set(mb["counts"]) == {"episodic", "semantic", "conversational", "procedural"}, mb
+        assert all(k in mb for k in ("facts", "episodic", "tools", "conversational")), mb
+        assert client.get("/api/memory").status_code == 401   # gated like every /api route
+    # dark when disabled: /api 404s, app otherwise unchanged
+    _reload_webui()
+    importlib.reload(mcp_http)
+    with TestClient(mcp_http.app) as client:
+        assert client.get("/api/graph").status_code == 404
+        assert client.get("/health").status_code == 200
 
 
 def test_rate_limiter_per_ip_isolation():
