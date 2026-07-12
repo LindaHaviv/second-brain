@@ -29,6 +29,7 @@ RULES = {
     "chatgpt":     ("export", 30, "request a ChatGPT export (Settings > Data controls); the watcher does the rest"),
     "claude":      ("export", 30, "request a Claude export (Settings > Privacy); the watcher does the rest"),
     "instagram":   ("auto",    3, "daily sync may not be running - check the sync log / API token"),
+    "linkedin":    ("auto",    9, "weekly Apify self-scrape may not be running - check sync log / Apify credit"),
     "youtube":     ("auto",    3, "daily sync may not be running - check the sync log"),
     "notion":      ("auto",    3, "daily sync may not be running - check the sync log"),
     "claude_code": ("auto",    3, "daily sync may not be running - check the sync log"),

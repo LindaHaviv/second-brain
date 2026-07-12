@@ -536,6 +536,32 @@ def test_health_heartbeat_roundtrip_live():
         assert health.last_heartbeat(c) == probe
     finally:
         c.close()
+# --- linkedin_apify guards: the self-scrape must never ingest someone else's posts --------
+
+def test_linkedin_apify_parse_guards():
+    """Pure parse: foreign authors, short text, and missing URLs are dropped; good
+    items come through with allowlisted fields only and a parsed date."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import linkedin_apify as la
+    assert la.handle_of("https://www.linkedin.com/in/lindahaviv/") == "lindahaviv"
+    assert la.handle_of("https://www.linkedin.com/in/LindaHaviv?x=1") == "lindahaviv"
+    assert la.handle_of("https://example.com/nope") == ""
+    good = {"author": {"publicIdentifier": "lindahaviv"},
+            "linkedinUrl": "https://www.linkedin.com/posts/lindahaviv_abc?utm=x",
+            "content": "A real post with plenty of text to pass the minimum bar.",
+            "postedAt": {"date": "2026-07-11T16:58:53.581Z"},
+            "reactions": ["dropped"], "comments": ["dropped"]}
+    foreign = dict(good, author={"publicIdentifier": "someone-else"})
+    short = dict(good, content="too short")
+    nourl = dict(good, linkedinUrl="")
+    out = la.parse_items([good, foreign, short, nourl, "junk"], "lindahaviv")
+    assert len(out) == 1
+    row = out[0]
+    assert sorted(row.keys()) == ["published_at", "text", "title", "url"]
+    assert row["url"] == "https://www.linkedin.com/posts/lindahaviv_abc"  # ?utm stripped
+    assert row["published_at"].year == 2026
+    # all-foreign payload -> parse yields nothing (main() turns that into a hard FAIL)
+    assert la.parse_items([foreign], "lindahaviv") == []
 
 
 if __name__ == "__main__":
