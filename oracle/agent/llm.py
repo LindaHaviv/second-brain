@@ -24,6 +24,9 @@ from dotenv import load_dotenv
 # adapter works no matter which module imports it first, from any cwd.
 load_dotenv(pathlib.Path(__file__).resolve().parent.parent / ".env")
 
+import keychain_secrets  # noqa: E402 -- resolve keychain:<item> secrets (same as db.py)
+keychain_secrets.resolve_env()  # so ANTHROPIC/OPENAI keys work whether or not db was imported
+
 PROVIDER = os.environ.get("LLM_PROVIDER", "anthropic").lower()
 DEFAULTS = {"anthropic": "claude-opus-4-8", "openai": "gpt-5.2", "ollama": "llama3.2"}
 MODEL = os.environ.get("LLM_MODEL") or DEFAULTS.get(PROVIDER, DEFAULTS["anthropic"])
