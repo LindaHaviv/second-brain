@@ -147,6 +147,11 @@ def build_wiki(client, conn, n=10):
     never an empty brain."""
     cur = conn.cursor()
     try:
+        # Autonomous DB defaults sessions to parallel DML; the small-table MERGE in
+        # _set_hwm then self-deadlocks (ORA-12801/ORA-12860). Disable it FIRST — before
+        # any DML opens the transaction — since Oracle forbids changing the parallel DML
+        # state once a txn is active (ORA-12841). Same guard every other write path uses.
+        cur.execute("alter session disable parallel dml")
         cur.execute("DELETE FROM wiki_pages")   # cascades to links + sources
         topics = propose_topics(client, conn, n)
         name2id, link_plan = {}, {}
@@ -199,6 +204,9 @@ def refresh_wiki(client, conn):
     posts newer than the last compile, AND propose new topic pages when new content clusters
     outside every existing topic. No new content -> no LLM calls."""
     cur = conn.cursor()
+    # Disable parallel DML up front (before the first _update_page/_set_hwm write) so the
+    # small-table MERGEs don't self-deadlock; must precede any DML to avoid ORA-12841.
+    cur.execute("alter session disable parallel dml")
     hwm = _get_hwm(cur)
     cur_max = _max_post_id(cur)
     if cur_max <= hwm:

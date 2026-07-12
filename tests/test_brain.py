@@ -299,6 +299,9 @@ def test_set_hwm_survives_missing_seed_row():
     c = db.connect()
     cur = c.cursor()
     try:
+        # Match the production write paths: disable parallel DML before any DML so the
+        # small-table MERGE in _set_hwm doesn't self-deadlock on the Autonomous DB.
+        cur.execute("alter session disable parallel dml")
         cur.execute("SELECT last_max_post_id FROM wiki_meta WHERE id = 1")
         before = (cur.fetchone() or [0])[0]
         cur.execute("DELETE FROM wiki_meta")
