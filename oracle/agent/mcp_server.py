@@ -32,6 +32,7 @@ load_dotenv(HERE.parent / ".env")   # oracle/.env (DB creds) — explicit so it 
 
 import db                # noqa: E402
 import content           # noqa: E402
+import health            # noqa: E402
 from fastmcp import FastMCP   # noqa: E402
 from fastmcp.exceptions import ToolError   # noqa: E402  — errors as isError:true, per MCP spec
 from pydantic import Field    # noqa: E402  — per-parameter schema descriptions + bounds
@@ -326,11 +327,17 @@ def overview() -> dict:
 
 @mcp.tool(annotations={**_READ, "title": "Source sync status"})
 def source_status() -> dict:
-    """LIVE freshness per source: when each platform last received new content and when its
-    loader last touched the rows — the brain reporting on its own upkeep.
+    """LIVE health + freshness: is the sync pipeline ALIVE (heartbeat from its machine),
+    and when did each platform last receive content / get touched by its loader — the
+    brain reporting on its own upkeep.
     WHEN TO USE: "when did my sources last sync", "is my brain up to date", "is anything
-    stale" — observability questions about the SYSTEM. For questions about the content
+    stale or down", "why can't local things run right now", "health check" —
+    observability questions about the SYSTEM. For questions about the content
     itself, use search()/overview() instead.
+    Reading 'pipeline': state ok = the sync ran inside its expected window; degraded =
+    it ran but some steps failed/skipped (each listed); down = no heartbeat inside the
+    window — the machine that runs the sync is likely off/asleep, so machine-local
+    capabilities are unavailable until it wakes (hosted tools keep working).
     PRESENTING: show the 'panel' field to the user VERBATIM in a code block — it is the
     system's status display and must look identical in every client. Add commentary
     after it if useful; never reformat the panel itself.
@@ -371,7 +378,15 @@ def source_status() -> dict:
         width = max([len("SOURCE")] + [len(r["platform"]) for r in out])
         exp = [r for r in out if r["platform"] in export_srcs]
         auto = [r for r in out if r["platform"] not in export_srcs]
-        lines = [f"SECOND BRAIN — SOURCE STATUS   {_dt.date.today().isoformat()}"]
+        # HEARTBEAT first: freshness tables say what the data looks like; the heartbeat
+        # says whether the pipeline RAN (see health.py — expected window is configurable
+        # per deployment via SYNC_EXPECTED_HOURS).
+        v = health.verdict(
+            health.last_heartbeat(conn),
+            expected_hours=float(os.environ.get("SYNC_EXPECTED_HOURS",
+                                                str(health.EXPECTED_HOURS))))
+        lines = [f"SECOND BRAIN — SOURCE STATUS   {_dt.date.today().isoformat()}", ""]
+        lines += health.panel_lines(v)
         if exp:
             lines += ["", f"YOU EXPORT THESE (newest content ≈ last export; due after {due_days}d):",
                       f"{'SOURCE':<{width}}  {'ITEMS':>6}  {'NEWEST':>7}",
@@ -387,9 +402,9 @@ def source_status() -> dict:
         for r in auto:
             lines.append(f"{r['platform']:<{width}}  {r['items']:>6}  "
                          f"{fmt(r['newest_item_days']):>7}  {fmt(r['last_loaded_days']):>7}")
-        lines += ["", "(TOUCHED = rows changed, block-granular — a hint, not proof a "
-                      "loader ran. NEWEST is content truth.)"]
-        return {"panel": "\n".join(lines), "sources": out}
+        lines += ["", "(TOUCHED = rows changed, block-granular — a hint. The LOCAL "
+                      "PIPELINE heartbeat is the proof a sync ran. NEWEST is content truth.)"]
+        return {"panel": "\n".join(lines), "pipeline": v, "sources": out}
     except Exception as e:
         _unavailable("source_status", e)
     finally:

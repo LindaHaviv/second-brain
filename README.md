@@ -241,9 +241,19 @@ you design the loops that maintain it — **and you keep the loops accountable**
   (`exports/loop_ledger.jsonl`, written by `llm.py`; `LOOP_LABEL` names the loop, and the sync
   tags each step automatically). "Is this loop worth it?" gets a denominator.
 - **Failures escalate instead of whispering.** The sync writes per-step outcomes to
-  `exports/sync_status.json`; anything failing or skipping repeatedly should headline your
-  weekly review, not hide in a log. (A missing API token once silently skipped a source here
-  for weeks — this exists so that can't happen quietly again.)
+  `exports/sync_status.json` locally AND as a **heartbeat row in the database**
+  (`sync_runs`, via `oracle/agent/health.py`, as the sync's last act); anything failing
+  or skipping repeatedly should headline your weekly review, not hide in a log. (A
+  missing API token once silently skipped a source here for weeks — this exists so that
+  can't happen quietly again.)
+- **Downtime is visible from anywhere.** The machine that runs your sync will sometimes
+  be off or asleep — and a system that can't say so just looks quietly stale. Because the
+  heartbeat lives in the *database*, the hosted MCP's `source_status` panel can tell you
+  from your phone: `LOCAL PIPELINE: DOWN — last sync run 49h ago` (machine-local
+  capabilities unavailable until it wakes; hosted search/wiki still fine — the panel
+  itself is proof). The rule underneath: measure **time since last SUCCESS**, never time
+  since last attempt, and store that proof somewhere that outlives the machine that
+  produced it.
 - **Forgetting is a designed stage.** A memory store that only grows drifts toward noise.
   `scripts/memory_review.py` is the report-only audit: stale time-bound facts, near-duplicate
   pairs, volume growth. Review it, retire by hand — deleting memories is the one loop that

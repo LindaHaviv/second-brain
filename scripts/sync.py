@@ -91,6 +91,21 @@ def _write_status(results):
                     "steps": results})
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(history[-30:], indent=1))
+    # HEARTBEAT: the same outcomes into the DB (oracle/schema/09_sync_runs.sql), so the
+    # hosted status panel can prove the pipeline ran — readable from any device, even
+    # with this machine closed. Best-effort: a heartbeat failure never fails the sync.
+    try:
+        import socket
+        import db
+        import health
+        conn = db.connect()
+        try:
+            health.record_run(conn, results, host=socket.gethostname())
+        finally:
+            conn.close()
+        print("  (heartbeat written to the brain)")
+    except Exception as e:
+        print(f"  (heartbeat write failed — panel ages until next success: {e})")
 
 
 def _run_step(label, argv, results):

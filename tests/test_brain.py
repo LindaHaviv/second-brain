@@ -465,6 +465,66 @@ Text with a [[Wiki Link]] and an [[page|aliased link]].""")
     assert meta2 == {} and body2 == "no frontmatter at all"
 
 
+# --- pipeline health (heartbeat + verdict): the closed-laptop / silent-skip alarm ------------
+
+def test_health_verdict_states():
+    """Pure verdict logic: no heartbeat, fresh-ok, fresh-with-trouble, and too-old runs."""
+    import datetime
+    import health
+    now = datetime.datetime(2026, 7, 11, 12, 0)
+    fresh = now - datetime.timedelta(hours=3)
+    old = now - datetime.timedelta(hours=50)
+    ok_steps = [{"label": "Instagram", "status": "ok", "seconds": 4}]
+    bad_steps = [{"label": "Instagram", "status": "skip", "seconds": 0},
+                 {"label": "Notion", "status": "ok", "seconds": 2}]
+    assert health.verdict(None)["state"] == "no-heartbeat"
+    assert health.verdict({"run_at": fresh, "steps": ok_steps}, now)["state"] == "ok"
+    v = health.verdict({"run_at": fresh, "steps": bad_steps}, now)
+    assert v["state"] == "degraded" and v["trouble"] == ["Instagram: skip"]
+    assert health.verdict({"run_at": old, "steps": ok_steps}, now)["state"] == "down"
+    # expected window is configurable: 50h old is fine on a 72h cadence
+    assert health.verdict({"run_at": old, "steps": ok_steps}, now,
+                          expected_hours=72)["state"] == "ok"
+
+
+def test_health_panel_lines():
+    """DOWN must say plainly that local capabilities are unavailable; trouble steps listed."""
+    import health
+    down = health.panel_lines({"state": "down", "hours_since": 49.5,
+                               "trouble": ["Instagram: skip"]})
+    assert "DOWN" in down[0] and "49.5h" in down[0]
+    assert any("unavailable" in ln for ln in down)
+    assert any("Instagram: skip" in ln for ln in down)
+    assert health.panel_lines({"state": "no-heartbeat", "hours_since": None,
+                               "trouble": []})[0].startswith("LOCAL PIPELINE: no heartbeat")
+
+
+def test_health_heartbeat_roundtrip_live():
+    """Live DB: record_run writes a heartbeat that last_heartbeat reads back; the test row
+    is removed afterwards so the real panel is untouched."""
+    import health
+    c = db.connect()
+    try:
+        try:
+            probe = health.last_heartbeat(c)
+            with c.cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM sync_runs")
+        except Exception:
+            raise unittest.SkipTest("sync_runs table not applied yet (scripts/apply_schema.py)")
+        steps = [{"label": "unit-test", "status": "ok", "seconds": 0}]
+        health.record_run(c, steps, host="unit-test")
+        hb = health.last_heartbeat(c)
+        assert hb is not None and hb["host"] == "unit-test"
+        assert hb["steps"] == steps
+        assert health.verdict(hb)["state"] == "ok"
+        with c.cursor() as cur:   # leave no trace: the panel must reflect real runs only
+            cur.execute("DELETE FROM sync_runs WHERE host = 'unit-test'")
+        c.commit()
+        assert health.last_heartbeat(c) == probe
+    finally:
+        c.close()
+
+
 if __name__ == "__main__":
     tests = [(n, f) for n, f in sorted(globals().items())
              if n.startswith("test_") and callable(f)]
@@ -483,4 +543,3 @@ if __name__ == "__main__":
     tail = f", {skipped} skipped (fine on a fresh brain)" if skipped else ""
     print(f"\n{passed} passed, {failed} failed{tail}")
     sys.exit(1 if failed else 0)
-
