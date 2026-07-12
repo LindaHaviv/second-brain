@@ -20,8 +20,9 @@ sys.path.insert(0, str(ROOT / "oracle" / "agent"))
 import db  # noqa: E402
 
 SCHEMA_DIR = ROOT / "oracle" / "schema"
-# tolerate "already exists / already granted" so re-runs are idempotent
-TOLERATE = ("ORA-00955", "ORA-01920", "ORA-00942", "ORA-01430", "ORA-02260", "ORA-01442")
+# tolerate "already exists / already granted / already seeded" so re-runs are idempotent
+TOLERATE = ("ORA-00955", "ORA-01920", "ORA-00942", "ORA-01430", "ORA-02260", "ORA-01442",
+            "ORA-00001")
 
 
 def statements(sql_text):

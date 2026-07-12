@@ -149,6 +149,14 @@ def test_schema_statement_split():
     assert stmts == ["CREATE TABLE t (a NUMBER)", "INSERT INTO t VALUES (1)"], stmts
 
 
+def test_schema_rerun_tolerates_seed_duplicate():
+    """Re-applying the schema must report 0 errors. Seed rows (wiki_meta) hit ORA-00001
+    on a second run, so it belongs in TOLERATE alongside the "already exists" codes."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import apply_schema
+    assert "ORA-00001" in apply_schema.TOLERATE
+
+
 def test_oamp_privacy_deny_patterns():
     """The structural sweep's deny-list (pure — no DB, no LLM, no package import needed):
     private business detail must match; ordinary tech-content phrasing — including '$0'
