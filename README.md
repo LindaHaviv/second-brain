@@ -254,6 +254,16 @@ you design the loops that maintain it — **and you keep the loops accountable**
   itself is proof). The rule underneath: measure **time since last SUCCESS**, never time
   since last attempt, and store that proof somewhere that outlives the machine that
   produced it.
+- **Make the alarm push, not pull (optional watchdog).** A panel only helps if you look
+  at it. The upgrade is a tiny scheduled check — any scheduler you already have (your AI
+  app's scheduled tasks, cron/launchd, or a job on the host that runs your MCP server) —
+  that calls `source_status` and notifies you on your messaging platform of choice ONLY
+  when the pipeline is degraded or down. Two design rules: **silence means healthy**
+  (a watchdog that messages daily gets muted, then ignored), and know your watchdog's
+  blind spot — a checker running on the same machine as the sync can only alert
+  *after* that machine wakes ("this broke while you were away"); a checker on always-on
+  infrastructure catches it in real time. Start with the free same-machine version;
+  graduate to the hosted one if the gap ever bites.
 - **Forgetting is a designed stage.** A memory store that only grows drifts toward noise.
   `scripts/memory_review.py` is the report-only audit: stale time-bound facts, near-duplicate
   pairs, volume growth. Review it, retire by hand — deleting memories is the one loop that
