@@ -264,6 +264,30 @@ you design the loops that maintain it — **and you keep the loops accountable**
   *after* that machine wakes ("this broke while you were away"); a checker on always-on
   infrastructure catches it in real time. Start with the free same-machine version;
   graduate to the hosted one if the gap ever bites.
+- **Every loop has a row in a registry.** One file lists every agent and scheduled job:
+  its trigger, what it reads, what it writes, whether it touches an LLM or the network —
+  plus the standing rules they all obey (scheduled jobs use APIs and local files only,
+  never a logged-in browser; report-only by default — loops *propose*, the human
+  applies). The registry is what you audit when something feels off, and the bar a new
+  loop must clear before it exists: no row, no run.
+- **Check the docs against reality.** Registries and system docs drift the moment
+  someone adds a loop in a hurry and forgets to write it down. A mechanical drift check
+  — registry vs. the agents directory, documented schedules vs. installed jobs,
+  documented sources vs. what the sync actually configures — flags mismatches in a
+  report you already read. Docs you don't verify are just wishes with formatting.
+- **Rehearse the restore.** A backup you've never restored is a hypothesis. Periodically
+  rebuild from scratch — fresh clone, schema, re-ingest from exports, point at the
+  database — and let the drill tell you what monitoring can't: the credential that
+  silently expired, the archive that exists on exactly one machine. The drill here found
+  both, including the expired token behind the README's favorite cautionary tale.
+- **Match the boundary to what the platform can enforce.** Three tiers, strongest first:
+  *structural* where the platform offers it (a service account that can only see the
+  folders you explicitly share — the rest of the drive is invisible by construction);
+  *code-enforced* where it doesn't (a whole-mailbox read grant that your loader
+  restricts to one opt-in label by convention); *human-present-only* where the data is
+  personal (a break-glass CLI with credentials in the OS keychain — never scheduled,
+  never hosted, every use consented). Standing automation belongs only behind the first
+  two fences; personal scopes get hand tools, not infrastructure.
 - **Forgetting is a designed stage.** A memory store that only grows drifts toward noise.
   `scripts/memory_review.py` is the report-only audit: stale time-bound facts, near-duplicate
   pairs, volume growth. Review it, retire by hand — deleting memories is the one loop that
