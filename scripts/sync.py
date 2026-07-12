@@ -36,6 +36,7 @@ STEPS = [
     ("Obsidian",     [str(ROOT / "scripts" / "obsidian.py")],           "OBSIDIAN_VAULT"),
     ("Google Drive", [str(ROOT / "scripts" / "gdrive.py")],             "GDRIVE_KEY"),
     ("Notion",       [str(ROOT / "scripts" / "notion.py")],             "NOTION_TOKEN"),
+    ("Substack",     [str(ROOT / "scripts" / "substack.py")],           "SUBSTACK_URL"),
     ("Claude Code",  [str(ROOT / "scripts" / "claude_code.py")],        None),
     ("Wiki refresh", [str(ROOT / "oracle" / "agent" / "wiki.py"), "--refresh"], None),
     ("Consolidate",  [str(ROOT / "scripts" / "consolidate.py")],        None),

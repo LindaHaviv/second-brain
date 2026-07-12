@@ -96,6 +96,21 @@ tutorial — not the Takeout format. Takeout is still worth keeping as your own 
 ➡ Save to `exports/twitter/`. (Archive is HTML/JS + a `data/` folder of JSON.) *(No loader ships for
 X yet — copy any `scripts/` loader as a template.)*
 
+Two archive caveats worth knowing before you trust it: retweets are stored truncated
+(`RT @… ` + the first ~140 chars — other people's text, not yours, so usually fine) and all
+links are `t.co`-shortened. On load, verify the archive's post count against the count your
+profile displays — treat the archive as *claimed complete, verified on load*.
+
+## 6. Threads
+
+Threads has no export of its own — your Threads posts ride along in the **Instagram** export:
+Accounts Center → **Download your information** → make sure **Threads** is among the selected
+profiles, **Format: JSON**, **All time**. (The same request can cover Instagram — one bundle,
+two platforms.)
+
+➡ Save to `exports/threads/` (or point at the combined bundle). *(No loader ships for Threads
+yet — copy any `scripts/` loader as a template.)*
+
 ---
 
 ## After exports land
@@ -126,6 +141,17 @@ are ingested too** — full text, chunked, as `kind='reference'`: searchable whe
 you ask, but excluded from the wiki compiler (your wiki synthesizes your work,
 not your library). This also works for any folder that isn't Obsidian: a drop
 folder of e-books, course notes, plain-text files.
+
+
+## Substack
+
+No export needed — your publication's public archive is served by Substack's own JSON API
+(the same data the web archive page and RSS readers use; your content, no login, no
+scraping). Set `SUBSTACK_URL=https://<you>.substack.com` in `oracle/.env` (a public URL,
+not a secret) and either run `./.venv/bin/python scripts/substack.py` or let the daily
+sync pick it up. Posts load as `kind='article'` (podcast posts as `'episode'`), full body
+chunked for search; paid posts whose body isn't publicly served still land as a
+title/subtitle row. Reloads are full-replace in one transaction, so reruns are safe.
 
 
 ## Google Drive
