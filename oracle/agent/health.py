@@ -55,6 +55,7 @@ def verdict(heartbeat, now=None, expected_hours=EXPECTED_HOURS):
     now = now or datetime.datetime.now()
     hours = max(0.0, (now - heartbeat["run_at"]).total_seconds() / 3600)
     trouble = [f"{s.get('label', '?')}: {s.get('status', '?')}"
+               + (f" ({s['why']})" if s.get("why") else "")
                for s in heartbeat["steps"] if s.get("status") != "ok"]
     state = "down" if hours > expected_hours else ("degraded" if trouble else "ok")
     return {"state": state, "hours_since": round(hours, 1), "trouble": trouble}

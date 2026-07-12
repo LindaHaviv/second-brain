@@ -489,6 +489,11 @@ def test_health_verdict_states():
     assert health.verdict({"run_at": fresh, "steps": ok_steps}, now)["state"] == "ok"
     v = health.verdict({"run_at": fresh, "steps": bad_steps}, now)
     assert v["state"] == "degraded" and v["trouble"] == ["Instagram: skip"]
+    # a step that recorded WHY it skipped/failed carries the reason into the panel
+    v = health.verdict({"run_at": fresh, "steps": [
+        {"label": "Instagram", "status": "skip",
+         "why": "no IG_ACCESS_TOKEN configured"}]}, now)
+    assert v["trouble"] == ["Instagram: skip (no IG_ACCESS_TOKEN configured)"]
     assert health.verdict({"run_at": old, "steps": ok_steps}, now)["state"] == "down"
     # expected window is configurable: 50h old is fine on a 72h cadence
     assert health.verdict({"run_at": old, "steps": ok_steps}, now,

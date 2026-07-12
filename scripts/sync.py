@@ -138,7 +138,8 @@ def main():
     for label, argv, need in steps:
         if need and not os.environ.get(need):
             print(f"— skip {label} (no {need})")
-            results.append({"label": label, "status": "skip", "seconds": 0})
+            results.append({"label": label, "status": "skip", "seconds": 0,
+                            "why": f"no {need} configured"})
             continue
         print(f"\n=== {label} ===", flush=True)
         if _run_step(label, argv, results):
