@@ -33,6 +33,15 @@ def seed_tools(conn, tools):
     conn.commit()
 
 
+def list_tools(conn):
+    """All registered tools (name, description, kind) — for the Memory view's procedural
+    section. Tool definitions carry no private data, so no visibility filter applies."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT name, description, kind FROM procedural_memory ORDER BY name")
+        cols = [c[0].lower() for c in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
 def select_tools(conn, query, k=3):
     """Return the k tools most relevant to `query`, ranked by meaning (with distance)."""
     with conn.cursor() as cur:

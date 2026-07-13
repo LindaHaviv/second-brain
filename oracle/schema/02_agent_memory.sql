@@ -20,8 +20,15 @@ CREATE TABLE agent_memory (
   detail       CLOB,                              -- result text / the lesson learned
   embedding    VECTOR(384, FLOAT32),              -- set at INSERT via VECTOR_EMBEDDING(MINILM ...)
   created_at   TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+  -- Structural privacy, same contract as posts.visibility: a memory whose text trips the
+  -- deny-list (deal/fee terms) is written 'business' and every read filters to 'content'.
+  visibility   VARCHAR2(12) DEFAULT 'content' NOT NULL,
   CONSTRAINT chk_outcome CHECK (outcome IN ('success','failure'))
 );
+
+-- Idempotent for already-created databases (apply_schema.py TOLERATE swallows ORA-01430;
+-- on a fresh DB the column is already in the CREATE above, so this ALTER is skipped).
+ALTER TABLE agent_memory ADD (visibility VARCHAR2(12) DEFAULT 'content' NOT NULL);
 
 -- NOTE: At demo scale, exact VECTOR_DISTANCE search (no index) is instant and needs no
 -- special setup. A fast approximate (HNSW) index is OPTIONAL and only pays off at scale —

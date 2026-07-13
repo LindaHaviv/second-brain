@@ -10,7 +10,13 @@ CREATE TABLE conversations (
   seq         NUMBER       NOT NULL,        -- order within the session
   role        VARCHAR2(12) NOT NULL,        -- 'user' | 'assistant'
   content     CLOB         NOT NULL,
-  created_at  TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL
+  created_at  TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+  -- Structural privacy, same contract as posts.visibility: a turn whose text trips the
+  -- deny-list (deal/fee terms) is written 'business' and every read filters to 'content'.
+  visibility  VARCHAR2(12) DEFAULT 'content' NOT NULL
 );
 
 CREATE INDEX conversations_sid_idx ON conversations (session_id, seq);
+
+-- Idempotent for already-created databases (apply_schema.py TOLERATE swallows ORA-01430).
+ALTER TABLE conversations ADD (visibility VARCHAR2(12) DEFAULT 'content' NOT NULL);

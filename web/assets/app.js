@@ -115,7 +115,7 @@
     BrainGraph.__g = g;
     try {
       var d = await api("/api/graph");
-      if (!d.nodes.length) { el("graph").innerHTML = '<div class="empty">Content is loaded, but no wiki topics are compiled yet — compile the wiki and the graph fills in.</div>'; el("focus-toggle").style.display = "none"; return; }
+      if (!d.nodes.length) { el("graph").innerHTML = '<div class="empty">Content is loaded, but no wiki topics are compiled yet. Compile the wiki and the graph fills in.</div>'; el("focus-toggle").style.display = "none"; return; }
       BrainGraph.setData(d);
     } catch (e) { if (e.message !== "unauthorized") el("graph").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; }
   }
@@ -125,7 +125,7 @@
     var on = BrainGraph.toggleFocus();
     this.classList.toggle("on", on);
     this.textContent = "Focus: " + (on ? "on" : "off");
-    flash(on ? "Focus on — click a node to see just its neighbors" : "Focus off — full graph");
+    flash(on ? "Focus on: click a node to see just its neighbors" : "Focus off: full graph");
   });
 
   async function expandNode(n) {
@@ -282,9 +282,9 @@
 
   // ---- memory -----------------------------------------------------------------
   var MEM_KINDS = [
-    ["semantic", "Semantic", "What your brain learned about your content — durable facts it distilled: recurring themes, audience questions, formats, gaps."],
-    ["episodic", "Episodic", "What the agent did and how it turned out — a timeline of research runs, each with its outcome."],
-    ["procedural", "Procedural", "What the agent can do — its tools, stored as memory so it can pull the relevant ones by meaning."],
+    ["semantic", "Semantic", "What your brain learned about your content. The durable facts it distilled: recurring themes, audience questions, formats, gaps."],
+    ["episodic", "Episodic", "What the agent did and how it turned out: a timeline of research runs, each with its outcome."],
+    ["procedural", "Procedural", "What the agent can do: its tools, stored as memory so it can pull the relevant ones by meaning."],
     ["conversational", "Conversational", "The running dialogue it keeps as working memory."]
   ];
   function tileHTML(n, l) {

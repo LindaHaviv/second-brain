@@ -28,6 +28,13 @@ MCP server. Everything below is what a maintainer would tell you on day one.
    every read path, and the cloud-copy script ships only `'content'`. If the user's
    most valuable questions are ABOUT their private data, plan a local-only query path
    for that scope — don't widen the default filters.
+   The **memory layer** carries the same contract: `agent_memory` and `conversations`
+   have a `visibility` column too, tagged at write time by the deterministic deny-list
+   (`oamp_memory.violates_privacy`) and filtered to `'content'` on every read — so a
+   private detail the agent saw never resurfaces in its recall, a shared memory view, or
+   the working-memory window. Any new memory write/read keeps that filter. (Semantic and
+   procedural memory need no column: the consolidator distills only from content-scope
+   posts, and tool definitions hold no private data.)
 3. **Run the tests after any change:** `./.venv/bin/python tests/test_brain.py`
    (needs the local DB from the Quickstart running). All green before you call it done.
 4. **Run the matching eval when you touch quality-bearing code:**

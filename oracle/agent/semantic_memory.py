@@ -101,6 +101,21 @@ def _clamp_bytes(s, limit):
     return s if len(b) <= limit else b[:limit].decode("utf-8", errors="ignore")
 
 
+def list_facts(conn, k=200):
+    """All consolidated facts (fact, category, when), grouped-friendly for the Memory view.
+    Semantic memory is privacy-safe by construction: consolidate() distills ONLY from
+    content-scope posts and drops financial/deal facts, so no visibility filter is needed here."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT fact, category, TO_CHAR(created_at,'YYYY-MM-DD') AS created_at "
+            "FROM semantic_memory ORDER BY category, created_at DESC "
+            "FETCH FIRST :k ROWS ONLY",
+            k=int(k),
+        )
+        cols = [c[0].lower() for c in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
 def semantic_recall(conn, query, k=5):
     """Return the k most relevant consolidated facts for `query`."""
     with conn.cursor() as cur:

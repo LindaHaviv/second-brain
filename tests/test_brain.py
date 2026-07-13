@@ -179,6 +179,38 @@ def test_graph_data_visibility():
         c.close()
 
 
+def test_related_topics_visibility():
+    """related_topics (semantic neighbors of a wiki topic) must also respect the privacy line:
+    a business post must never surface as a topic's nearest item. Sibling of related_posts,
+    same filter — pinned separately because it joins wiki_pages to posts, not posts to posts."""
+    c = db.connect()
+    token = "zqxreltopic"
+    cur = c.cursor()
+    cur.execute("alter session disable parallel dml")
+    cur.execute("merge into platforms p using (select 'test' id from dual) s "
+                "on (p.platform_id=s.id) when not matched then "
+                "insert (platform_id, display_name) values ('test','Test')")
+    try:
+        cur.execute("insert into wiki_pages (topic, body, embedding) values (:t, 'probe body', "
+                    "vector_embedding(MINILM using :e as data))",
+                    t=f"{token} topic", e=f"{token} shared subject")
+        ids = {}
+        for name, vis in [("pub", "content"), ("priv", "business")]:
+            out = cur.var(int)
+            cur.execute("insert into posts (platform_id, kind, title, caption, visibility, "
+                        "content_embedding) values ('test','note', :t, 'probe', :v, "
+                        "vector_embedding(MINILM using :e as data)) returning post_id into :outid",
+                        t=f"{token} {name}", v=vis, e=f"{token} shared subject", outid=out)
+            ids[name] = int(out.getvalue()[0])
+        got = content.related_topics(c, f"{token} topic", k=10)
+        got_ids = {r["post_id"] for r in got}
+        assert ids["pub"] in got_ids, "content post not found as a topic neighbor"
+        assert ids["priv"] not in got_ids, "PRIVACY LEAK: business post surfaced as a topic neighbor"
+    finally:
+        c.rollback()
+        c.close()
+
+
 def test_get_wiki_page():
     c = db.connect()
     _skip_if_empty(c, "wiki_pages", "compile the wiki first (Lab 5 / Step 5), then re-run")
@@ -320,10 +352,14 @@ def test_schema_statement_split():
 
 def test_schema_rerun_tolerates_seed_duplicate():
     """Re-applying the schema must report 0 errors. Seed rows (wiki_meta) hit ORA-00001
-    on a second run, so it belongs in TOLERATE alongside the "already exists" codes."""
+    on a second run, so it belongs in TOLERATE alongside the "already exists" codes.
+    ORA-01430 ("column being added already exists") must be tolerated too — the memory
+    layer's idempotent `ALTER TABLE agent_memory/conversations ADD (visibility …)` relies
+    on it being swallowed on re-apply."""
     sys.path.insert(0, str(ROOT / "scripts"))
     import apply_schema
     assert "ORA-00001" in apply_schema.TOLERATE
+    assert "ORA-01430" in apply_schema.TOLERATE
 
 
 def test_oamp_privacy_deny_patterns():
@@ -594,6 +630,23 @@ def test_webui_api_routes_live():
         assert set(mb["counts"]) == {"episodic", "semantic", "conversational", "procedural"}, mb
         assert all(k in mb for k in ("facts", "episodic", "tools", "conversational")), mb
         assert client.get("/api/memory").status_code == 401   # gated like every /api route
+        # end-to-end privacy pin: a fee-mentioning memory must not escape via the endpoint
+        # (write-tag -> read-filter -> API wiring, all in one assertion)
+        import memory as _mem
+        _c = db.connect(); _cur = _c.cursor()
+        try:
+            _mem.record(_c, "test-api-priv", "zqxapibiz our fee is $9,000 for the campaign",
+                        "logged", "none", "success", detail="private")
+            leak = client.get("/api/memory", headers={"authorization": f"Bearer {tok}"}).text
+            assert "zqxapibiz" not in leak, "PRIVACY LEAK: business memory reached /api/memory"
+        finally:
+            _cur.execute("DELETE FROM agent_memory WHERE run_id = 'test-api-priv'")
+            _c.commit(); _c.close()
+        # smoke: every no-arg read route answers 200 (catches a route that 500s on wiring)
+        for route in ("/api/graph", "/api/topics", "/api/recent", "/api/overview",
+                      "/api/status", "/api/memory", "/api/series", "/api/search"):
+            rr = client.get(route, headers={"authorization": f"Bearer {tok}"})
+            assert rr.status_code == 200, route + " -> " + str(rr.status_code) + " " + rr.text[:120]
     # dark when disabled: /api 404s, app otherwise unchanged
     _reload_webui()
     importlib.reload(mcp_http)
