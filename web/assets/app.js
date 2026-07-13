@@ -232,12 +232,18 @@
     });
   }
 
-  // very light markdown: headings + keep line breaks (body is trusted-but-escaped user content)
+  // light markdown: headings, bullets, bold, inline code. Escape first, so the compiled wiki
+  // body (user content) can never inject HTML; then reinstate a safe subset.
+  function mdInline(s) {
+    return s.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  }
   function renderBody(body) {
     return esc(body || "").split("\n").map(function (line) {
-      var m = line.match(/^(#{1,3})\s+(.*)/);
-      if (m) return "<h" + (m[1].length + 1) + ">" + m[2] + "</h" + (m[1].length + 1) + ">";
-      return line;
+      var h = line.match(/^(#{1,6})\s+(.*)/);
+      if (h) { var lvl = Math.min(h[1].length + 1, 6); return "<h" + lvl + ">" + mdInline(h[2]) + "</h" + lvl + ">"; }
+      var b = line.match(/^\s*[-*]\s+(.*)/);
+      if (b) return "•  " + mdInline(b[1]);
+      return mdInline(line);
     }).join("\n");
   }
 

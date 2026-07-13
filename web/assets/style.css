@@ -311,3 +311,7 @@ pre.panel-block {
 .reg-desc { color: var(--text-dim); font-size: 12.5px; line-height: 1.45; }
 .reg-where { color: var(--text-faint); font-family: var(--mono); font-size: 11px; margin-top: 8px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* wiki reader inline code */
+.panel .body code { font-family: var(--mono); font-size: 12px; background: var(--bg-elev);
+  border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; }
