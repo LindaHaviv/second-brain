@@ -32,6 +32,7 @@ import memory
 import semantic_memory
 import conversation
 import procedural
+import registry
 import mcp_server as _srv   # reuse the tools' helpers so the UI pages identically to MCP
 
 ENABLED = os.environ.get("UI_ENABLED") == "1"
@@ -79,9 +80,11 @@ def _static(path):
         return None
     if target.suffix.lower() not in _ALLOWED_EXT:
         return None
-    # index.html must never cache (it's the app entry); other assets we keep short-lived so a
-    # redeploy is picked up without a hard refresh during filming.
-    cache = "no-cache" if target.name == "index.html" else "public, max-age=3600"
+    # The app files (html/js/css) change on every redeploy and share a stable URL, so they must
+    # revalidate — otherwise a redeploy serves stale UI for up to the max-age. Only the vendored,
+    # version-pinned lib under assets/vendor/ is safe to cache long.
+    long_cache = "/vendor/" in ("/" + rel)
+    cache = "public, max-age=604800, immutable" if long_cache else "no-cache"
     return FileResponse(target, headers={"Cache-Control": cache})
 
 
@@ -107,6 +110,8 @@ def _api(request):
     try:
         if path == "/api/ping":
             return _json({"ok": True, "auth": "public" if PUBLIC_RO else "token", "title": UI_TITLE})
+        if path == "/api/agents":
+            return _json(registry.registry())   # static catalog; no DB needed
         conn = db.connect()
         if path == "/api/graph":
             return _json(content.graph_data(conn))

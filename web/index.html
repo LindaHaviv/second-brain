@@ -15,8 +15,9 @@
         <button data-view="search">Search</button>
         <button data-view="wiki">Wiki</button>
         <button data-view="memory">Memory</button>
+        <button data-view="agents">Agents</button>
         <button data-view="feed">Feed</button>
-        <button data-view="status">Status</button>
+        <button data-view="status">Overview</button>
       </nav>
       <span class="spacer"></span>
       <span class="meta" id="header-meta"></span>
@@ -72,8 +73,80 @@
       <section class="view" id="view-memory">
         <h1 class="page">Memory</h1>
         <p class="sub">The agent's experience layer: what it learned, did, can do, and discussed. Private items are filtered out at the database level, so this is safe to show.</p>
+
+        <!-- how it works: the memory lifecycle (click a step to read it) -->
+        <div class="mem-flow" id="mem-flow">
+          <div class="flow-track" id="flow-track"></div>
+          <div class="flow-loop">Consolidate feeds back into Recall, so the next run starts smarter. Experience compounds.</div>
+          <div class="flow-detail" id="flow-detail"></div>
+          <div class="flow-notes">
+            <span class="flow-note flow-note--priv">Anything about deals or fees is tagged private at write time and never stored here.</span>
+            <span class="flow-note flow-note--db">One Oracle database, two shapes: recalled by <b>meaning</b> (vectors) and audited by <b>SQL</b> (relational).</span>
+            <a class="flow-note flow-note--doc" id="flow-doc" href="#" target="_blank" rel="noopener" hidden>How agent memory works ↗</a>
+          </div>
+        </div>
+
+        <!-- the four kinds of memory (definitional reference) -->
+        <div class="hiw">
+          <h2 class="hiw-h">The four kinds of memory</h2>
+          <div class="types-grid">
+            <div class="type-card">
+              <div class="type-head"><span class="kdot" style="background:var(--item)"></span>Episodic</div>
+              <div class="type-analogy">“what I did”</div>
+              <div class="type-desc">Every run: the task, what it did, the outcome, a reward.</div>
+              <div class="type-meta"><span class="mono">agent_memory</span><span>by meaning + SQL audit</span></div>
+            </div>
+            <div class="type-card">
+              <div class="type-head"><span class="kdot" style="background:var(--topic)"></span>Semantic</div>
+              <div class="type-analogy">“what I know”</div>
+              <div class="type-desc">Durable facts distilled from runs: themes, audience, formats, gaps.</div>
+              <div class="type-meta"><span class="mono">semantic_memory</span><span>by meaning</span></div>
+            </div>
+            <div class="type-card">
+              <div class="type-head"><span class="kdot" style="background:var(--ok)"></span>Procedural</div>
+              <div class="type-analogy">“my skills”</div>
+              <div class="type-desc">Its tools, embedded so it loads only the ones relevant to a task.</div>
+              <div class="type-meta"><span class="mono">procedural_memory</span><span>by meaning</span></div>
+            </div>
+            <div class="type-card">
+              <div class="type-head"><span class="kdot" style="background:var(--text-dim)"></span>Conversational</div>
+              <div class="type-analogy">“what we just said”</div>
+              <div class="type-desc">The running dialogue, a bounded recent window for follow-ups.</div>
+              <div class="type-meta"><span class="mono">conversations</span><span>recent window</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- one database, two shapes -->
+        <div class="hiw">
+          <h2 class="hiw-h">One database, two shapes</h2>
+          <div class="db-box">
+            <div class="db-title">Oracle 26ai</div>
+            <div class="db-cols">
+              <div class="db-group">
+                <div class="db-group-h">Knowledge <span>what you made</span></div>
+                <div class="db-chips"><span class="db-chip">posts</span><span class="db-chip">content_chunks</span><span class="db-chip">wiki_pages</span></div>
+              </div>
+              <div class="db-group">
+                <div class="db-group-h">Experience <span>what the agent learned</span></div>
+                <div class="db-chips"><span class="db-chip">agent_memory</span><span class="db-chip">semantic_memory</span><span class="db-chip">procedural_memory</span><span class="db-chip">conversations</span></div>
+              </div>
+            </div>
+            <div class="db-foot">Every row is <b>both</b>: relational (columns you query in SQL) <b>and</b> vector (an embedding you search by meaning). That's why it's one engine, not a database plus a bolted-on vector store.</div>
+          </div>
+        </div>
+
         <div id="memory-tiles" class="tiles"></div>
         <div id="memory-body"></div>
+      </section>
+
+      <!-- Agents -->
+      <section class="view" id="view-agents">
+        <h1 class="page">Agents &amp; tools</h1>
+        <p class="sub">Everything you've built on top of the brain, in one place — agents, playbooks, tools, jobs, sources, and integrations.
+          <span class="scope-key"><span class="scope generic">generic</span> ships to everyone <span class="scope private">private</span> yours only</span>
+        </p>
+        <div id="agents-body"></div>
       </section>
 
       <!-- Feed -->
@@ -83,11 +156,17 @@
         <div id="feed-list"></div>
       </section>
 
-      <!-- Status -->
+      <!-- Overview -->
       <section class="view" id="view-status">
-        <h1 class="page">Overview &amp; health</h1>
-        <p class="sub">What's in the brain, and whether the pipeline is fresh.</p>
+        <h1 class="page">Your brain at a glance</h1>
+        <p class="sub" id="ov-coverage">What's in your brain, how it breaks down, and whether it's fresh.</p>
         <div id="overview-tiles" class="tiles"></div>
+        <div class="ov-charts">
+          <div class="ov-card"><h2 class="ov-h">By source</h2><div id="ov-by-source" class="bars"></div></div>
+          <div class="ov-card"><h2 class="ov-h">By type</h2><div id="ov-by-kind" class="bars"></div></div>
+        </div>
+        <div class="ov-card" id="ov-series-card" hidden><h2 class="ov-h">Series</h2><div id="ov-series" class="bars"></div></div>
+        <h2 class="ov-h" style="margin-top:22px">Source health</h2>
         <pre class="panel-block" id="status-panel">loading…</pre>
       </section>
     </main>

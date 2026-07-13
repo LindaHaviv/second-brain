@@ -97,9 +97,32 @@
   function loadView(view) {
     if (view === "wiki") loadWiki();
     else if (view === "memory") loadMemory();
+    else if (view === "agents") loadAgents();
     else if (view === "feed") loadFeed();
     else if (view === "status") loadStatus();
     else if (view === "search") el("q").focus();
+  }
+
+  // ---- agents & tools registry ------------------------------------------------
+  async function loadAgents() {
+    var box = el("agents-body");
+    box.innerHTML = '<div class="loading">loading…</div>';
+    try {
+      var reg = await api("/api/agents");
+      var cats = (reg.categories || []).filter(function (c) { return c.items && c.items.length; });
+      box.innerHTML = cats.map(function (c) {
+        var cards = c.items.map(function (it) {
+          var scope = it.scope === "private" ? "private" : "generic";
+          return '<div class="reg-card"><div class="reg-top"><span class="reg-name">' + esc(it.name) +
+            '</span><span class="scope ' + scope + '">' + scope + '</span></div>' +
+            '<div class="reg-desc">' + esc(it.desc || "") + '</div>' +
+            (it.where ? '<div class="reg-where">' + esc(it.where) + "</div>" : "") + "</div>";
+        }).join("");
+        return '<div class="reg-cat"><div class="reg-cat-h"><h2>' + esc(c.label) +
+          '<span class="reg-count">' + c.items.length + "</span></h2>" +
+          (c.desc ? '<p>' + esc(c.desc) + "</p>" : "") + '</div><div class="reg-grid">' + cards + "</div></div>";
+      }).join("") || '<div class="empty">No agents registered yet.</div>';
+    } catch (e) { box.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; }
   }
 
   // ---- graph ------------------------------------------------------------------
@@ -290,7 +313,44 @@
   function tileHTML(n, l) {
     return '<div class="tile"><div class="n">' + esc(n == null ? "–" : n) + '</div><div class="l">' + esc(l) + "</div></div>";
   }
+
+  // ---- memory lifecycle flow (the "how it works" strip) ----
+  // Optional doc link: set localStorage 'brain_memory_doc' to a URL to reveal a "learn more".
+  var MEMORY_DOC_URL = localStorage.getItem("brain_memory_doc") || "";
+  var FLOW = [
+    { t: "Ask", dot: "var(--text-faint)", l: "A question or task arrives.",
+      d: "Everything starts with a prompt, from you or a scheduled job." },
+    { t: "Recall", dot: "var(--topic)", l: "Pull relevant past experience + tools, by meaning.",
+      d: "Before acting, the agent semantic-searches its own memory: what worked on similar tasks (<b>episodic</b> and <b>semantic</b>) and which tools fit (<b>procedural</b>). It starts informed, not blank." },
+    { t: "Act", dot: "var(--accent)", l: "Research and answer.",
+      d: "It runs the task with the recalled tools, grounded in your content and wiki." },
+    { t: "Record", dot: "var(--item)", l: "Write an episodic memory of what happened.",
+      d: "One row per run: the task, what it did, the outcome, a reward. Auditable in plain SQL, so you can literally query its <b>success rate per tool</b>." },
+    { t: "Consolidate", dot: "var(--topic)", l: "Distill runs into durable facts.",
+      d: "Periodically an LLM reads the episodic log and updates the <b>semantic</b> facts (themes, audience, formats, gaps). Experience compounds into reusable knowledge." }
+  ];
+  var flowDone = false;
+  function renderFlow() {
+    if (flowDone) return; flowDone = true;
+    el("flow-track").innerHTML = FLOW.map(function (s, i) {
+      var arrow = i < FLOW.length - 1 ? '<span class="flow-arrow">→</span>' : "";
+      return '<div class="flow-stage" data-i="' + i + '"><div class="fs-i">step ' + (i + 1) +
+        '</div><div class="fs-t"><span class="kdot" style="background:' + s.dot + '"></span>' + esc(s.t) +
+        '</div><div class="fs-l">' + esc(s.l) + "</div></div>" + arrow;
+    }).join("");
+    var stages = el("flow-track").querySelectorAll(".flow-stage");
+    function activate(i) {
+      stages.forEach(function (n, j) { n.classList.toggle("active", j === i); n.classList.remove("pulse"); });
+      stages[i].classList.add("pulse");
+      el("flow-detail").innerHTML = FLOW[i].d;   // trusted static copy (no user input)
+    }
+    stages.forEach(function (n) { n.addEventListener("click", function () { activate(+n.dataset.i); }); });
+    activate(1);   // open on Recall — the most "aha" step for explaining memory
+    if (MEMORY_DOC_URL) { var a = el("flow-doc"); a.href = MEMORY_DOC_URL; a.hidden = false; }
+  }
+
   async function loadMemory() {
+    renderFlow();
     var body = el("memory-body");
     body.innerHTML = '<div class="loading">loading memory…</div>';
     try {
@@ -344,18 +404,39 @@
   }
 
   // ---- status -----------------------------------------------------------------
+  // one horizontal magnitude bar per category, single hue, direct value labels
+  function renderBars(id, rows, labelKey, amber) {
+    var box = el(id);
+    if (!rows || !rows.length) { box.innerHTML = '<div class="empty">Nothing here yet.</div>'; return; }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.count; })) || 1;
+    box.innerHTML = rows.slice(0, 12).map(function (r) {
+      var w = Math.max(2, Math.round(r.count / max * 100));
+      return '<div class="bar-row"><div class="bar-label" title="' + esc(r[labelKey]) + '">' + esc(r[labelKey]) +
+        '</div><div class="bar-track"><div class="bar-fill' + (amber ? " amber" : "") + '" style="width:' + w + '%"></div></div>' +
+        '<div class="bar-val">' + esc(r.count) + "</div></div>";
+    }).join("");
+  }
+
   async function loadStatus() {
     try {
       var ov = await api("/api/overview");
       var mem = ov.memory || {};
       var tiles = [
-        ["items", ov.total_items], ["platforms", (ov.by_platform || []).length],
+        ["items", ov.total_items], ["sources", (ov.by_platform || []).length],
         ["wiki topics", ov.wiki_topics], ["series", (ov.series || []).length],
         ["facts", mem.semantic], ["memories", mem.episodic]
       ];
       el("overview-tiles").innerHTML = tiles.map(function (t) {
         return '<div class="tile"><div class="n">' + esc(t[1] == null ? "–" : t[1]) + '</div><div class="l">' + esc(t[0]) + "</div></div>";
       }).join("");
+      renderBars("ov-by-source", ov.by_platform, "platform", false);
+      renderBars("ov-by-kind", ov.by_kind, "kind", true);
+      if (ov.series && ov.series.length) { el("ov-series-card").hidden = false; renderBars("ov-series", ov.series, "series", false); }
+      var pr = ov.published_range || {};
+      if (pr.from && pr.to) {
+        el("ov-coverage").textContent = (ov.total_items || 0) + " items across " +
+          ((ov.by_platform || []).length) + " sources, spanning " + pr.from + " to " + pr.to + ".";
+      }
     } catch (e) {}
     try {
       var st = await api("/api/status");

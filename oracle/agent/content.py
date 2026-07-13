@@ -208,8 +208,8 @@ def list_by_series(conn, series, k=25):
 
 def stats(conn):
     """A high-level map of the brain (content scope only): total items, per-platform counts,
-    per-series counts, wiki topic count, and the published date range. Cheap orientation for a
-    demo or for the agent to size up what's here before searching."""
+    per-kind counts, per-series counts, wiki topic count, and the published date range. Cheap
+    orientation for a demo, the overview dashboard, or the agent sizing up what's here."""
     with conn.cursor() as cur:
         cur.execute("SELECT COUNT(*), TO_CHAR(MIN(published_at),'YYYY-MM-DD'), "
                     "TO_CHAR(MAX(published_at),'YYYY-MM-DD') FROM posts "
@@ -219,7 +219,11 @@ def stats(conn):
                     "WHERE NVL(visibility,'content')='content' "
                     "GROUP BY platform_id ORDER BY n DESC")
         by_platform = [{"platform": r[0], "count": int(r[1])} for r in cur.fetchall()]
-    return {"total_items": int(total or 0), "by_platform": by_platform,
+        cur.execute("SELECT kind, COUNT(*) AS n FROM posts "
+                    "WHERE NVL(visibility,'content')='content' AND kind IS NOT NULL "
+                    "GROUP BY kind ORDER BY n DESC")
+        by_kind = [{"kind": r[0], "count": int(r[1])} for r in cur.fetchall()]
+    return {"total_items": int(total or 0), "by_platform": by_platform, "by_kind": by_kind,
             "series": list_series(conn), "wiki_topics": len(list_topics(conn)),
             "published_range": {"from": first, "to": last}}
 

@@ -40,6 +40,7 @@ STEPS = [
     ("Claude Code",  [str(ROOT / "scripts" / "claude_code.py")],        None),
     ("Wiki refresh", [str(ROOT / "oracle" / "agent" / "wiki.py"), "--refresh"], None),
     ("Consolidate",  [str(ROOT / "scripts" / "consolidate.py")],        None),
+    ("Registry",     [str(ROOT / "scripts" / "build_registry.py")],     None),  # auto-detect what's built
 ]
 
 def resolve_memory_backend(env):
