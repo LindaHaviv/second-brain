@@ -178,7 +178,8 @@ def build_private():
             {"name": "MCP Apps diagram panel", "desc": _module_doc(hx), "where": _rel(hx), "scope": "private"})
     sk = _cat(cats, "skills", "Skills", "Claude Code skills you authored.")
     mds = []
-    for basedir in (ROOT / "private" / "claude-code" / "skills", ROOT / ".claude" / "skills"):
+    for basedir in (ROOT / "private" / "skills", ROOT / "private" / "claude-code" / "skills",
+                    ROOT / ".claude" / "skills"):
         if basedir.is_dir():
             mds += list(basedir.glob("*/SKILL.md"))
     seen = set()

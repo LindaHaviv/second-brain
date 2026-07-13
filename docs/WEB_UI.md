@@ -30,10 +30,17 @@ and writes:
 - `private/server/registry.private.json` — **your** private items (private repo, ships only on
   your deployment via the Dockerfile).
 
-`oracle/agent/registry.py` reads and merges them; `/api/agents` serves the result. The **daily
-sync regenerates it** (`scripts/sync.py`'s "Registry" step), so a new agent appears on its own.
+`oracle/agent/registry.py` reads and merges them; `/api/agents` serves the result.
 
-To refresh by hand: `./.venv/bin/python scripts/build_registry.py`.
+**You never run it by hand.** It regenerates automatically in three places:
+- a **git pre-commit hook** (in each repo) refreshes the JSON on every commit, so the committed
+  code and the registry are always in lock-step — and therefore so is every deploy;
+- the **daily sync** (`scripts/sync.py`'s "Registry" step) as a backstop;
+- manual, if ever needed: `./.venv/bin/python scripts/build_registry.py`.
+
+If `.git/hooks` is ever wiped, reinstall from the committed copy: `cp scripts/git-hooks/pre-commit
+.git/hooks/pre-commit && chmod +x .git/hooks/pre-commit` (the private repo has its own under
+`private/.git/hooks/`).
 
 ## Enabling / deploying
 
@@ -53,18 +60,17 @@ version-pinned vendor lib is long-cached.
 Nothing here is blocking — the UI is complete and tested (`tests/test_brain.py`, green). These
 are optional follow-ups:
 
-- [ ] **Deploy to see it live.** The code is pushed but not yet deployed — redeploy the private
-      Fly app (above) so the Overview dashboard, Agents registry, and memory visuals show on the
-      hosted UI. Warm the machine before filming (scale-to-zero cold start).
-- [ ] **Regenerate the registry before a deploy** if you added an agent since the last sync
-      (`scripts/build_registry.py`, then commit). *Possible improvement:* run it during the Docker
-      build so the shipped registry is always current without a manual step.
-- [ ] **`script` skill isn't listed** — it has no `SKILL.md` under `private/claude-code/skills/`,
-      so the scanner doesn't see it. Add one there and rerun the scanner to include it.
-- [ ] **Filmable artifact is behind** — the shareable storyboard artifact has the Memory lifecycle
-      but not the Overview dashboard or Agents registry. Mirror them only if you film the artifact
-      instead of the real app.
+- [x] **Registry auto-regenerates** — via the pre-commit hook (+ sync backstop). No manual step,
+      no Docker change needed. *(The `.dockerignore` deliberately keeps `scripts/`/`private/` out of
+      the build context, so build-time generation was intentionally avoided.)*
+- [x] **`script` skill now listed** — it lives in `private/skills/` (not `private/claude-code/skills/`);
+      the scanner now covers both. Both `script` and `spark` show.
+- [x] **Parallel-DML deadlock confirmed fixed** — `wiki._set_hwm` guard is on `main` (`cbc0ded`),
+      `test_set_hwm` passes repeatedly.
+- [ ] **Deploy to see it live.** After a redeploy of the private Fly app, warm the machine before
+      filming (scale-to-zero cold start).
+- [ ] **Filmable artifact is behind** — the shareable storyboard has the Memory lifecycle but not
+      the Overview dashboard or Agents registry. Mirror them only if you film the artifact, not the
+      real app.
 - [ ] **Live agent console (future)** — watching a workflow *run* is a separate interactive surface,
       not this read-only view. Not built.
-- [ ] **Confirm the parallel-DML fix is on `main`** — the `wiki._set_hwm` deadlock fix landed on a
-      branch (`cbc0ded`); verify it's merged so the `test_set_hwm` flake can't recur.
