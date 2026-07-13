@@ -37,6 +37,15 @@ def test_hard_deadline_pins_to_top():
     assert ranked[0].tier == 0
 
 
+def test_invalid_deadline_ranks_like_no_deadline():
+    """BACKLOG.md is hand-editable, so a typo'd deadline ("TBD") must not crash rank() —
+    it sorts like a no-deadline item (regression: None vs int TypeError on tie-break)."""
+    items = [_it("typo deadline", type="idea", deadline="TBD"),
+             _it("clean idea", type="idea")]
+    ranked = core.rank(items, TODAY, CFG)   # must not raise
+    assert [r.title for r in ranked] == ["clean idea", "typo deadline"]
+
+
 def test_overdue_beats_due_soon():
     items = [_it("Due in 2d", type="obligation", deadline="2026-07-14"),
              _it("Overdue 3d", type="obligation", deadline="2026-07-09")]

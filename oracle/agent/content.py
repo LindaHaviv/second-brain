@@ -176,6 +176,19 @@ def get_wiki_page(conn, topic):
         cites = [{"post_id": s["post"]["postId"], "title": s["post"]["title"],
                   "platform": s["post"]["platform"], "url": s["post"]["url"]}
                  for s in doc.get("sources", [])]
+        # READ-TIME visibility guard: the Duality view nests posts unfiltered, and a post
+        # can be retagged private AFTER the page was compiled (classify_private runs post-
+        # ingestion). Between that retag and the next wiki refresh, its title/url would
+        # still leak here as a citation — so re-check scope now, the same rule graph_data
+        # applies at read time.
+        if cites:
+            ids = [c["post_id"] for c in cites]
+            binds = ",".join(f":i{n}" for n in range(len(ids)))
+            cur.execute(f"SELECT post_id FROM posts WHERE post_id IN ({binds}) "
+                        "AND NVL(visibility,'content')='content'",
+                        {f"i{n}": v for n, v in enumerate(ids)})
+            ok = {r[0] for r in cur.fetchall()}
+            cites = [c for c in cites if c["post_id"] in ok]
         return {"topic": doc["topic"], "body": doc["body"], "citations": cites}
 
 

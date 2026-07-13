@@ -15,10 +15,10 @@ The ranking model, in one breath:
   2. Below the deadline tier, rank by a transparent blend of STRATEGIC weight (bigger-goal
      work) and MOMENTUM (things already in flight), so neither a whim nor a half-done task
      alone decides order.
-  3. FORCED STRATEGIC SEAT. Left alone she fills the whole week with brand deals and
+  3. FORCED STRATEGIC SEAT. Left alone, a week fills itself with obligations and
      finishing tasks, and the strategic work never moves. So Top-3 selection guarantees at
      least one strategic item a seat (never displacing a hard-deadline item). This is the
-     counterweight to the stated bias, encoded, not hoped for.
+     counterweight to that bias, encoded, not hoped for.
   4. AGING = KILL OR COMMIT. An item that sits active and un-promoted past CFG.stale_days
      gets flagged. The graveyard becomes visible instead of silent.
 
@@ -136,9 +136,14 @@ def rank(items: list[Item], today: datetime.date, cfg: Config = CFG) -> list[Ite
     active = [replace(it) for it in items if not it.done]
     for it in active:
         it.tier, it.score, it.reason = score_item(it, today, cfg)
-    # tier asc (0 before 1), then score desc, then nearest deadline, then title (stable)
-    active.sort(key=lambda it: (it.tier, -it.score,
-                                days_until(it.deadline, today) if it.deadline else 10**6,
+    # tier asc (0 before 1), then score desc, then nearest deadline, then title (stable).
+    # days_until returns None for an unparseable hand-edited deadline (e.g. "TBD") —
+    # coalesce it to the no-deadline sentinel so one typo can't crash the whole review.
+    def _deadline_key(it):
+        du = days_until(it.deadline, today) if it.deadline else None
+        return du if du is not None else 10**6
+
+    active.sort(key=lambda it: (it.tier, -it.score, _deadline_key(it),
                                 it.title.lower()))
     return active
 

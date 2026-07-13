@@ -13,6 +13,9 @@
     });
   }
   function el(id) { return document.getElementById(id); }
+  // href values come from ingested content — allow only web schemes so a poisoned
+  // url (javascript:, data:) in a post can never execute on click.
+  function safeUrl(u) { return /^https?:\/\//i.test(String(u || "")) ? u : ""; }
 
   // ---- API client -------------------------------------------------------------
   var Auth = { needed: false };
@@ -193,7 +196,7 @@
       p.querySelector(".kind").textContent = [it.platform_id, it.kind].filter(Boolean).join(" · ");
       var html = '<div class="body">' + esc(it.caption || "") + "</div>";
       html += '<div class="actions">';
-      if (it.url) html += '<a class="chip" href="' + esc(it.url) + '" target="_blank" rel="noopener">Open source ↗</a>';
+      if (safeUrl(it.url)) html += '<a class="chip" href="' + esc(safeUrl(it.url)) + '" target="_blank" rel="noopener">Open source ↗</a>';
       html += '<button class="ghost" data-rel="item:' + esc(pid) + '">Show related in graph</button></div>';
       p.querySelector(".pbody").innerHTML = html;
       wireRelated(p);
@@ -208,7 +211,7 @@
       if (w.citations && w.citations.length) {
         html += '<div class="cites"><h3>' + w.citations.length + " citations</h3>";
         w.citations.forEach(function (c) {
-          html += '<a class="cite" ' + (c.url ? 'href="' + esc(c.url) + '" target="_blank" rel="noopener"' : "") +
+          html += '<a class="cite" ' + (safeUrl(c.url) ? 'href="' + esc(safeUrl(c.url)) + '" target="_blank" rel="noopener"' : "") +
             "><span>" + esc(c.title || "(untitled)") + '</span><br><span class="src">' + esc(c.platform || "") + "</span></a>";
         });
         html += "</div>";

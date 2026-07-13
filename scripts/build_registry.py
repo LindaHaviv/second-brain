@@ -13,8 +13,27 @@ import ast
 import json
 import pathlib
 import re
+import subprocess
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+def _tracked():
+    """Repo-relative paths git actually tracks. The GENERIC registry is committed to the
+    public repo, so it must be built from tracked files ONLY — an untracked personal
+    script dropped into scripts/ or oracle/agent/ must never get its name + docstring
+    auto-committed by the pre-commit hook. Returns None if git is unavailable (then the
+    caller keeps everything, matching the old behavior outside a checkout)."""
+    try:
+        out = subprocess.run(["git", "-C", str(ROOT), "ls-files"],
+                             capture_output=True, text=True, check=True, timeout=10)
+        return set(out.stdout.splitlines())
+    except Exception:
+        return None
+
+
+def _is_tracked(p, tracked):
+    return tracked is None or _rel(p) in tracked
 
 
 def _title(stem):
@@ -130,9 +149,12 @@ def _scripts_split():
 
 
 def build_generic():
+    tracked = _tracked()   # public registry = tracked files only (see _tracked docstring)
     cats = []
     ag = _cat(cats, "agents", "Agents", "Reasoning agents grounded in your content + memory.")
     for f in _agent_files(ROOT / "oracle" / "agent"):
+        if not _is_tracked(f, tracked):
+            continue
         ag["items"].append({"name": _title(f.stem), "desc": _module_doc(f), "where": _rel(f), "scope": "generic"})
     # tools + playbooks from the public MCP server
     tl = _cat(cats, "tools", "Tools", "The MCP tools that reach the brain from any AI client.")
@@ -143,15 +165,19 @@ def build_generic():
     src, jobs = _scripts_split()
     so = _cat(cats, "sources", "Sources", "Loaders that pull your content in (official APIs and your exports).")
     for f in src:
+        if not _is_tracked(f, tracked):
+            continue
         so["items"].append({"name": _title(f.stem), "desc": _module_doc(f), "where": _rel(f), "scope": "generic"})
     jb = _cat(cats, "jobs", "Jobs & loops", "Background automation that keeps the brain fed and fresh.")
     for f in jobs:
+        if not _is_tracked(f, tracked):
+            continue
         jb["items"].append({"name": _title(f.stem), "desc": _module_doc(f), "where": _rel(f), "scope": "generic"})
     ig = _cat(cats, "integrations", "Integrations", "How the brain reaches the outside world.")
     for fname, label in [("mcp_http.py", "Hosted MCP server"), ("webui.py", "Web memory UI"),
                          ("telegram_api.py", "Telegram idea-capture"), ("slack_api.py", "Slack brain-dump")]:
         p = ROOT / "oracle" / "agent" / fname
-        if p.exists():
+        if p.exists() and _is_tracked(p, tracked):
             ig["items"].append({"name": label, "desc": _module_doc(p), "where": _rel(p), "scope": "generic"})
     return [c for c in cats if c["items"]]
 

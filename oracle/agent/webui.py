@@ -222,9 +222,10 @@ async def maybe_handle(request, rate_limit_ok):
     if path.startswith("/api/"):
         if request.method not in ("GET", "HEAD"):
             return _err("method not allowed", 405)
-        if not _authorized(request):
-            return _err("unauthorized", 401)
+        # rate-limit BEFORE auth so failed token guesses are metered too
         if not rate_limit_ok():
             return _err("rate limited — slow down", 429)
+        if not _authorized(request):
+            return _err("unauthorized", 401)
         return _api(request)
     return None
