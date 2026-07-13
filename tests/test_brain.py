@@ -642,6 +642,11 @@ def test_webui_api_routes_live():
         assert client.get("/health").status_code == 200           # probe stays open
         assert client.get("/").status_code == 200                 # static shell, no auth
         assert client.get("/api/graph").status_code == 401        # gated without token
+        # security headers are structural: on the shell AND on api responses, 200 or 401 alike
+        for resp in (client.get("/"), client.get("/api/graph")):
+            csp = resp.headers.get("content-security-policy", "")
+            assert "script-src 'self'" in csp and "frame-ancestors 'none'" in csp, resp.headers
+            assert resp.headers.get("x-content-type-options") == "nosniff", resp.headers
         r = client.get("/api/graph", headers={"authorization": f"Bearer {tok}"})
         assert r.status_code == 200, r.text
         body = r.json()

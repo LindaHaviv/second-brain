@@ -68,6 +68,21 @@ def _authorized(request):
     return hmac.compare_digest(request.headers.get("authorization") or "", f"Bearer {UI_TOKEN}")
 
 
+# Structural back-stop for the whole XSS class: even if an escaping bug slips into the JS,
+# the browser refuses inline/foreign scripts. Everything the UI needs is same-origin (the
+# vendored graph lib included); inline style *attributes* are used by index.html, so styles
+# allow unsafe-inline — the win is blocking inline SCRIPT, which stays 'self'-only.
+_SEC_HEADERS = {
+    "Content-Security-Policy": (
+        "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; connect-src 'self'; font-src 'self'; "
+        "frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+    ),
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+}
+
+
 def _static(path):
     """Serve the static shell. Traversal-guarded: the resolved file must live under WEB_DIR and
     carry an allowlisted extension. Returns a Response, or None if there's nothing to serve."""
@@ -85,12 +100,12 @@ def _static(path):
     # version-pinned lib under assets/vendor/ is safe to cache long.
     long_cache = "/vendor/" in ("/" + rel)
     cache = "public, max-age=604800, immutable" if long_cache else "no-cache"
-    return FileResponse(target, headers={"Cache-Control": cache})
+    return FileResponse(target, headers={"Cache-Control": cache, **_SEC_HEADERS})
 
 
 def _json(data, status=200):
     return Response(json.dumps(data, default=str), status_code=status,
-                    media_type="application/json")
+                    media_type="application/json", headers=_SEC_HEADERS)
 
 
 def _err(msg, status):
