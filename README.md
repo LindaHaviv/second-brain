@@ -144,6 +144,14 @@ cd oracle/agent && ../../.venv/bin/python demo_research.py
 The agent searches your content, answers grounded in it (citing your videos), and records
 each research run to `agent_memory`.
 
+The agent needs an engine — I run Claude here. But the brain underneath doesn't care what you
+point at it: search needs no LLM at all (the embeddings live in the database), and everything
+that does — the wiki, memory, the classifiers — runs on Claude, OpenAI, or a fully-local model
+via Ollama, one line of config (`LLM_PROVIDER`). The one Claude-first piece is this research
+agent (its tool loop uses Anthropic's server-side web search) — but the same "research my
+brain" move runs inside ChatGPT too, over MCP, where whatever model you're chatting with
+executes the playbooks. The engine is swappable. Your brain stays put.
+
 ## Step 4 — Beyond the quickstart: make it a real second brain
 
 Once the basics work, this scales into a real second brain — the full path is in
@@ -313,10 +321,16 @@ that catch silent quality regressions — is in
 - **Web UI** — a read-only view of the brain: an Obsidian-style **knowledge graph**, semantic
   **search**, the **wiki** reader, a **memory** view (the four memory kinds + how they work), an
   **overview** dashboard, and an **agents** registry that auto-lists everything you've built on
-  top. Served by the same hosted app, token-gated and off by default; it fills from *your* content
-  (the shots below are generic sample data). ([docs/WEB_UI.md](docs/WEB_UI.md))
+  top. Served by the same hosted app, token-gated and off by default ([docs/WEB_UI.md](docs/WEB_UI.md)).
+  **Your install starts empty and fills as you load your content:**
 
-  ![The Second Brain web UI — the knowledge graph (sample data)](docs/images/web-ui-graph.png)
+  *Day one — a fresh install:*
+
+  ![The web UI's empty first-run state](docs/images/web-ui-empty.png)
+
+  *…and once your content is in (a populated brain, generic sample data shown):*
+
+  ![The Second Brain web UI — the knowledge graph](docs/images/web-ui-graph.png)
 - **Cloud** — lift to Oracle Autonomous AI Database ([docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md))
 - **Maintenance** — `lint_wiki.py` (review candidates) + `review.py` (leaked-secret scan)
 
@@ -402,7 +416,8 @@ their own family's work too kindly.
 
 ## Notes
 
-- **LLM-agnostic** — Claude here, but the agent talks to any LLM; the database is the constant.
+- **LLM-agnostic where it counts** — the pipeline swaps engines with one line of config
+  (`LLM_PROVIDER`: Claude, OpenAI, or local Ollama; see Step 3); the database is the constant.
 - **Local-first, cloud-optional** — runs entirely on your machine; your data stays put — and the
   cloud copy script ships **only the content scope** by default.
 - Oracle AI Database Free in Docker is the same engine as the cloud — features used here

@@ -5,7 +5,13 @@ MCP server (`oracle/agent/webui.py` + `web/`). Generic and data-driven: the publ
 ships with no data and fills from whatever a person loads; a private deployment shows your
 data behind your auth. Nothing personal is baked into the code.
 
-> The screenshots below use **generic sample data** — your deployment shows your own content.
+Your install **starts empty** and fills as you load content — nothing is baked in.
+
+**Day one — a fresh install:**
+
+![Web UI — empty first-run state](images/web-ui-empty.png)
+
+> The populated screenshots below use **generic sample data** — your deployment shows your own content.
 
 **The knowledge graph** — topics your brain synthesized (violet) + the content they cite, with
 semantic edges you grow on double-click:
