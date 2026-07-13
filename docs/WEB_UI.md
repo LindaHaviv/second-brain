@@ -5,6 +5,18 @@ MCP server (`oracle/agent/webui.py` + `web/`). Generic and data-driven: the publ
 ships with no data and fills from whatever a person loads; a private deployment shows your
 data behind your auth. Nothing personal is baked into the code.
 
+> The screenshots below use **generic sample data** — your deployment shows your own content.
+
+**The knowledge graph** — topics your brain synthesized (violet) + the content they cite, with
+semantic edges you grow on double-click:
+
+![Web UI — knowledge graph](images/web-ui-graph.png)
+
+**The memory view** — the record→recall→consolidate lifecycle, the four memory kinds, and the
+"one database, two shapes" idea, above your live memory:
+
+![Web UI — memory view](images/web-ui-memory.png)
+
 ## What it shows
 
 | Tab | What it is |

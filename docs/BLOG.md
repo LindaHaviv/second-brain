@@ -664,9 +664,10 @@ memory, grounding, privacy scope) are already the platform's job. And each one m
 richer for the rest.
 
 Agents aren't the only thing you can build on it, either. **The brain is an API away from powering
-applications.** The MCP server already speaks HTTP, so a thin REST layer over the same functions
-serves a **content dashboard** (your wiki as a link graph, memory as a live stream, loop health at
-a glance) or any app you dream up. Or skip the middleware entirely: **Oracle REST Data Services
+applications.** In fact one already ships: a read-only **web UI** on the same hosted app — your
+wiki as a link graph, a memory view, an overview dashboard, and a registry of everything you've
+built — token-gated and off by default ([docs/WEB_UI.md](WEB_UI.md)). Beyond that, a thin REST
+layer over the same functions serves any app you dream up. Or skip the middleware entirely: **Oracle REST Data Services
 (ORDS)** can REST-enable your tables, and your **Duality views**, directly in Autonomous AI
 Database. `wiki_page_dv` becomes a JSON endpoint with no application server at all. One brain;
 agents, chats, and apps all drinking from it.

@@ -310,9 +310,13 @@ that catch silent quality regressions — is in
   the *client* model executes with the read tools, so your agents run on whatever AI you're
   chatting with — swap the client, keep the agents. Scheduled agents stay cron jobs; see
   ["Exposing agents over MCP"](docs/HOSTED_MCP.md#exposing-agents-over-mcp-the-playbook-pattern).
-- **Web UI** — a read-only view of the brain (knowledge graph, wiki reader, memory, feed,
-  pipeline status) served by the same hosted app, token-gated and off by default
-  ([docs/WEB_UI.md](docs/WEB_UI.md))
+- **Web UI** — a read-only view of the brain: an Obsidian-style **knowledge graph**, semantic
+  **search**, the **wiki** reader, a **memory** view (the four memory kinds + how they work), an
+  **overview** dashboard, and an **agents** registry that auto-lists everything you've built on
+  top. Served by the same hosted app, token-gated and off by default; it fills from *your* content
+  (the shots below are generic sample data). ([docs/WEB_UI.md](docs/WEB_UI.md))
+
+  ![The Second Brain web UI — the knowledge graph (sample data)](docs/images/web-ui-graph.png)
 - **Cloud** — lift to Oracle Autonomous AI Database ([docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md))
 - **Maintenance** — `lint_wiki.py` (review candidates) + `review.py` (leaked-secret scan)
 
