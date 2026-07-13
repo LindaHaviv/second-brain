@@ -45,8 +45,8 @@ MCP server. Everything below is what a maintainer would tell you on day one.
    The golden sets in `tests/*.json` work on the sample data; encourage your user to
    grow their own once real content is loaded.
 5. **Every loop earns its keep.** A new source, agent, or scheduled job ships with an
-   eval that proves it works or a report your user will actually read (see README →
-   "Loop engineering"). Don't add silent automation.
+   eval that proves it works or a report your user will actually read (see
+   `docs/LOOP_ENGINEERING.md`). Don't add silent automation.
 6. **No self-modification patterns.** Agents here never rewrite their own prompts or
    code at runtime; scheduling stays deterministic (`scripts/sync.py` + cron/launchd).
    Keep that property — it's what makes the system auditable with plain SQL.

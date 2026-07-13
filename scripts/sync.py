@@ -81,7 +81,7 @@ def _tags_look_reset():
 
 def _write_status(results):
     """Append this run's per-step outcomes to exports/sync_status.json (last 30 runs kept),
-    so a weekly report (yours to write — see README's loop-engineering section) can escalate
+    so a weekly report (yours to write — see docs/LOOP_ENGINEERING.md) can escalate
     a step that fails or skips REPEATEDLY into a headline instead of a log line."""
     import datetime
     import json

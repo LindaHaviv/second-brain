@@ -160,6 +160,17 @@ Once the basics work, this scales into a real second brain — the full path is 
 
 ![The same question answered in Claude and in ChatGPT by the same Second Brain connector — same brain, any chat](docs/images/mcp-search.png)
 
+## Step 5 — Take it to the cloud (optional)
+
+Everything above runs free on your laptop. The same code runs on an **Always Free Autonomous AI
+Database** so the brain is always-on, backed up, and reachable from anywhere:
+
+1. **Move the database** — wallet + load the same ONNX model + one copy script (ships
+   content-scope only by default): **[docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md)**.
+2. **Host the MCP server** — one small container (the guide deploys to Fly.io) with OAuth + an
+   email allowlist, so claude.ai, ChatGPT, and your phone can reach it:
+   **[docs/HOSTED_MCP.md](docs/HOSTED_MCP.md)**.
+
 ## How it all connects
 
 The data flow, in one breath: **loaders** normalize any source into `posts` (embeddings are
@@ -230,122 +241,40 @@ verify.** When a rule matters, don't leave it at tier 1 — push it down a tier.
 
 ## Loop engineering: keeping the loops honest
 
-There's a name for this discipline now — [**loop engineering**](https://addyosmani.com/blog/loop-engineering/)
-(Addy Osmani's term; Boris Cherny: "my job is writing loops"). The essays are about coding
-agents; this repo applies the same idea to a knowledge system: you don't maintain the brain,
-you design the loops that maintain it — **and you keep the loops accountable**:
-
-- **Every loop earns its keep.** A source, agent, or scheduled job ships with an eval proving
-  it works or a report you actually read — otherwise it's a removal candidate, not furniture.
-- **Loops report their spend.** Every LLM call lands in a local ledger tagged by loop
-  (`exports/loop_ledger.jsonl`, written by `llm.py`; `LOOP_LABEL` names the loop, and the sync
-  tags each step automatically). "Is this loop worth it?" gets a denominator.
-- **Failures escalate instead of whispering.** The sync writes per-step outcomes to
-  `exports/sync_status.json` locally AND as a **heartbeat row in the database**
-  (`sync_runs`, via `oracle/agent/health.py`, as the sync's last act); anything failing
-  or skipping repeatedly should headline your weekly review, not hide in a log. (A
-  missing API token once silently skipped a source here for weeks — this exists so that
-  can't happen quietly again.)
-- **Downtime is visible from anywhere.** The machine that runs your sync will sometimes
-  be off or asleep — and a system that can't say so just looks quietly stale. Because the
-  heartbeat lives in the *database*, the hosted MCP's `source_status` panel can tell you
-  from your phone: `LOCAL PIPELINE: DOWN — last sync run 49h ago` (machine-local
-  capabilities unavailable until it wakes; hosted search/wiki still fine — the panel
-  itself is proof). The rule underneath: measure **time since last SUCCESS**, never time
-  since last attempt, and store that proof somewhere that outlives the machine that
-  produced it.
-- **Make the alarm push, not pull (optional watchdog).** A panel only helps if you look
-  at it. The upgrade is a tiny scheduled check — any scheduler you already have (your AI
-  app's scheduled tasks, cron/launchd, or a job on the host that runs your MCP server) —
-  that calls `source_status` and notifies you on your messaging platform of choice ONLY
-  when the pipeline is degraded or down. Two design rules: **silence means healthy**
-  (a watchdog that messages daily gets muted, then ignored), and know your watchdog's
-  blind spot — a checker running on the same machine as the sync can only alert
-  *after* that machine wakes ("this broke while you were away"); a checker on always-on
-  infrastructure catches it in real time. Start with the free same-machine version;
-  graduate to the hosted one if the gap ever bites.
-- **Every loop has a row in a registry.** One file lists every agent and scheduled job:
-  its trigger, what it reads, what it writes, whether it touches an LLM or the network —
-  plus the standing rules they all obey (scheduled jobs use APIs and local files only,
-  never a logged-in browser; report-only by default — loops *propose*, the human
-  applies). The registry is what you audit when something feels off, and the bar a new
-  loop must clear before it exists: no row, no run.
-- **Check the docs against reality.** Registries and system docs drift the moment
-  someone adds a loop in a hurry and forgets to write it down. A mechanical drift check
-  — registry vs. the agents directory, documented schedules vs. installed jobs,
-  documented sources vs. what the sync actually configures — flags mismatches in a
-  report you already read. Docs you don't verify are just wishes with formatting.
-- **Rehearse the restore.** A backup you've never restored is a hypothesis. Periodically
-  rebuild from scratch — fresh clone, schema, re-ingest from exports, point at the
-  database — and let the drill tell you what monitoring can't: the credential that
-  silently expired, the archive that exists on exactly one machine. The drill here found
-  both, including the expired token behind the README's favorite cautionary tale.
-- **Match the boundary to what the platform can enforce.** Three tiers, strongest first:
-  *structural* where the platform offers it (a service account that can only see the
-  folders you explicitly share — the rest of the drive is invisible by construction);
-  *code-enforced* where it doesn't (a whole-mailbox read grant that your loader
-  restricts to one opt-in label by convention); *human-present-only* where the data is
-  personal (a break-glass CLI with credentials in the OS keychain — never scheduled,
-  never hosted, every use consented). Standing automation belongs only behind the first
-  two fences; personal scopes get hand tools, not infrastructure.
-- **Forgetting is a designed stage.** A memory store that only grows drifts toward noise.
-  `scripts/memory_review.py` is the report-only audit: stale time-bound facts, near-duplicate
-  pairs, volume growth. Review it, retire by hand — deleting memories is the one loop that
-  should never run unattended first.
-
-The privacy filter is part of the loop, not an afterthought: consolidation and the wiki only read
-`visibility = 'content'`, so a private item can never be laundered into a "learned" fact. Accuracy
-is guarded the same way: a verification pass fact-checks every research answer against the run's
-own evidence before it is returned or remembered, and consolidation refuses to promote unverified
-claims into durable facts — so the loop compounds knowledge, not mistakes.
-
-And because quality can regress silently, the repo ships **evals** alongside the tests (plain
-Python + JSON golden sets, no framework): `tests/eval_retrieval.py` (golden queries that must keep
-ranking — free, in-database), `eval_classifier.py` (privacy-classifier drift vs your reviewed
-labels), `eval_verify.py` (a fabrication probe for the accuracy gate), `eval_grounding.py`
-(do answers cite the sources they should?), and `eval_oamp.py` (seven probes for the memory
-package — extraction smoke, privacy leak, isolation, enforcement — run on every package
-upgrade). Tests prove the code runs; evals prove the system still finds and says the right
-things.
-
-## Step 5 — Take it to the cloud (optional)
-
-Everything above runs free on your laptop. The same code runs on an **Always Free Autonomous AI
-Database** so the brain is always-on, backed up, and reachable from anywhere:
-
-1. **Move the database** — wallet + load the same ONNX model + one copy script (ships
-   content-scope only by default): **[docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md)**.
-2. **Host the MCP server** — one small container (the guide deploys to Fly.io) with OAuth + an
-   email allowlist, so claude.ai, ChatGPT, and your phone can reach it:
-   **[docs/HOSTED_MCP.md](docs/HOSTED_MCP.md)**.
+Everything in "how it runs day to day" is a **loop** — a scheduled job that works without
+you watching: the sync pulls new content, the wiki recompiles, memory consolidates
+overnight. That's the value *and* the risk, because automation fails quietly: a token
+expires and a source just stops loading; a job breaks and nothing announces it; an LLM
+step spends money nobody counts. (Each of those happened here.) So every loop is built
+to stay accountable: it ships with an eval or a report you actually read, its LLM calls
+land in a spend ledger, its failures escalate through a database heartbeat you can check
+from your phone, and it has a registry row before it's allowed to exist — no row, no run.
+The full playbook — the watchdog recipe, restore drills, boundary tiers, and the evals
+that catch silent quality regressions — is in
+**[docs/LOOP_ENGINEERING.md](docs/LOOP_ENGINEERING.md)**.
 
 ## Repo layout
 
-```
-oracle/            the database: docker-compose, schema (Duality + 4 memory types + wiki),
-                   setup SQL; the agents (db / content / memory / oamp_memory / research_agent /
-                   idea_agent / wiki) + the MCP server (mcp_server stdio, mcp_http hosted)
-scripts/           loaders (youtube, notion, instagram, instagram_export, chatgpt, claude_chats,
-                   linkedin, linkedin_harvest, obsidian, gdrive) + pipeline (classify_private, sync, consolidate,
-                   oamp_sweep) + ops (apply_schema, load_model_cloud, copy_local_to_cloud,
-                   lint_wiki, review)
-tests/             regression suite (test_brain.py) + quality evals (eval_retrieval /
-                   eval_classifier / eval_verify / eval_grounding / eval_oamp, with golden sets)
-deploy/            hosted-MCP container (Dockerfile; fly.toml lives at repo root)
-sources/           canonical content as Markdown + frontmatter (source of truth)
-docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE ·
-                   CLOUD_MIGRATION · HOSTED_MCP
-```
+| Folder | What lives there |
+|---|---|
+| `oracle/` | The database: docker-compose, schema (Duality + 4 memory types + wiki), setup SQL |
+| `oracle/agent/` | The agents (db, content, memory, research_agent, idea_agent, wiki…) + the MCP server (stdio and hosted) |
+| `scripts/` | Source loaders (YouTube, Notion, Instagram, LinkedIn, ChatGPT/Claude, Obsidian, Drive…) + the pipeline (`sync`, `classify_private`, `consolidate`) + ops tools |
+| `tests/` | Regression suite (`test_brain.py`) + quality evals with golden sets |
+| `web/` | Read-only web UI (graph, wiki, memory views) served by the hosted MCP |
+| `deploy/` | Hosted-MCP container (Dockerfile; `fly.toml` lives at repo root) |
+| `sources/` | Your canonical content as Markdown + frontmatter — the source of truth |
+| `docs/` | TUTORIAL (start here) · ARCHITECTURE · EXPORT_GUIDE · CLOUD_MIGRATION · HOSTED_MCP · WEB_UI · LOOP_ENGINEERING · BLOG |
 
 `sources/` is the canonical layer; the database is a derived, rebuildable view of it.
 
 ## What's included
 
-- [x] Collect → Store → Search → Converse — self-improving research agent over your content
-- [x] **Many sources, one model** — YouTube (+ transcripts), Notion, **Instagram** (API *or*
+- Collect → Store → Search → Converse — self-improving research agent over your content
+- **Many sources, one model** — YouTube (+ transcripts), Notion, **Instagram** (API *or*
   export — captions + reel transcripts), **LinkedIn**, **ChatGPT/Claude** exports — all into one
   `posts` table (`scripts/`)
-- [x] **Four agent-memory types, two ways** — episodic, semantic, conversational,
+- **Four agent-memory types, two ways** — episodic, semantic, conversational,
   procedural. The default is Oracle's official
   [AI Agent Memory package](https://docs.oracle.com/en/database/oracle/agent-memory/)
   (`oracleagentmemory` — maintained + benchmarked, auto-extraction, hybrid retrieval, the
@@ -357,18 +286,18 @@ docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE
   this build's extensions of the core on both (+ a
   [LangGraph example](examples/langgraph_oamp.py), + `tests/eval_oamp.py` — 7 probes to run
   on every package upgrade)
-- [x] **Knowledge wiki layer** — LLM-compiled, self-improving topic pages (`wiki.py`) + a Duality
+- **Knowledge wiki layer** — LLM-compiled, self-improving topic pages (`wiki.py`) + a Duality
   view; the strongest relational + JSON + vector showcase
-- [x] **Hybrid search** — vector + keyword (Reciprocal Rank Fusion)
-- [x] **Content series (your own)** — group posts into a named `series` (a tutorial series, an
+- **Hybrid search** — vector + keyword (Reciprocal Rank Fusion)
+- **Content series (your own)** — group posts into a named `series` (a tutorial series, an
   interview show, book notes, a weekly update…) via a Notion `Series` label or `classify_series.py`;
   surfaced by a `by_series` tool + flagged in search — **define whatever series fit your content**
-- [x] **Private by scope** — a `visibility` flag keeps financials/private items out of search **and**
+- **Private by scope** — a `visibility` flag keeps financials/private items out of search **and**
   the self-improving loop; `classify_private.py` tags private + off-topic items on ingest
-- [x] **Self-improving sync** — `sync.py` (pull → wiki refresh → consolidate) on a daily schedule,
+- **Self-improving sync** — `sync.py` (pull → wiki refresh → consolidate) on a daily schedule,
   so the derived layers never go stale
-- [x] **Idea & repurposing agent** — grounded next-content suggestions (`idea_agent.py`)
-- [x] **MCP server, everywhere** — local (stdio) **+ hosted** (HTTP + WorkOS OAuth + allowlist),
+- **Idea & repurposing agent** — grounded next-content suggestions (`idea_agent.py`)
+- **MCP server, everywhere** — local (stdio) **+ hosted** (HTTP + WorkOS OAuth + allowlist),
   reachable from **claude.ai, ChatGPT, and your phone**; read tools annotated read-only, the write
   tool gated (`MCP_READONLY`) — see [docs/HOSTED_MCP.md](docs/HOSTED_MCP.md).
   (This build uses the **custom, portable, Python** route — full control, works with the local
@@ -376,25 +305,36 @@ docs/              TUTORIAL (start here) · BLOG · ARCHITECTURE · EXPORT_GUIDE
   [Autonomous AI Database MCP Server](https://www.oracle.com/autonomous-database/mcp-server/)
   — zero-ops + DB-identity governance, built into Autonomous AI Database — is the official
   managed alternative when your brain lives there.)
-- [x] **Agents over MCP: the playbook pattern** — conversational agents ship as **MCP prompts**
+- **Agents over MCP: the playbook pattern** — conversational agents ship as **MCP prompts**
   (`research_brief`, `interview_prep`, `caption_pack`, `weekly_review`): parameterized playbooks
   the *client* model executes with the read tools, so your agents run on whatever AI you're
   chatting with — swap the client, keep the agents. Scheduled agents stay cron jobs; see
   ["Exposing agents over MCP"](docs/HOSTED_MCP.md#exposing-agents-over-mcp-the-playbook-pattern).
-- [x] **Cloud** — lift to Oracle Autonomous AI Database ([docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md))
-- [x] **Maintenance** — `lint_wiki.py` (review candidates) + `review.py` (leaked-secret scan)
-- [ ] Roadmap — live Instagram performance metrics via API sync · a lightweight UI
+- **Web UI** — a read-only view of the brain (knowledge graph, wiki reader, memory, feed,
+  pipeline status) served by the same hosted app, token-gated and off by default
+  ([docs/WEB_UI.md](docs/WEB_UI.md))
+- **Cloud** — lift to Oracle Autonomous AI Database ([docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md))
+- **Maintenance** — `lint_wiki.py` (review candidates) + `review.py` (leaked-secret scan)
+
+**Roadmap:** live Instagram performance metrics via API sync.
 
 ## Make it yours (safely)
 
-Forking this into *your* second brain is the point — these five steps keep yours private while
+Forking this into *your* second brain is the point — these six steps keep yours private while
 you do:
 
 1. **Change every demo password** (`oracle/.env`) — the defaults are public in this repo.
+   For real credentials, go one better: move them into the **OS keychain**, so `.env` holds
+   `keychain:<item>` pointers instead of plaintext values —
+   `./.venv/bin/python scripts/migrate_env_to_keychain.py --apply` does it safely
+   (backs up, verifies each secret reads back, never prints a value). See
+   [SECURITY.md](SECURITY.md#secrets-in-the-os-keychain-recommended).
 2. **Decide your private categories first**, then ingest — adapt `classify_private.py`'s rubric to
    *your* private material (don't publish what those categories are), and run it after every import.
 3. **Your own auth, before hosting** — your own WorkOS allowlist (`ALLOWED_SUBS`) or bearer token.
-   The server refuses to start unconfigured, so there's no accidental open door.
+   The server refuses to start unconfigured, so there's no accidental open door. (The web UI has
+   its own gate — off by default, and enabling it without a token also refuses to boot:
+   [docs/WEB_UI.md](docs/WEB_UI.md).)
 4. **Never commit** `.env`, the cloud wallet, `exports/`, or `sources/` — already gitignored; keep
    it that way, and run `scripts/review.py` before sharing anything derived from your data.
 5. **Customize the personal bits** — your sources, your `series` labels, your wiki topics. The code
@@ -405,11 +345,12 @@ you do:
 
 ## Build yours with your AI (three prompts)
 
-Don't copy this second brain — my sources aren't your sources. Hand this repo to your AI as the
-map, and use these prompts to make it build *yours*. Use them in order. Your coding agent gets
-its own briefing: **[AGENTS.md](AGENTS.md)** tells Claude Code / Cursor / any agent the house
-rules — the privacy constraints it must preserve, and which tests and evals gate every change —
-so "open your coding tool and point it at this repo" is a first-class path, not a hack.
+This repo is the map, not the territory — my sources aren't your sources, and my questions
+aren't your questions. To build *your* second brain, hand this repo to your AI as the
+reference and use these three prompts, in order, to make it build yours. Your coding agent
+gets its own briefing: **[AGENTS.md](AGENTS.md)** tells Claude Code / Cursor / any agent the
+house rules — the privacy constraints it must preserve, and which tests and evals gate every
+change — so "open your coding tool and point it at this repo" is a first-class path, not a hack.
 
 **1. The Architect Prompt** — plan first, no code:
 
