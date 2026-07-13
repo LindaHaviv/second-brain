@@ -136,9 +136,11 @@ model, so the pipeline is the same.
 ## Step 3 — Converse: the research agent (needs an LLM)
 
 ```bash
-# oracle/.env:  ANTHROPIC_API_KEY=sk-ant-...   (default)
-#   — or LLM_PROVIDER=ollama for a free local model, LLM_PROVIDER=openai for OpenAI
+# oracle/.env:  ANTHROPIC_API_KEY=sk-ant-...   (this demo agent is the Claude build)
 cd oracle/agent && ../../.venv/bin/python demo_research.py
+# No Claude key? You lose nothing: the same "research my brain" move runs in any MCP
+# client (Step 4), and every other LLM step swaps engines freely — LLM_PROVIDER=openai
+# or LLM_PROVIDER=ollama (free + local) in oracle/.env.
 ```
 
 The agent searches your content, answers grounded in it (citing your videos), and records
