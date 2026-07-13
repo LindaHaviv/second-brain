@@ -64,6 +64,11 @@ the loops that maintain it, and then you hold those loops to the rules below:
   database — and let the drill tell you what monitoring can't: the credential that
   silently expired, the archive that exists on exactly one machine. The drill here found
   both, including the expired token behind the README's favorite cautionary tale.
+- **New agents climb a permission ladder: Read → Remember → Propose → Act.** An agent starts
+  read-only. It earns the right to *remember* (write memory) once you trust its results, and to
+  *propose* changes (report-only output you apply by hand) before it may ever apply them. The
+  top rung stays narrow: anything touching money, publishing, deletion, or another person is
+  human-approved every time — some agents should simply never reach it.
 - **Match the boundary to what the platform can enforce.** Three tiers, strongest first:
   *structural* where the platform offers it (a service account that can only see the
   folders you explicitly share — the rest of the drive is invisible by construction);

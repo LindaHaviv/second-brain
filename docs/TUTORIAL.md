@@ -462,7 +462,8 @@ content scope** by default, so private data stays local. See
   shape for your own: a meeting-prep briefer, a weekly digest, whatever your work needs. Each agent's
   runs enrich the shared memory for the rest.
 
-  Every new agent follows the same three-beat pattern — **recall → act → record** — and the four
+  Every new agent follows the same pattern — **recall → act → verify → record** (verification
+  fact-checks the answer against the run's own evidence before it's remembered) — and the four
   memory types each have one job in it:
 
   | Type | Table (default backend) | Your agent should… |

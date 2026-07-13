@@ -147,10 +147,11 @@ each research run to `agent_memory`.
 The agent needs an engine — I run Claude here. But the brain underneath doesn't care what you
 point at it: search needs no LLM at all (the embeddings live in the database), and everything
 that does — the wiki, memory, the classifiers — runs on Claude, OpenAI, or a fully-local model
-via Ollama, one line of config (`LLM_PROVIDER`). The one Claude-first piece is this research
-agent (its tool loop uses Anthropic's server-side web search) — but the same "research my
-brain" move runs inside ChatGPT too, over MCP, where whatever model you're chatting with
-executes the playbooks. The engine is swappable. Your brain stays put.
+via Ollama, one line of config (`LLM_PROVIDER`). Agents are apps built on the brain, and each
+app picks its own engine: this research agent I built Claude-first because I wanted its
+server-side web search — build yours on whatever you like. The same "research my brain" move
+also runs inside ChatGPT, over MCP, where whatever model you're chatting with executes the
+playbooks. The engine is swappable. Your brain stays put.
 
 ## Step 4 — Beyond the quickstart: make it a real second brain
 
@@ -217,8 +218,9 @@ tool stores it on the spot, no export needed.
   default backend the package extracts durable memories from every exchange as it happens, and
   nightly consolidation distills raw agent runs (`agent_memory`) into global facts
   (`semantic_memory`) — recall reads both. Nobody asks for any of it; the daily sync keeps it fed.
-- **The agents compound experience.** Every run follows **recall → act → record**: an agent
-  recalls consolidated facts before acting, does the work, and records the outcome. Tonight's
+- **The agents compound experience.** Every run follows **recall → act → verify → record**: an
+  agent recalls consolidated facts before acting, does the work, fact-checks its answer against
+  the run's own evidence, and records the outcome. Tonight's
   runs become tomorrow's recalled facts — the research agent literally stops re-deriving things
   it worked out last month. The more you use it, the better it answers.
 - **Nothing self-modifies.** No agent rewrites its own code or prompts, and no model decides what
