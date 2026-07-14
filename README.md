@@ -403,27 +403,22 @@ change — so "open your coding tool and point it at this repo" is a first-class
 > + `OBSIDIAN_VAULT` handles any such folder, and a `visibility:` frontmatter key is the
 > privacy switch.)
 
-**3. The Verifier Prompt** — the next step after that first answer. Prompt 2 ended with
-your brain answering a real question. Before you trust it — and before you ever let the
-brain draft something you'd publish — learn the checking move, on the answer you just got:
+**3. The Growth Prompt** — turning one source into a brain. Prompt 2 ended with one
+source answering one real question. The next move isn't adding sources at random — it's
+letting your own questions tell you what's missing:
 
-> My second brain just answered a real question for me. Here's the question and the
-> answer: [paste both]. You are my verifier, not my writer — be harder on this answer
-> than you'd be on your own work. Using my brain's search and fetch tools:
-> 1. List every factual claim in the answer — numbers, dates, titles, quotes, every
->    "you covered this in…".
-> 2. Check each claim against my brain: search for it, fetch the source, and mark it
->    VERIFIED (cite which item), UNVERIFIED (nothing in my content supports it), or
->    CONTRADICTED (my content says otherwise). Contradicted = automatic fail.
-> 3. Don't rewrite anything. End with: trust it or double-check first — and one more
->    thing: whatever you couldn't verify that I'd EXPECT my brain to know, name it.
->    That gap is my next source to add.
->
-> Keep this habit forever: anything your brain drafts — a caption, a post, an article —
-> gets this same pass before it ships under your name.
+> My brain has one source so far. Here are the 5 real questions from my interview:
+> [paste them]. Ask each one against my brain (search + fetch, cite what you find).
+> For each, tell me honestly: answered WELL, answered THINLY (the brain has fragments
+> but not the substance), or CAN'T ANSWER. No generous grading — a vague answer counts
+> as thin. Then propose the ONE next source that would fix the most, and we'll build it
+> exactly like the first: one loader, prove it with a real question, then stop.
 
-Tip for the verifier: run it in a *different* AI than the one that wrote the draft — models grade
-their own family's work too kindly.
+Repeat until your 5 questions come back solid — that's when it stopped being a demo and
+became your brain. **For later:** once it starts drafting things you'll publish (captions,
+posts, articles), split the roles — writer in one AI, verifier in another, every claim
+checked against your brain before it ships under your name. Your agents already live by
+that rule (recall → act → verify → record); adopt it for yourself when publishing starts.
 
 ## Notes
 
