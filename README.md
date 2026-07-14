@@ -403,22 +403,31 @@ change — so "open your coding tool and point it at this repo" is a first-class
 > + `OBSIDIAN_VAULT` handles any such folder, and a `visibility:` frontmatter key is the
 > privacy switch.)
 
-**3. The Growth Prompt** — turning one source into a brain. Prompt 2 ended with one
-source answering one real question. The next move isn't adding sources at random — it's
-letting your own questions tell you what's missing:
+**3. The Build-It-Out Prompt** — from one source to a real second brain. Prompt 2 proved
+the pipeline works; this one builds everything that makes it a *brain*. Same rules as the
+quickstart: one checkpoint at a time, proof before moving on:
 
-> My brain has one source so far. Here are the 5 real questions from my interview:
-> [paste them]. Ask each one against my brain (search + fetch, cite what you find).
-> For each, tell me honestly: answered WELL, answered THINLY (the brain has fragments
-> but not the substance), or CAN'T ANSWER. No generous grading — a vague answer counts
-> as thin. Then propose the ONE next source that would fix the most, and we'll build it
-> exactly like the first: one loader, prove it with a real question, then stop.
+> My single-source brain works. Now build it out with me, following docs/TUTORIAL.md
+> (don't improvise your own procedure), ONE checkpoint at a time — show me proof at each
+> before we continue:
+> 1. NEXT SOURCES: re-ask my 5 real questions against the brain; whichever answers come
+>    back thin, add the ONE source that fixes the most (a loader like the first). Prove
+>    it with a real question. Repeat as I say so — never bulk-import everything at once.
+> 2. PRIVACY, before any real volume: set up my private scope and the classifier, then
+>    PROVE it — plant a test item in my private category, show me search can't find it.
+> 3. THE WIKI: compile it, and show me one topic page synthesized from MY content, with
+>    citations that link back to real items.
+> 4. THE DAILY SYNC: schedule it, run it once, and show me the heartbeat/status proof.
+> 5. MCP: connect the brain to the AI I actually use every day, and show me it answering
+>    one of my 5 questions from THERE. That's the finish line: my context, in my AI.
+>
+> Stop at every checkpoint. If a step fails, we fix it before adding anything new.
 
-Repeat until your 5 questions come back solid — that's when it stopped being a demo and
-became your brain. **For later:** once it starts drafting things you'll publish (captions,
-posts, articles), split the roles — writer in one AI, verifier in another, every claim
-checked against your brain before it ships under your name. Your agents already live by
-that rule (recall → act → verify → record); adopt it for yourself when publishing starts.
+When your 5 questions come back solid *inside the AI you use daily*, it stopped being a
+demo and became your brain. **For later:** once it starts drafting things you'll publish,
+split the roles — writer in one AI, verifier in another, claims checked against your brain
+before anything ships under your name (the same recall → act → verify → record rule your
+agents already live by).
 
 ## Notes
 
