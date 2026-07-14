@@ -403,23 +403,24 @@ change — so "open your coding tool and point it at this repo" is a first-class
 > + `OBSIDIAN_VAULT` handles any such folder, and a `visibility:` frontmatter key is the
 > privacy switch.)
 
-**3. The Verifier Prompt** — for every day *after* the build. Prompts 1–2 built the brain;
-this one protects you from its drafts. Once your brain helps you write things — captions,
-posts, scripts, articles — run this before anything ships. Use it in a chat that's
-**connected to your brain** (the MCP tools), so the verifier can check claims against your
-actual sources instead of taking the draft's word for it:
+**3. The Verifier Prompt** — the next step after that first answer. Prompt 2 ended with
+your brain answering a real question. Before you trust it — and before you ever let the
+brain draft something you'd publish — learn the checking move, on the answer you just got:
 
-> You are my verifier, not my writer — you didn't write this draft, so be harder on it
-> than you'd be on your own work. My second brain is connected; use its search and fetch
-> tools. I'll paste a draft plus what I asked for.
-> 1. List every factual claim the draft makes about me or my work — numbers, dates,
->    titles, quotes, and every "as I covered in…".
-> 2. Check each one against my second brain: search for it, fetch the source. Mark it
->    VERIFIED (cite which item), UNVERIFIED (nothing found), or CONTRADICTED (my content
->    says otherwise). Contradicted claims are automatic fails.
-> 3. Then check the draft against what I actually asked for, point by point.
-> 4. Don't rewrite anything — a verifier that rewrites starts defending its own prose.
->    End with a verdict — ship, or fix first — and the single highest-impact fix.
+> My second brain just answered a real question for me. Here's the question and the
+> answer: [paste both]. You are my verifier, not my writer — be harder on this answer
+> than you'd be on your own work. Using my brain's search and fetch tools:
+> 1. List every factual claim in the answer — numbers, dates, titles, quotes, every
+>    "you covered this in…".
+> 2. Check each claim against my brain: search for it, fetch the source, and mark it
+>    VERIFIED (cite which item), UNVERIFIED (nothing in my content supports it), or
+>    CONTRADICTED (my content says otherwise). Contradicted = automatic fail.
+> 3. Don't rewrite anything. End with: trust it or double-check first — and one more
+>    thing: whatever you couldn't verify that I'd EXPECT my brain to know, name it.
+>    That gap is my next source to add.
+>
+> Keep this habit forever: anything your brain drafts — a caption, a post, an article —
+> gets this same pass before it ships under your name.
 
 Tip for the verifier: run it in a *different* AI than the one that wrote the draft — models grade
 their own family's work too kindly.
