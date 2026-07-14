@@ -403,17 +403,23 @@ change — so "open your coding tool and point it at this repo" is a first-class
 > + `OBSIDIAN_VAULT` handles any such folder, and a `visibility:` frontmatter key is the
 > privacy switch.)
 
-**3. The Verifier Prompt** — the quality gate, for anything your brain helps you write:
+**3. The Verifier Prompt** — for every day *after* the build. Prompts 1–2 built the brain;
+this one protects you from its drafts. Once your brain helps you write things — captions,
+posts, scripts, articles — run this before anything ships. Use it in a chat that's
+**connected to your brain** (the MCP tools), so the verifier can check claims against your
+actual sources instead of taking the draft's word for it:
 
-> Act as my verifier, not my writer. I'll paste a draft plus the brief it was written from.
-> 1. Turn the brief into a checklist of requirements.
-> 2. Grade the draft against each item — pass or fail, quoting the line that fails.
-> 3. Mark any claim you can't confirm from the brief as "unverified," and any claim the
->    brief contradicts as "contradicted" — contradicted claims are automatic fails.
-> 4. Don't rewrite anything. End with a verdict — ship or fix first — and the single
->    highest-impact fix.
->
-> You didn't write this draft. Be harder on it than you'd be on your own work.
+> You are my verifier, not my writer — you didn't write this draft, so be harder on it
+> than you'd be on your own work. My second brain is connected; use its search and fetch
+> tools. I'll paste a draft plus what I asked for.
+> 1. List every factual claim the draft makes about me or my work — numbers, dates,
+>    titles, quotes, and every "as I covered in…".
+> 2. Check each one against my second brain: search for it, fetch the source. Mark it
+>    VERIFIED (cite which item), UNVERIFIED (nothing found), or CONTRADICTED (my content
+>    says otherwise). Contradicted claims are automatic fails.
+> 3. Then check the draft against what I actually asked for, point by point.
+> 4. Don't rewrite anything — a verifier that rewrites starts defending its own prose.
+>    End with a verdict — ship, or fix first — and the single highest-impact fix.
 
 Tip for the verifier: run it in a *different* AI than the one that wrote the draft — models grade
 their own family's work too kindly.
