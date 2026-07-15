@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#06070d">
   <title>Second Brain</title>
   <link rel="stylesheet" href="/assets/style.css">
 </head>
@@ -55,7 +56,7 @@
         <h1 class="page">Search by meaning</h1>
         <p class="sub">Semantic + keyword retrieval across everything in the brain.</p>
         <div class="searchbar">
-          <input id="q" type="text" placeholder="what have I said about…" autocomplete="off">
+          <input id="q" type="text" placeholder="what have I said about…" autocomplete="off" aria-label="Search your brain">
           <button class="go" id="q-go">Search</button>
         </div>
         <div id="search-results"></div>
@@ -178,7 +179,7 @@
       <h2>Unlock your brain</h2>
       <p>This memory view is private. Paste your access token to continue. It stays in this browser.</p>
       <div class="tokinput">
-        <input id="tok" type="password" placeholder="access token" autocomplete="off">
+        <input id="tok" type="password" placeholder="access token" autocomplete="off" aria-label="Access token">
         <button class="go" id="tok-go">Enter</button>
       </div>
       <div class="err" id="tok-err"></div>

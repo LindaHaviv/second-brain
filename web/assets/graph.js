@@ -1,6 +1,7 @@
-/* The graph view: a force-directed map of the brain. Topic hubs (violet) + the content
-   items they cite (amber). Citation edges are solid-faint; semantic edges (added on demand
-   via /api/related) are dashed. Renders with the vendored force-graph UMD global. */
+/* The graph view: a holographic star-map of the brain. Topic hubs glow amber-gold; the
+   content items they cite are terracotta embers. Citation edges are faint holo-cyan;
+   semantic edges (added on demand via /api/related) are dashed. A nebula + starfield is
+   painted behind it. Renders with the vendored force-graph UMD global. */
 (function () {
   "use strict";
 
@@ -12,12 +13,15 @@
       C_BG = v('--bg', '#16161c'),
       C_TEXT = v('--text', '#d7d7e0');
 
-  // stable per-platform hue so the same source is always the same tint (no hardcoded list)
+  // content embers: warm hues only (terracotta -> amber, 14-40deg) with a stable per-platform
+  // variation in hue + lightness, so sources read as stars at different distances — never the
+  // cool pastels the brand rules reject.
   function platformColor(p) {
     if (!p) return C_ITEM;
     var h = 0, s = String(p);
-    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
-    return 'hsl(' + h + ',55%,66%)';
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 1000;
+    var hue = 14 + (h % 26), lig = 54 + (Math.floor(h / 26) % 22);
+    return 'hsl(' + hue + ',72%,' + lig + '%)';
   }
 
   var Graph = null, DATA = { nodes: [], links: [] }, IDS = {}, DEG = {};
@@ -68,10 +72,12 @@
     ctx.globalAlpha = dim ? 0.16 : 1;
     ctx.beginPath();
     ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
-    ctx.fillStyle = nodeColor(node);
+    var col = nodeColor(node);
+    ctx.fillStyle = col;
     ctx.fill();
-    if (node.type === 'topic' && !dim) {
-      ctx.shadowColor = C_TOPIC; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
+    if (!dim) {   // every node glows like a star; topic hubs burn brighter
+      ctx.shadowColor = col; ctx.shadowBlur = node.type === 'topic' ? 20 : 9; ctx.fill();
+      ctx.shadowBlur = 0;
     }
     // labels: topics always (when zoomed enough); items only when zoomed in close
     var show = node.type === 'topic' ? scale > 0.7 : scale > 2.4;
@@ -86,18 +92,46 @@
     ctx.globalAlpha = 1;
   }
 
-  function linkColor(l) {
+  function linkColor(l) {   // holo-cyan hyperspace lanes
     if (HOVER) {   // on hover, only the hovered node's edges stay lit
       var s = l.source.id || l.source, t = l.target.id || l.target;
-      if (s !== HOVER.id && t !== HOVER.id) return 'rgba(120,120,140,.05)';
-      return l.type === 'semantic' ? 'rgba(167,139,250,.7)' : 'rgba(140,120,230,.5)';
+      if (s !== HOVER.id && t !== HOVER.id) return 'rgba(120,140,170,.05)';
+      return l.type === 'semantic' ? 'rgba(87,214,255,.8)' : 'rgba(87,214,255,.45)';
     }
-    return l.type === 'semantic' ? 'rgba(167,139,250,.45)' : 'rgba(109,91,208,.28)';
+    return l.type === 'semantic' ? 'rgba(87,214,255,.55)' : 'rgba(87,214,255,.16)';
+  }
+
+  // a fixed faint starfield, generated once per canvas size (deterministic — no flicker)
+  var STARS = null;
+  function starfield(w, h) {
+    if (STARS && STARS.w === w && STARS.h === h) return STARS.pts;
+    var pts = [], seed = 20260713;
+    function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+    for (var i = 0; i < 150; i++) pts.push([rnd() * w, rnd() * h, rnd() * 1.0 + 0.3, rnd() * 0.45 + 0.15, rnd() < 0.16]);
+    STARS = { w: w, h: h, pts: pts };
+    return pts;
+  }
+  // paint the deep-space backdrop (nebula glow + stars) in screen space, under the graph
+  function paintSpace(ctx) {
+    var w = Graph.width(), h = Graph.height();
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    var g = ctx.createRadialGradient(w * 0.5, h * 0.34, 0, w * 0.5, h * 0.34, Math.max(w, h) * 0.62);
+    g.addColorStop(0, 'rgba(40,70,110,.20)'); g.addColorStop(1, 'rgba(40,70,110,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    var pts = starfield(w, h);
+    for (var i = 0; i < pts.length; i++) {
+      ctx.globalAlpha = pts[i][3];
+      ctx.fillStyle = pts[i][4] ? '#bcd6ff' : '#ffffff';
+      ctx.beginPath(); ctx.arc(pts[i][0], pts[i][1], pts[i][2], 0, 2 * Math.PI); ctx.fill();
+    }
+    ctx.globalAlpha = 1; ctx.restore();
   }
 
   function init(container, onNode, onExpand) {
     Graph = ForceGraph()(container)
       .backgroundColor(C_BG)
+      .onRenderFramePre(paintSpace)
       .nodeId('id')
       .nodeLabel(function (n) { return n.label + (n.type === 'item' && n.platform ? '  ·  ' + n.platform : ''); })
       .nodeRelSize(1)
