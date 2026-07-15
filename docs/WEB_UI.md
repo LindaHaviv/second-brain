@@ -13,10 +13,10 @@ Your install **starts empty** and fills as you load content — nothing is baked
 
 > The populated screenshots below use **generic sample data** — your deployment shows your own content.
 
-**The knowledge graph** — topics your brain synthesized (violet) + the content they cite, with
-semantic edges you grow on double-click:
+**Home** — the knowledge graph is the canvas; everything else floats over it as instruments
+(search command bar, at-a-glance counts, latest items, memory pulse):
 
-![Web UI — knowledge graph](images/web-ui-graph.png)
+![Web UI — Home dashboard](images/web-ui-graph.png)
 
 **The memory view** — the record→recall→consolidate lifecycle, the four memory kinds, and the
 "one database, two shapes" idea, above your live memory:
@@ -25,15 +25,19 @@ semantic edges you grow on double-click:
 
 ## What it shows
 
-| Tab | What it is |
-|-----|------------|
-| **Graph** | Obsidian-style force graph: wiki topics + the content they cite, with semantic edges you grow on double-click. A **Focus** toggle shows one node's neighborhood. |
-| **Search** | Semantic + keyword retrieval, with an "explain how it was found" toggle. |
-| **Wiki** | The self-compiled topic pages, with citations. |
-| **Memory** | The agent's four memory kinds + an educational header: the record→recall→consolidate **lifecycle**, a **four-kinds** panel, and a **"one database, two shapes"** visual. |
+Three views: **Home** (the dashboard), **Memory**, and **Agents**. Search, feed, and overview
+aren't separate places — they're instruments on Home.
+
+| Where | What it is |
+|-------|------------|
+| **Home — graph** | Obsidian-style force graph as the canvas: wiki topics + the content they cite, semantic edges you grow on double-click. Click a topic hub to read its wiki page (with citations) in the side panel; click an item to read it. A **Focus** toggle shows one node's neighborhood. |
+| **Home — search bar** | Semantic + keyword retrieval as a command bar over the graph (**⌘K**). Results drop down in place; picking one opens the reading panel and flies the graph to that node. Hovering a result lights its node. |
+| **Home — At a glance** | Items / topics / memories / sources counts. **details →** opens the full overview panel: by-source and by-type bars, series, coverage, and source health. |
+| **Home — Latest** | The five newest items; hovering lights their nodes in the graph, **all →** opens the full feed panel. |
+| **Home — Agent memory** | The four memory counts + a link into the Memory page. |
+| **Home — Hide instruments** | Collapses the search bar + widgets to a pure star-map (nice on camera). |
+| **Memory** | The agent's four memory kinds + an educational header: the record→recall→consolidate **lifecycle**, a **four-kinds** panel, and a **"one database, two shapes"** visual, above the live memory data. |
 | **Agents** | A registry of **everything built on the brain** — agents, playbooks, tools, jobs, sources, integrations, skills, schedules — auto-detected (see below). |
-| **Feed** | Newest items. |
-| **Overview** | "What's in my brain": by-source and by-type bars, series, coverage, memory counts, and the source-health panel. |
 
 Structural privacy holds throughout: every read filters `visibility='content'`, so business/deal
 data (content **and** agent memory) never appears — safe to demo on screen.

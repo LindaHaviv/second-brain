@@ -201,6 +201,13 @@
     if (n && Graph) { Graph.centerAt(n.x, n.y, 600); Graph.zoom(3.5, 600); }
   }
 
+  // external highlight: widgets (latest / search results) light up a node's neighborhood
+  // by reusing the hover-highlight path
+  function highlight(id) {
+    if (id && IDS[id]) { HOVER = { id: id }; HOVERN = neighborIds(id); }
+    else { HOVER = null; HOVERN = null; }
+  }
+
   window.BrainGraph = { init: init, setData: setData, merge: merge, focus: focus,
-    toggleFocus: toggleFocus, has: function (id) { return !!IDS[id]; } };
+    toggleFocus: toggleFocus, highlight: highlight, has: function (id) { return !!IDS[id]; } };
 })();

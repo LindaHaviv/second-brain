@@ -402,3 +402,87 @@ pre.panel-block {
 /* wiki reader inline code */
 .panel .body code { font-family: var(--mono); font-size: 12px; background: var(--bg-elev);
   border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; }
+
+/* ---- Home instruments: search bar + widget rail floating over the graph ---- */
+.graph-hint { right: auto; left: 16px; top: 14px; text-align: left; max-width: 300px; }
+
+.hud-search {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 7;
+  display: flex; align-items: center; gap: 10px; width: min(440px, 42vw);
+  background: rgba(10,16,26,.78); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: 24px; padding: 4px 8px 4px 18px;
+}
+.hud-search:focus-within { border-color: var(--border-accent); box-shadow: var(--glow-cyan); }
+.hud-search input {
+  flex: 1; background: none; border: 0; color: var(--text); font: inherit; padding: 6px 0;
+}
+.hud-search input:focus { outline: none; }
+.hud-search input::placeholder { color: var(--text-faint); }
+.hud-search .k {
+  font-family: var(--mono); font-size: 11px; color: var(--text-faint);
+  border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; margin-right: 6px;
+}
+.hud-results {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 30;
+  max-height: 56vh; overflow: auto;
+  background: rgba(10,16,26,.94); backdrop-filter: blur(10px);
+  border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.5);
+}
+.hud-results .r { padding: 10px 16px; border-bottom: 1px solid rgba(148,172,205,.08); cursor: pointer; }
+.hud-results .r:last-child { border-bottom: 0; }
+.hud-results .r:hover { background: var(--bg-elev); }
+.hud-results .t { font-size: 13px; color: var(--text); }
+.hud-results .m { font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); margin-top: 2px; }
+.hud-results .snip { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+
+.rail-toggle {
+  position: absolute; right: 16px; top: 14px; z-index: 7;
+  background: rgba(10,16,26,.72); backdrop-filter: blur(6px);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-faint); font: inherit; font-size: 11.5px; padding: 6px 11px; cursor: pointer;
+}
+.rail-toggle:hover { color: var(--text); border-color: var(--border-accent); }
+
+.hud-col {
+  position: absolute; right: 16px; top: 52px; width: 296px; z-index: 6;
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: calc(100% - 120px); overflow-y: auto; scrollbar-width: none;
+}
+.hud-col.collapsed, .hud-search.collapsed { display: none; }
+.hud {
+  background: rgba(10,16,26,.78); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px;
+}
+.hud h3 {
+  display: flex; align-items: baseline; font-family: var(--display); font-size: 10.5px;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--overline);
+  margin: 0 0 10px; font-weight: 600;
+}
+.hud h3 a { margin-left: auto; font-family: var(--sans); font-size: 11.5px; letter-spacing: 0;
+  text-transform: none; font-weight: 400; }
+.glance { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+.g-tile .n { font-family: var(--serif); font-size: 22px; color: var(--topic); line-height: 1;
+  font-variant-numeric: tabular-nums; }
+.g-tile .l { font-size: 10px; color: var(--text-dim); text-transform: uppercase;
+  letter-spacing: 1.2px; margin-top: 3px; }
+.latest .lrow { padding: 7px 0; border-bottom: 1px solid rgba(148,172,205,.08); cursor: pointer; }
+.latest .lrow:last-child { border-bottom: 0; padding-bottom: 2px; }
+.latest .lrow:hover .t { color: var(--accent); }
+.latest .t { font-size: 12.5px; color: var(--text); }
+.latest .m { font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); margin-top: 2px; }
+.memrow { display: flex; gap: 10px; justify-content: space-between; }
+.memrow .n { font-size: 19px; }
+.hud .foot { margin-top: 10px; font-size: 11.5px; }
+.hud .loading, .hud .empty { padding: 4px 0; font-size: 12px; text-align: left; }
+
+/* narrow screens: search bar shifts left of the rail toggle; below 900px the rail hides
+   (pure-graph + search) so the map keeps room */
+@media (max-width: 1100px) {
+  .hud-search { left: 16px; transform: none; width: auto; right: 340px; }
+  .graph-hint { display: none; }
+}
+@media (max-width: 900px) {
+  .hud-col, .rail-toggle { display: none; }
+  .hud-search { right: 16px; }
+}

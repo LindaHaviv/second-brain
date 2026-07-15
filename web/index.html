@@ -12,28 +12,49 @@
     <header>
       <span class="brand"><span class="dot"></span><span id="brand-title">Second Brain</span></span>
       <nav>
-        <button data-view="graph" class="active">Graph</button>
-        <button data-view="search">Search</button>
-        <button data-view="wiki">Wiki</button>
+        <button data-view="graph" class="active">Home</button>
         <button data-view="memory">Memory</button>
         <button data-view="agents">Agents</button>
-        <button data-view="feed">Feed</button>
-        <button data-view="status">Overview</button>
       </nav>
       <span class="spacer"></span>
       <span class="meta" id="header-meta"></span>
     </header>
 
     <main>
-      <!-- Graph -->
+      <!-- Home: the graph is the canvas; search + widgets float over it as instruments -->
       <section class="view active" id="view-graph">
         <div id="graph"></div>
         <div class="graph-hint">Click a node to read it · double-click to grow the graph by meaning</div>
+
+        <!-- search is an action over the graph, not a separate place -->
+        <div class="hud-search" id="hud-search">
+          <input id="q" type="search" placeholder="Search your brain…" autocomplete="off" aria-label="Search your brain">
+          <span class="k">⌘K</span>
+          <div class="hud-results" id="hud-results" hidden></div>
+        </div>
+
+        <button class="rail-toggle" id="rail-toggle" title="Hide the instruments for a pure graph view">Hide instruments</button>
+        <aside class="hud-col" id="hud-col" aria-label="Brain instruments">
+          <div class="hud">
+            <h3>At a glance <a href="#" id="glance-more">details →</a></h3>
+            <div class="glance" id="glance-tiles"><div class="loading">loading…</div></div>
+          </div>
+          <div class="hud latest">
+            <h3>Latest <a href="#" id="latest-more">all →</a></h3>
+            <div id="latest-rows"><div class="loading">loading…</div></div>
+          </div>
+          <div class="hud">
+            <h3>Agent memory</h3>
+            <div class="memrow" id="mem-pulse"><div class="loading">loading…</div></div>
+            <div class="foot"><a href="#" id="mem-more">how it works →</a></div>
+          </div>
+        </aside>
+
         <button class="graph-toggle" id="focus-toggle" title="Focus on the selected node's neighborhood">Focus: off</button>
         <div class="graph-legend">
           <div class="row"><span class="swatch" style="background:var(--topic)"></span> Topic (synthesized)</div>
           <div class="row"><span class="swatch" style="background:var(--item)"></span> Content item</div>
-          <div class="row"><span class="swatch" style="background:var(--topic-dim);height:2px;width:16px;border-radius:0"></span> cites &nbsp;·&nbsp; <span style="border-top:1px dashed var(--topic);width:16px;display:inline-block"></span> semantic</div>
+          <div class="row"><span class="swatch" style="background:var(--accent);height:2px;width:16px;border-radius:0"></span> cites &nbsp;·&nbsp; <span style="border-top:1px dashed var(--accent);width:16px;display:inline-block"></span> semantic</div>
         </div>
         <div class="panel" id="graph-panel"></div>
         <!-- empty state: shown when the brain has no content yet -->
@@ -49,25 +70,6 @@
             <p class="onboard-foot">Nothing is stored here but what you load. Private items you tag stay out of every view by design.</p>
           </div>
         </div>
-      </section>
-
-      <!-- Search -->
-      <section class="view" id="view-search">
-        <h1 class="page">Search by meaning</h1>
-        <p class="sub">Semantic + keyword retrieval across everything in the brain.</p>
-        <div class="searchbar">
-          <input id="q" type="text" placeholder="what have I said about…" autocomplete="off" aria-label="Search your brain">
-          <button class="go" id="q-go">Search</button>
-        </div>
-        <div id="search-results"></div>
-      </section>
-
-      <!-- Wiki -->
-      <section class="view" id="view-wiki">
-        <h1 class="page">Wiki topics</h1>
-        <p class="sub">Self-compiled pages synthesizing your content, with citations.</p>
-        <div class="grid" id="topic-chips"></div>
-        <div class="panel" id="wiki-panel"></div>
       </section>
 
       <!-- Memory -->
@@ -148,27 +150,6 @@
           <span class="scope-key"><span class="scope generic">generic</span> ships to everyone <span class="scope private">private</span> yours only</span>
         </p>
         <div id="agents-body"></div>
-      </section>
-
-      <!-- Feed -->
-      <section class="view" id="view-feed">
-        <h1 class="page">Recent</h1>
-        <p class="sub">Newest items across your sources.</p>
-        <div id="feed-list"></div>
-      </section>
-
-      <!-- Overview -->
-      <section class="view" id="view-status">
-        <h1 class="page">Your brain at a glance</h1>
-        <p class="sub" id="ov-coverage">What's in your brain, how it breaks down, and whether it's fresh.</p>
-        <div id="overview-tiles" class="tiles"></div>
-        <div class="ov-charts">
-          <div class="ov-card"><h2 class="ov-h">By source</h2><div id="ov-by-source" class="bars"></div></div>
-          <div class="ov-card"><h2 class="ov-h">By type</h2><div id="ov-by-kind" class="bars"></div></div>
-        </div>
-        <div class="ov-card" id="ov-series-card" hidden><h2 class="ov-h">Series</h2><div id="ov-series" class="bars"></div></div>
-        <h2 class="ov-h" style="margin-top:22px">Source health</h2>
-        <pre class="panel-block" id="status-panel">loading…</pre>
       </section>
     </main>
   </div>

@@ -322,10 +322,12 @@ that catch silent quality regressions — is in
   the *client* model executes with the read tools, so your agents run on whatever AI you're
   chatting with — swap the client, keep the agents. Scheduled agents stay cron jobs; see
   ["Exposing agents over MCP"](docs/HOSTED_MCP.md#exposing-agents-over-mcp-the-playbook-pattern).
-- **Web UI** — a read-only view of the brain: an Obsidian-style **knowledge graph**, semantic
-  **search**, the **wiki** reader, a **memory** view (the four memory kinds + how they work), an
-  **overview** dashboard, and an **agents** registry that auto-lists everything you've built on
-  top. Served by the same hosted app, token-gated and off by default ([docs/WEB_UI.md](docs/WEB_UI.md)).
+- **Web UI** — a read-only view of the brain. **Home** puts the knowledge graph center stage
+  with instruments floating over it: a semantic **search** command bar (⌘K), an **at-a-glance**
+  widget (counts + source health, with a full overview one click away), the **latest** items,
+  and the agent-**memory** pulse. Two deeper pages: **Memory** (the four memory kinds + how
+  they work) and **Agents** (a registry that auto-lists everything you've built on top).
+  Served by the same hosted app, token-gated and off by default ([docs/WEB_UI.md](docs/WEB_UI.md)).
   **Your install starts empty and fills as you load your content:**
 
   *Day one — a fresh install:*
@@ -334,7 +336,7 @@ that catch silent quality regressions — is in
 
   *…and once your content is in (a populated brain, generic sample data shown):*
 
-  ![The Second Brain web UI — the knowledge graph](docs/images/web-ui-graph.png)
+  ![The Second Brain web UI — the Home dashboard: knowledge graph with instruments](docs/images/web-ui-graph.png)
 - **Cloud** — lift to Oracle Autonomous AI Database ([docs/CLOUD_MIGRATION.md](docs/CLOUD_MIGRATION.md))
 - **Maintenance** — `lint_wiki.py` (review candidates) + `review.py` (leaked-secret scan)
 
