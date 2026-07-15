@@ -129,22 +129,41 @@ def _src_weight(r):
     return CHAT_SOURCE_WEIGHT if r.get("platform_id") in CHAT_PLATFORMS else 1.0
 
 
+def _collapse(rows):
+    """One entry per document, keeping its BEST-ranked row — the guard against length bias.
+
+    A long chat or transcript is chunked into many passages, and every chunk is a separate
+    candidate that maps to the same fusion id. Scored as-is, RRF would add one increment PER
+    CHUNK, so a 9-chunk build log accumulates ~9x the score of a tight, single-shot item and
+    wins for being long rather than for being right. Rank-ordered in, so the first row a
+    document contributes is its best; the rest are dropped before scoring."""
+    out, seen = [], set()
+    for r in rows:
+        rid = _rid(r)
+        if rid not in seen:
+            seen.add(rid)
+            out.append((rid, r))
+    return out
+
+
 def search_hybrid(conn, query, k=8, C=60):
     """Hybrid retrieval: fuse semantic (vector) and keyword (lexical) results with Reciprocal
     Rank Fusion. Vector handles meaning; lexical rescues exact tokens; a source-type weight
     keeps published content ahead of workflow chats on close calls. Returns the same row
-    shape as search_content."""
+    shape as search_content.
+
+    Each retriever is collapsed to one entry per document FIRST (see _collapse), then the two
+    are summed: a document is rewarded for being found by BOTH retrievers, never for being
+    chopped into more chunks than its neighbours."""
     pool = max(k * 3, 20)
     vec = search_content(conn, query, pool)
     lex = _lexical_posts(conn, _terms(query), pool)
     scores, meta, retr = {}, {}, {}
-    for rank, r in enumerate(vec):
-        rid = _rid(r)
+    for rank, (rid, r) in enumerate(_collapse(vec)):
         scores[rid] = scores.get(rid, 0.0) + _src_weight(r) / (C + rank)
         meta[rid] = r
         retr.setdefault(rid, set()).add("semantic")
-    for rank, r in enumerate(lex):
-        rid = _rid(r)
+    for rank, (rid, r) in enumerate(_collapse(lex)):
         scores[rid] = scores.get(rid, 0.0) + _src_weight(r) / (C + rank)
         meta.setdefault(rid, r)
         retr.setdefault(rid, set()).add("keyword")

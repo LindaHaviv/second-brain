@@ -9,6 +9,9 @@ cheap to run after anything that could shift ranking: loader changes, fusion wei
 tuning, chunking changes, embedding model swaps, big imports.
 
 Golden file: JSON list of {"query", "expect_title_contains", "k"} (k defaults to 8).
+Negative cases: {"query", "forbid_title_contains", "top"} asserts a known noise item
+does NOT appear in the top `top` (defaults to k) — use it to pin down ranking bugs
+(e.g. a chunked log that once flooded the fusion) so they can't quietly return.
 Default file is tests/golden_retrieval.json (works on the sample data). Point it at
 your own golden set once you've loaded your own content — keep one; when you notice
 a query that SHOULD find something and doesn't, fix it, then add it here so it can
@@ -35,6 +38,19 @@ def run(golden_path):
             k = int(c.get("k", 8))
             rows = search_hybrid(conn, c["query"], k)
             titles = [str(r.get("title") or "") for r in rows]
+            if "forbid_title_contains" in c:
+                # NEGATIVE case: a known noise item must NOT rank in the top `top`.
+                # (Born from a real regression: a long chunked build log outscored
+                # everything by accumulating one RRF increment per chunk.)
+                top = int(c.get("top", k))
+                bad = c["forbid_title_contains"].lower()
+                hit = next((i for i, t in enumerate(titles[:top], 1) if bad in t.lower()), None)
+                status = f"noise@{hit}" if hit else f"clean top {top}"
+                print(f"{'FAIL' if hit else 'PASS':4s}  {status:12s}  {c['query'][:58]!r} "
+                      f"-> forbid ...{bad[:40]!r}")
+                if hit:
+                    misses.append(c)
+                continue
             want = c["expect_title_contains"].lower()
             hit = next((i for i, t in enumerate(titles, 1) if want in t.lower()), None)
             status = f"rank {hit}/{k}" if hit else f"MISS (top {k})"
