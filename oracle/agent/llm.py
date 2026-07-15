@@ -28,7 +28,7 @@ import keychain_secrets  # noqa: E402 -- resolve keychain:<item> secrets (same a
 keychain_secrets.resolve_env()  # so ANTHROPIC/OPENAI keys work whether or not db was imported
 
 PROVIDER = os.environ.get("LLM_PROVIDER", "anthropic").lower()
-DEFAULTS = {"anthropic": "claude-opus-4-8", "openai": "gpt-5.2", "ollama": "llama3.2"}
+DEFAULTS = {"anthropic": "claude-opus-4-8", "openai": "gpt-5.6-sol", "ollama": "llama3.2"}
 MODEL = os.environ.get("LLM_MODEL") or DEFAULTS.get(PROVIDER, DEFAULTS["anthropic"])
 
 # --- the loop ledger: every LLM call records its tokens, tagged by which loop spent them.

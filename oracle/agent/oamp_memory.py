@@ -57,7 +57,7 @@ _PRIVACY_GUARD = (
 # structured output" -> zero memories), so the anthropic default is sonnet-5.
 _EXTRACT_DEFAULTS = {
     "anthropic": "anthropic/claude-sonnet-5",
-    "openai": "openai/gpt-5.2",
+    "openai": "openai/gpt-5.6-terra",
     "ollama": "ollama/llama3.2",
 }
 
