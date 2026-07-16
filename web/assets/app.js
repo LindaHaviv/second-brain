@@ -385,28 +385,29 @@
 
   // ---- memory -----------------------------------------------------------------
   var MEM_KINDS = [
-    ["semantic", "Semantic", "What your brain learned about your content. The durable facts it distilled: recurring themes, audience questions, formats, gaps."],
-    ["episodic", "Episodic", "What the agent did and how it turned out: a timeline of research runs, each with its outcome."],
-    ["procedural", "Procedural", "What the agent can do: its tools, stored as memory so it can pull the relevant ones by meaning."],
-    ["conversational", "Conversational", "The running dialogue it keeps as working memory."]
+    ["semantic", "Semantic", "What your brain learned about your content. The durable facts it distilled: recurring themes, audience questions, formats, gaps.", "var(--k-sem)"],
+    ["episodic", "Episodic", "What the agent did and how it turned out: a timeline of research runs, each with its outcome.", "var(--k-epi)"],
+    ["procedural", "Procedural", "What the agent can do: its tools, stored as memory so it can pull the relevant ones by meaning.", "var(--k-pro)"],
+    ["conversational", "Conversational", "The running dialogue it keeps as working memory.", "var(--k-con)"]
   ];
-  function tileHTML(n, l) {
-    return '<div class="tile"><div class="n">' + esc(n == null ? "–" : n) + '</div><div class="l">' + esc(l) + "</div></div>";
+  function tileHTML(n, l, color) {
+    return '<div class="tile"' + (color ? ' style="box-shadow: inset 0 2px 0 ' + color + '"' : "") +
+      '><div class="n">' + esc(n == null ? "–" : n) + '</div><div class="l">' + esc(l) + "</div></div>";
   }
 
   // ---- memory lifecycle flow (the "how it works" strip) ----
   // Optional doc link: set localStorage 'brain_memory_doc' to a URL to reveal a "learn more".
   var MEMORY_DOC_URL = localStorage.getItem("brain_memory_doc") || "";
   var FLOW = [
-    { t: "Ask", dot: "var(--text-faint)", l: "A question or task arrives.",
+    { t: "Ask", k: "neu", dot: "var(--ink-soft)", l: "A question or task arrives.",
       d: "Everything starts with a prompt, from you or a scheduled job." },
-    { t: "Recall", dot: "var(--topic)", l: "Pull relevant past experience + tools, by meaning.",
+    { t: "Recall", k: "sem", dot: "var(--k-sem)", l: "Pull relevant past experience + tools, by meaning.",
       d: "Before acting, the agent semantic-searches its own memory: what worked on similar tasks (<b>episodic</b> and <b>semantic</b>) and which tools fit (<b>procedural</b>). It starts informed, not blank." },
-    { t: "Act", dot: "var(--accent)", l: "Research and answer.",
+    { t: "Act", k: "act", dot: "var(--k-act)", l: "Research and answer.",
       d: "It runs the task with the recalled tools, grounded in your content and wiki." },
-    { t: "Record", dot: "var(--item)", l: "Write an episodic memory of what happened.",
+    { t: "Record", k: "epi", dot: "var(--k-epi)", l: "Write an episodic memory of what happened.",
       d: "One row per run: the task, what it did, the outcome, a reward. Auditable in plain SQL, so you can literally query its <b>success rate per tool</b>." },
-    { t: "Consolidate", dot: "var(--topic)", l: "Distill runs into durable facts.",
+    { t: "Consolidate", k: "sem", dot: "var(--k-sem)", l: "Distill runs into durable facts.",
       d: "Periodically an LLM reads the episodic log and updates the <b>semantic</b> facts (themes, audience, formats, gaps). Experience compounds into reusable knowledge." }
   ];
   var flowDone = false;
@@ -414,7 +415,7 @@
     if (flowDone) return; flowDone = true;
     el("flow-track").innerHTML = FLOW.map(function (s, i) {
       var arrow = i < FLOW.length - 1 ? '<span class="flow-arrow">→</span>' : "";
-      return '<div class="flow-stage" data-i="' + i + '"><div class="fs-i">step ' + (i + 1) +
+      return '<div class="flow-stage k-' + s.k + '" data-i="' + i + '"><div class="fs-i">step ' + (i + 1) +
         '</div><div class="fs-t"><span class="kdot" style="background:' + s.dot + '"></span>' + esc(s.t) +
         '</div><div class="fs-l">' + esc(s.l) + "</div></div>" + arrow;
     }).join("");
@@ -437,11 +438,11 @@
     try {
       var m = await api("/api/memory");
       el("memory-tiles").innerHTML = MEM_KINDS.map(function (k) {
-        return tileHTML((m.counts || {})[k[0]], k[1]);
+        return tileHTML((m.counts || {})[k[0]], k[1], k[3]);
       }).join("");
       var html = "";
       // Semantic — grouped by category
-      html += memSection("Semantic", "semantic memory", MEM_KINDS[0][2], (function () {
+      html += memSection(MEM_KINDS[0], (function () {
         if (!m.facts || !m.facts.length) return '<div class="empty">No facts distilled yet.</div>';
         var byCat = {}; m.facts.forEach(function (f) { (byCat[f.category || "other"] = byCat[f.category || "other"] || []).push(f.fact); });
         return Object.keys(byCat).map(function (cat) {
@@ -450,7 +451,7 @@
         }).join("");
       })());
       // Episodic — recent actions
-      html += memSection("Episodic", "episodic memory", MEM_KINDS[1][2], (function () {
+      html += memSection(MEM_KINDS[1], (function () {
         if (!m.episodic || !m.episodic.length) return '<div class="empty">No runs recorded yet.</div>';
         return m.episodic.map(function (e) {
           var out = (e.outcome || "").toLowerCase();
@@ -462,7 +463,7 @@
         }).join("");
       })());
       // Procedural — tools
-      html += memSection("Procedural", "procedural memory", MEM_KINDS[2][2], (function () {
+      html += memSection(MEM_KINDS[2], (function () {
         if (!m.tools || !m.tools.length) return '<div class="empty">No tools registered yet.</div>';
         return m.tools.map(function (t) {
           return '<div class="tool"><div class="n">' + esc(t.name) + '<span class="kind">' + esc(t.kind || "") +
@@ -470,7 +471,7 @@
         }).join("");
       })());
       // Conversational — recent turns (light)
-      html += memSection("Conversational", "working memory", MEM_KINDS[3][2], (function () {
+      html += memSection(MEM_KINDS[3], (function () {
         if (!m.conversational || !m.conversational.length) return '<div class="empty">No dialogue recorded yet.</div>';
         return m.conversational.slice(0, 12).map(function (t) {
           return '<div class="turn"><span class="role">' + esc(t.role || "") + "</span>" + esc((t.content || "").slice(0, 220)) + "</div>";
@@ -479,9 +480,11 @@
       body.innerHTML = html;
     } catch (e) { body.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; }
   }
-  function memSection(title, tag, whatis, inner) {
-    return '<div class="mem-section"><h2>' + esc(title) + '<span class="kindtag">' + esc(tag) +
-      '</span></h2><p class="whatis">' + esc(whatis) + "</p>" + inner + "</div>";
+  // kind = [key, title, whatis, color]; the dot ties the section to its sheet color
+  function memSection(kind, inner) {
+    return '<div class="mem-section"><h2><span class="kdot" style="background:' + kind[3] + '"></span>' +
+      esc(kind[1]) + '<span class="kindtag">' + esc(kind[0]) + " memory" +
+      '</span></h2><p class="whatis">' + esc(kind[2]) + "</p>" + inner + "</div>";
   }
 
   window.addEventListener("DOMContentLoaded", boot);

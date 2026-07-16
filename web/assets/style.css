@@ -11,6 +11,14 @@
   font-style: normal;
   font-display: swap;
 }
+/* Excalifont — Excalidraw's hand-drawn face (OFL), for the diagram sheet on the Memory page. */
+@font-face {
+  font-family: "Excalifont";
+  src: url("/assets/fonts/excalifont.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 /* Fraunces — an editorial serif (with a real italic) for titles. It gives the console its
    quiet-luxury counterweight: high-contrast letterforms against the deep space, no glow. */
 @font-face {
@@ -49,6 +57,18 @@
   --radius: 10px;
   --glow-topic: 0 0 12px rgba(255,190,77,.5);
   --glow-cyan: 0 0 10px rgba(87,214,255,.55);
+  /* the diagram sheet: cream paper + ink, with one soft-tint color per memory kind
+     (episodic terracotta, semantic gold, procedural sage, conversational dusty blue,
+     act teal) — color carries meaning, borders and text stay ink */
+  --paper: #f5f1ea;
+  --paper-2: #fffdf8;
+  --ink: #241f18;
+  --ink-soft: #6b6156;
+  --k-epi: #c4643f;  --k-epi-t: #f2d6c6;
+  --k-sem: #b8923c;  --k-sem-t: #f3e6c3;
+  --k-pro: #7d9367;  --k-pro-t: #dfe8d3;
+  --k-con: #6d87a8;  --k-con-t: #dbe4ef;
+  --k-act: #5f9b8c;  --k-act-t: #d7e7e2;
   --display: "Orbitron", var(--sans);           /* wordmark + small-caps labels only */
   --serif: "Fraunces", Georgia, "Times New Roman", serif;  /* editorial titles */
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -334,7 +354,8 @@ pre.panel-block {
 .flow-note--doc:hover { background: rgba(87,214,255,.12); }
 @media (prefers-reduced-motion: no-preference) {
   .flow-stage.pulse { animation: fpulse 1.1s ease; }
-  @keyframes fpulse { 0% { box-shadow: 0 0 0 0 rgba(87,214,255,.5); } 100% { box-shadow: 0 0 0 10px rgba(87,214,255,0); } }
+  /* ink pulse — the flow strip lives on the paper sheet */
+  @keyframes fpulse { 0% { box-shadow: 0 0 0 0 rgba(36,31,24,.35); } 100% { box-shadow: 0 0 0 10px rgba(36,31,24,0); } }
 }
 
 /* ---- "how it works" educational blocks (four-types panel + database visual) ---- */
@@ -406,6 +427,79 @@ pre.panel-block {
 /* wiki reader inline code */
 .panel .body code { font-family: var(--mono); font-size: 12px; background: var(--bg-elev);
   border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; }
+
+/* ---- the Memory diagram sheet: the lesson drawn on paper, pinned to the console ----
+   Everything educational lives on cream with ink text and soft-tint fills (the same
+   language as a hand-drawn explainer); the live memory data below stays dark console. */
+.sheet {
+  background: var(--paper); color: var(--ink); border-radius: 14px;
+  padding: 24px 26px 18px; margin-bottom: 30px;
+  box-shadow: 0 14px 44px rgba(0,0,0,.5);
+}
+.sheet-claim {
+  font-family: "Excalifont", var(--serif); font-size: 24px; line-height: 1.25;
+  margin: 0 0 18px; text-wrap: balance;
+}
+.sheet-caption {
+  font-family: "Excalifont", var(--serif); color: var(--ink-soft); font-size: 14.5px;
+  text-align: center; margin: 16px 0 2px;
+}
+.sheet .mem-flow { border: 0; background: none; padding: 0; margin-bottom: 20px; }
+.sheet .flow-title { font-family: "Excalifont", var(--serif); font-size: 14px;
+  letter-spacing: .5px; text-transform: none; color: var(--ink); }
+.sheet .flow-clickhint { color: var(--ink-soft); }
+.sheet .flow-stage { background: var(--paper-2); border: 1.5px solid var(--ink); border-radius: 10px; }
+.sheet .flow-stage:hover { border-color: var(--ink); box-shadow: 2px 2px 0 rgba(36,31,24,.25); }
+.sheet .flow-stage .fs-i { color: var(--ink-soft); }
+.sheet .flow-stage .fs-l { color: var(--ink-soft); }
+.sheet .flow-stage.active { border-width: 2px; border-color: var(--ink); }
+.sheet .flow-stage.active.k-neu { background: #ece5d8; }
+.sheet .flow-stage.active.k-sem { background: var(--k-sem-t); }
+.sheet .flow-stage.active.k-act { background: var(--k-act-t); }
+.sheet .flow-stage.active.k-epi { background: var(--k-epi-t); }
+.sheet .flow-arrow { color: var(--ink); font-weight: 600; }
+.flow-return { position: relative; height: 44px; margin: 2px 10px 0; }
+.flow-return svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.flow-return .lbl {
+  position: absolute; left: 50%; top: 20px; transform: translateX(-50%);
+  font-family: "Excalifont", var(--serif); font-size: 13.5px; color: var(--ink-soft);
+  background: var(--paper); padding: 0 10px;
+}
+.sheet .flow-detail { background: var(--paper-2); border: 1.5px solid var(--ink);
+  color: var(--ink); border-radius: 10px; }
+.sheet .flow-detail b { color: var(--ink); }
+.sheet .flow-note { border: 1.5px solid var(--ink); color: var(--ink-soft); }
+.sheet .flow-note b { color: var(--ink); }
+.sheet .flow-note--priv { color: #a04b2e; border-color: #a04b2e; }
+.sheet .hiw { margin-bottom: 22px; }
+.sheet .hiw-h { font-family: "Excalifont", var(--serif); font-size: 14px; letter-spacing: .5px;
+  text-transform: none; color: var(--ink); font-weight: 400; }
+.sheet .type-card { border: 1.5px solid var(--ink); border-radius: 10px; }
+.sheet .type-card.k-epi { background: var(--k-epi-t); }
+.sheet .type-card.k-sem { background: var(--k-sem-t); }
+.sheet .type-card.k-pro { background: var(--k-pro-t); }
+.sheet .type-card.k-con { background: var(--k-con-t); }
+.sheet .type-analogy { color: var(--ink); opacity: .68; }
+.sheet .type-desc { color: var(--ink); }
+.sheet .type-meta { color: var(--ink-soft); border-top: 1px solid rgba(36,31,24,.2); }
+.sheet .type-meta .mono { color: var(--ink); }
+.sheet .db-box { border: 1.5px solid var(--ink); background: var(--paper-2); border-radius: 10px; }
+.sheet .db-title { font-family: "Excalifont", var(--serif); font-size: 13.5px;
+  letter-spacing: .5px; text-transform: none; color: var(--ink); }
+.sheet .db-group { background: none; border: 1.5px dashed rgba(36,31,24,.45); border-radius: 8px; }
+.sheet .db-group-h { color: var(--ink); }
+.sheet .db-group-h span { color: var(--ink-soft); }
+.sheet .db-chip { border: 1.2px solid var(--ink); color: var(--ink); background: var(--paper); }
+.sheet .db-chip.k-epi { background: var(--k-epi-t); }
+.sheet .db-chip.k-sem { background: var(--k-sem-t); }
+.sheet .db-chip.k-pro { background: var(--k-pro-t); }
+.sheet .db-chip.k-con { background: var(--k-con-t); }
+.sheet .db-foot { color: var(--ink-soft); }
+.sheet .db-foot b { color: var(--ink); }
+
+/* the live-data sections below the sheet tie back to it: each kind keeps its color */
+.mem-section > h2 .kdot { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  align-self: center; }
 
 /* ---- Home instruments: search bar + widget rail floating over the graph ---- */
 .graph-hint { right: auto; left: 16px; top: 14px; text-align: left; max-width: 300px; }
