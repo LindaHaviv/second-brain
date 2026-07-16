@@ -305,13 +305,17 @@ pre.panel-block {
 
 /* ---- memory lifecycle flow strip (top of Memory tab) ---- */
 .mem-flow { border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-panel); padding: 18px 18px 16px; margin-bottom: 26px; }
+  background: var(--bg-panel); padding: 16px 18px; margin-bottom: 26px; }
+.flow-head { display: flex; align-items: baseline; margin: 0 4px 10px; }
+.flow-title { font-family: var(--display); font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--overline); font-weight: 600; }
+.flow-clickhint { margin-left: auto; font-size: 11.5px; color: var(--text-faint); }
 .flow-track { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; }
 .flow-stage { position: relative; flex: 1 1 0; min-width: 130px; text-align: left;
   background: var(--bg-elev); border: 1px solid var(--border); border-radius: 9px;
   padding: 10px 12px; margin: 4px; cursor: pointer; transition: border-color .15s, background .15s; }
 .flow-stage:hover { border-color: var(--accent); }
-.flow-stage.active { border-color: var(--accent); background: rgba(87,214,255,.08); box-shadow: 0 0 14px rgba(87,214,255,.22); }
+.flow-stage.active { border-color: var(--border-accent); background: rgba(87,214,255,.07); }
 .flow-stage .fs-i { font-family: var(--mono); font-size: 11px; color: var(--text-faint); }
 .flow-stage .fs-t { font-weight: 600; margin: 2px 0 2px; font-size: 13.5px; }
 .flow-stage .fs-t .kdot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
