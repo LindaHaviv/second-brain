@@ -514,6 +514,15 @@ pre.panel-block {
 .mem-section > h2 .kdot { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
   align-self: center; }
 
+/* live memory: the four count tiles are tabs — click a kind to browse it */
+.mem-live-head { display: flex; align-items: baseline; margin: 4px 0 10px; }
+.mem-live-head .live-title { font-family: var(--display); font-size: 12px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--overline); font-weight: 600; }
+.mem-live-head .live-hint { margin-left: auto; font-size: 11.5px; color: var(--text-faint); }
+button.tile.mem-tab { font: inherit; text-align: left; cursor: pointer; color: var(--text); width: 100%; }
+.mem-tab:hover { border-color: rgba(148,172,205,.45); }
+.mem-tab.active { border-color: var(--tab-c, var(--accent)); background: rgba(148,172,205,.06); }
+
 /* ---- the sheet draws itself in (replays each visit; off under reduced-motion) ----
    Order tells the story: title writes on, the five steps land left to right, the
    loop-arrow sweeps back from Consolidate to Recall, then the reference blocks settle. */
@@ -550,8 +559,18 @@ pre.panel-block {
   .view.active .sheet .type-card.k-con { animation: shRise .34s ease-out 2.25s both; }
   .view.active .sheet .hiw + .hiw { animation: shRise .4s ease-out 2.35s both; }
   .view.active .sheet-caption { animation: shRise .4s ease-out 2.55s both; }
-  /* clicking a step re-runs a quick settle on the detail box (JS toggles .swap) */
+  /* clicking a step / a kind re-runs a quick settle (JS toggles .swap) */
   .sheet .flow-detail.swap { animation: shRise .26s ease-out; }
+  #memory-body.swap { animation: shRise .26s ease-out; }
+}
+
+/* ---- narrow screens: the whole Memory page adapts ---- */
+@media (max-width: 720px) {
+  .view { padding: 20px 16px; }
+  h1.page { font-size: 23px; }
+  .sheet { padding: 18px 16px 12px; border-radius: 10px; }
+  .sheet-claim { font-size: 19px; }
+  .tiles { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ---- Home instruments: search bar + widget rail floating over the graph ---- */

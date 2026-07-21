@@ -390,11 +390,6 @@
     ["procedural", "Procedural", "What the agent can do: its tools, stored as memory so it can pull the relevant ones by meaning.", "var(--k-pro)"],
     ["conversational", "Conversational", "The running dialogue it keeps as working memory.", "var(--k-con)"]
   ];
-  function tileHTML(n, l, color) {
-    return '<div class="tile"' + (color ? ' style="box-shadow: inset 0 2px 0 ' + color + '"' : "") +
-      '><div class="n">' + esc(n == null ? "–" : n) + '</div><div class="l">' + esc(l) + "</div></div>";
-  }
-
   // ---- memory lifecycle flow (the "how it works" strip) ----
   // Optional doc link: set localStorage 'brain_memory_doc' to a URL to reveal a "learn more".
   var MEMORY_DOC_URL = localStorage.getItem("brain_memory_doc") || "";
@@ -430,47 +425,56 @@
     body.innerHTML = '<div class="loading">loading memory…</div>';
     try {
       var m = await api("/api/memory");
+      // one prepared section per kind — the count tiles are the tabs that pick one
+      var SECTIONS = {
+        semantic: memSection(MEM_KINDS[0], (function () {
+          if (!m.facts || !m.facts.length) return '<div class="empty">No facts distilled yet.</div>';
+          var byCat = {}; m.facts.forEach(function (f) { (byCat[f.category || "other"] = byCat[f.category || "other"] || []).push(f.fact); });
+          return Object.keys(byCat).map(function (cat) {
+            return '<div class="fact-cat"><h3>' + esc(cat) + "</h3>" +
+              byCat[cat].map(function (f) { return '<div class="fact">' + esc(f) + "</div>"; }).join("") + "</div>";
+          }).join("");
+        })()),
+        episodic: memSection(MEM_KINDS[1], (function () {
+          if (!m.episodic || !m.episodic.length) return '<div class="empty">No runs recorded yet.</div>';
+          return m.episodic.map(function (e) {
+            var out = (e.outcome || "").toLowerCase();
+            return '<div class="ep"><div class="task">' + esc(e.task || "") + '</div><div class="meta">' +
+              (e.tool ? "<span>" + esc(e.tool) + "</span>" : "") +
+              '<span class="out ' + esc(out) + '">' + esc(e.outcome || "") + "</span>" +
+              (e.reward != null ? "<span>reward " + esc(e.reward) + "</span>" : "") +
+              (e.created_at ? "<span>" + esc(e.created_at) + "</span>" : "") + "</div></div>";
+          }).join("");
+        })()),
+        procedural: memSection(MEM_KINDS[2], (function () {
+          if (!m.tools || !m.tools.length) return '<div class="empty">No tools registered yet.</div>';
+          return m.tools.map(function (t) {
+            return '<div class="tool"><div class="n">' + esc(t.name) + '<span class="kind">' + esc(t.kind || "") +
+              '</span></div><div class="d">' + esc((t.description || "").slice(0, 200)) + "</div></div>";
+          }).join("");
+        })()),
+        conversational: memSection(MEM_KINDS[3], (function () {
+          if (!m.conversational || !m.conversational.length) return '<div class="empty">No dialogue recorded yet.</div>';
+          return m.conversational.slice(0, 12).map(function (t) {
+            return '<div class="turn"><span class="role">' + esc(t.role || "") + "</span>" + esc((t.content || "").slice(0, 220)) + "</div>";
+          }).join("");
+        })())
+      };
       el("memory-tiles").innerHTML = MEM_KINDS.map(function (k) {
-        return tileHTML((m.counts || {})[k[0]], k[1], k[3]);
+        var n = (m.counts || {})[k[0]];
+        return '<button class="tile mem-tab" data-kind="' + k[0] + '" style="--tab-c:' + k[3] +
+          '; box-shadow: inset 0 2px 0 ' + k[3] + '"><div class="n">' + esc(n == null ? "–" : n) +
+          '</div><div class="l">' + esc(k[1]) + "</div></button>";
       }).join("");
-      var html = "";
-      // Semantic — grouped by category
-      html += memSection(MEM_KINDS[0], (function () {
-        if (!m.facts || !m.facts.length) return '<div class="empty">No facts distilled yet.</div>';
-        var byCat = {}; m.facts.forEach(function (f) { (byCat[f.category || "other"] = byCat[f.category || "other"] || []).push(f.fact); });
-        return Object.keys(byCat).map(function (cat) {
-          return '<div class="fact-cat"><h3>' + esc(cat) + "</h3>" +
-            byCat[cat].map(function (f) { return '<div class="fact">' + esc(f) + "</div>"; }).join("") + "</div>";
-        }).join("");
-      })());
-      // Episodic — recent actions
-      html += memSection(MEM_KINDS[1], (function () {
-        if (!m.episodic || !m.episodic.length) return '<div class="empty">No runs recorded yet.</div>';
-        return m.episodic.map(function (e) {
-          var out = (e.outcome || "").toLowerCase();
-          return '<div class="ep"><div class="task">' + esc(e.task || "") + '</div><div class="meta">' +
-            (e.tool ? "<span>" + esc(e.tool) + "</span>" : "") +
-            '<span class="out ' + esc(out) + '">' + esc(e.outcome || "") + "</span>" +
-            (e.reward != null ? "<span>reward " + esc(e.reward) + "</span>" : "") +
-            (e.created_at ? "<span>" + esc(e.created_at) + "</span>" : "") + "</div></div>";
-        }).join("");
-      })());
-      // Procedural — tools
-      html += memSection(MEM_KINDS[2], (function () {
-        if (!m.tools || !m.tools.length) return '<div class="empty">No tools registered yet.</div>';
-        return m.tools.map(function (t) {
-          return '<div class="tool"><div class="n">' + esc(t.name) + '<span class="kind">' + esc(t.kind || "") +
-            '</span></div><div class="d">' + esc((t.description || "").slice(0, 200)) + "</div></div>";
-        }).join("");
-      })());
-      // Conversational — recent turns (light)
-      html += memSection(MEM_KINDS[3], (function () {
-        if (!m.conversational || !m.conversational.length) return '<div class="empty">No dialogue recorded yet.</div>';
-        return m.conversational.slice(0, 12).map(function (t) {
-          return '<div class="turn"><span class="role">' + esc(t.role || "") + "</span>" + esc((t.content || "").slice(0, 220)) + "</div>";
-        }).join("");
-      })());
-      body.innerHTML = html;
+      var tabs = el("memory-tiles").querySelectorAll(".mem-tab");
+      function show(kind) {
+        tabs.forEach(function (t) { t.classList.toggle("active", t.dataset.kind === kind); });
+        body.classList.remove("swap"); void body.offsetWidth;
+        body.innerHTML = SECTIONS[kind];
+        body.classList.add("swap");
+      }
+      tabs.forEach(function (t) { t.addEventListener("click", function () { show(t.dataset.kind); }); });
+      show("semantic");
     } catch (e) { body.innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; }
   }
   // kind = [key, title, whatis, color]; the dot ties the section to its sheet color
