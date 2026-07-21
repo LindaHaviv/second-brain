@@ -424,7 +424,10 @@
       stages.forEach(function (n, j) { n.classList.toggle("active", j === i); n.classList.remove("pulse"); });
       stages[i].classList.add("pulse");
       // name the selected step in the detail box, so the strip and the box read as one control
-      el("flow-detail").innerHTML = "<b>" + esc(FLOW[i].t) + ".</b> " + FLOW[i].d;   // trusted static copy
+      var d = el("flow-detail");
+      d.classList.remove("swap"); void d.offsetWidth;   // retrigger the settle animation
+      d.innerHTML = "<b>" + esc(FLOW[i].t) + ".</b> " + FLOW[i].d;   // trusted static copy
+      d.classList.add("swap");
     }
     stages.forEach(function (n) { n.addEventListener("click", function () { activate(+n.dataset.i); }); });
     activate(0);   // start where the story starts; the hint invites clicking through

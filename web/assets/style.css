@@ -501,6 +501,44 @@ pre.panel-block {
 .mem-section > h2 .kdot { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
   align-self: center; }
 
+/* ---- the sheet draws itself in (replays each visit; off under reduced-motion) ----
+   Order tells the story: title writes on, the five steps land left to right, the
+   loop-arrow sweeps back from Consolidate to Recall, then the reference blocks settle. */
+.sheet .flow-stage { transition: box-shadow .15s, background .15s; }
+.sheet .type-card { transition: transform .15s, box-shadow .15s; }
+.sheet .type-card:hover { transform: translateY(-2px); box-shadow: 2px 3px 0 rgba(36,31,24,.22); }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes shRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes shWrite { from { clip-path: inset(-10% 100% -10% 0); } to { clip-path: inset(-10% 0 -10% 0); } }
+  @keyframes shSweep { from { clip-path: inset(-12% 0 -12% 100%); } to { clip-path: inset(-12% 0 -12% 0); } }
+  .view.active .sheet { animation: shRise .4s ease-out both; }
+  .view.active .sheet-claim { animation: shWrite .8s ease-out .15s both; }
+  .view.active .flow-head { animation: shRise .3s ease-out .25s both; }
+  .view.active div.flow-stage { animation: shRise .32s ease-out both; }
+  .view.active div.flow-stage:nth-of-type(1) { animation-delay: .3s; }
+  .view.active div.flow-stage:nth-of-type(2) { animation-delay: .42s; }
+  .view.active div.flow-stage:nth-of-type(3) { animation-delay: .54s; }
+  .view.active div.flow-stage:nth-of-type(4) { animation-delay: .66s; }
+  .view.active div.flow-stage:nth-of-type(5) { animation-delay: .78s; }
+  .view.active span.flow-arrow { animation: shRise .3s ease-out both; }
+  .view.active span.flow-arrow:nth-of-type(1) { animation-delay: .38s; }
+  .view.active span.flow-arrow:nth-of-type(2) { animation-delay: .5s; }
+  .view.active span.flow-arrow:nth-of-type(3) { animation-delay: .62s; }
+  .view.active span.flow-arrow:nth-of-type(4) { animation-delay: .74s; }
+  .view.active .flow-return { animation: shSweep .7s ease-in-out .95s both; }
+  .view.active .flow-detail { animation: shRise .32s ease-out 1.25s both; }
+  .view.active .flow-notes { animation: shRise .32s ease-out 1.35s both; }
+  .view.active .sheet .mem-flow + .hiw .hiw-h { animation: shRise .32s ease-out 1.3s both; }
+  .view.active .sheet .type-card.k-epi { animation: shRise .34s ease-out 1.4s both; }
+  .view.active .sheet .type-card.k-sem { animation: shRise .34s ease-out 1.52s both; }
+  .view.active .sheet .type-card.k-pro { animation: shRise .34s ease-out 1.64s both; }
+  .view.active .sheet .type-card.k-con { animation: shRise .34s ease-out 1.76s both; }
+  .view.active .sheet .hiw + .hiw { animation: shRise .4s ease-out 1.85s both; }
+  .view.active .sheet-caption { animation: shRise .4s ease-out 2.05s both; }
+  /* clicking a step re-runs a quick settle on the detail box (JS toggles .swap) */
+  .sheet .flow-detail.swap { animation: shRise .26s ease-out; }
+}
+
 /* ---- Home instruments: search bar + widget rail floating over the graph ---- */
 .graph-hint { right: auto; left: 16px; top: 14px; text-align: left; max-width: 300px; }
 
