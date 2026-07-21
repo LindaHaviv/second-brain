@@ -280,6 +280,12 @@
           "scope": "generic"
         },
         {
+          "name": "Memory expire",
+          "desc": "Raw-log rotation: the \"consolidate, then expire\" half of memory forgetting.",
+          "where": "scripts/memory_expire.py",
+          "scope": "generic"
+        },
+        {
           "name": "Memory review",
           "desc": "Memory hygiene review: the FORGETTING report. Report-only: it never deletes.",
           "where": "scripts/memory_review.py",
@@ -313,6 +319,12 @@
           "name": "Sync",
           "desc": "Keep the brain current: and never let the derived layers go stale.",
           "where": "scripts/sync.py",
+          "scope": "generic"
+        },
+        {
+          "name": "Watchdog",
+          "desc": "Pipeline watchdog: makes the alarm PUSH, not pull. Silence means healthy.",
+          "where": "scripts/watchdog.py",
           "scope": "generic"
         },
         {

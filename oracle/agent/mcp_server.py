@@ -199,6 +199,27 @@ def _fmt_hit(rid, r):
     return item
 
 
+def _log_query(conn, query):
+    """Usage telemetry INTO the memory loop, not a log file: first-page search queries land
+    in `conversations` (role 'user', an mcp-<day> session) so nightly consolidation and the
+    hygiene report's repeated-questions signal reflect how the brain is ACTUALLY used —
+    without this, hosted/read-tool usage leaves no improvement signal at all. The deny-list
+    tags at write time (conversation.record_turn), so a query mentioning a deal/fee is
+    stored business-scope and never resurfaces in any read path. Best-effort by design —
+    telemetry must never break a search. Skipped entirely on read-only deployments
+    (MCP_READONLY=1 means the server writes NOTHING); disable anywhere with
+    MCP_LOG_QUERIES=0."""
+    if READONLY or os.environ.get("MCP_LOG_QUERIES", "1").lower() in ("0", "false", "no"):
+        return
+    try:
+        import datetime
+        import conversation
+        conversation.record_turn(conn, "mcp-" + datetime.date.today().isoformat(),
+                                 "user", str(query)[:2000])
+    except Exception:
+        pass
+
+
 @mcp.tool(annotations={**_READ, "title": "Search the second brain"})
 def search(
     query: Annotated[str, Field(description="What to look for, in natural language")],
@@ -231,6 +252,8 @@ def search(
     conn = None
     try:
         conn = db.connect()
+        if cursor is None:   # first page only — paging the same query is one question, not N
+            _log_query(conn, query)
         # fetch a pool deep enough for this page (+ buffer for item/passage dedup), then slice
         pool_n = min((offset + k) * 2 + 4, 100)
         deduped = _dedup_hits(content.search_hybrid(conn, query, pool_n))

@@ -13,13 +13,17 @@ EMBED_MODEL = "MINILM"
 
 _SYS = (
     "You maintain a durable, reusable set of FACTS about a creator's content library. You are given "
-    "(a) the facts you already distilled last time, (b) a sample of their content, and (c) a log of "
-    "recent research over it. UPDATE the fact set: KEEP the existing facts that still hold, REVISE "
+    "(a) the facts you already distilled last time, (b) a sample of their content, (c) a log of "
+    "recent research over it, and (d) recent conversation questions asked of the assistant. "
+    "UPDATE the fact set: KEEP the existing facts that still hold, REVISE "
     "any that are now more precise, ADD genuinely new ones from the recent runs, and DROP duplicates "
     "or anything contradicted. This is cumulative — do NOT discard prior knowledge just because it "
     "isn't in the recent runs. Return the FULL updated set (concise, standalone facts an assistant "
     "could reuse) — themes, recurring audience questions, formats, tools, notable gaps — deduplicated "
     "and capped at the ~40 most useful. Categories: theme | audience | format | tool | gap.\n"
+    "CONVERSATION SIGNAL: a question asked repeatedly across conversations is a fact "
+    "(category: audience) — it marks knowledge worth synthesizing once instead of re-deriving; "
+    "a user correction of an earlier answer outranks the prior fact it contradicts.\n"
     "PRIVACY GUARD: never record financial or private business facts — no earnings, rates, fees, "
     "pricing, invoices, payments, banking, budgets, taxes, contracts, or deal terms. Knowing a "
     "post is a brand collaboration (and its reach/engagement) is fine; the money and terms are not.\n"
@@ -42,7 +46,8 @@ _SCHEMA = {
 
 
 def consolidate(client, conn, limit=30, title_sample=80):
-    """Cumulatively update semantic_memory from episodic memory + content. Feeds the EXISTING facts
+    """Cumulatively update semantic_memory from episodic memory + content + recent conversation
+    questions (all content-scope). Feeds the EXISTING facts
     back in so prior knowledge is preserved (merge, not rolling-window rebuild), and samples titles
     instead of dumping the whole library so it scales to thousands of posts. Returns the facts."""
     cur = conn.cursor()
@@ -60,9 +65,21 @@ def consolidate(client, conn, limit=30, title_sample=80):
     cur.execute("select category, fact from semantic_memory where source = 'consolidation' "
                 "order by category")
     prior = cur.fetchall()
-    cur.execute("select task, action, detail from agent_memory order by created_at desc "
+    # content-scope only, same contract as the posts read above: a business-tagged run
+    # (deal/fee terms the deny-list caught at write time) must never be distilled into
+    # a durable fact.
+    cur.execute("select task, action, detail from agent_memory "
+                "where nvl(visibility,'content') = 'content' "
+                "order by created_at desc "
                 f"fetch first {int(limit)} rows only")
     runs = cur.fetchall()
+    # what the user actually ASKED lately (content-scope turns only) — repeated questions
+    # and corrections are consolidation signal, not just the research runs.
+    cur.execute("select content from conversations "
+                "where role = 'user' and nvl(visibility,'content') = 'content' "
+                "order by created_at desc "
+                f"fetch first {int(limit)} rows only")
+    questions = [str(r[0])[:200] for r in cur.fetchall()]
 
     prompt = (
         "EXISTING FACTS (from last consolidation — keep/revise/dedupe these):\n" +
@@ -71,6 +88,8 @@ def consolidate(client, conn, limit=30, title_sample=80):
         "\n".join(f"- {t}" for t in titles) +
         "\n\nRECENT RESEARCH RUNS (question | answer-summary | notes):\n" +
         "\n".join(f"- {q} | {(a or '')[:160]} | {d or ''}" for q, a, d in runs) +
+        "\n\nRECENT CONVERSATION QUESTIONS (what the user asked, newest first):\n" +
+        ("\n".join(f"- {q}" for q in questions) if questions else "(none yet)") +
         "\n\nReturn the full updated fact set."
     )
     facts = llm.structured(_SYS, prompt, _SCHEMA, max_tokens=8192)["facts"]

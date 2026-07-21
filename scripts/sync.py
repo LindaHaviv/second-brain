@@ -2,8 +2,10 @@
 
 The rule: whenever new content lands, the *synthesized* layers must be rebuilt too. So this always
 runs in order:  pull configured API sources  ->  classify if needed  ->  refresh the wiki  ->
-consolidate memory. (The wiki + consolidation read only visibility='content', so private/off-topic
-never seep in.)
+consolidate memory  ->  rotate expired raw memory + write the hygiene report. (The wiki +
+consolidation read only visibility='content', so private/off-topic never seep in; rotation only
+touches raw layers whose lessons consolidation just distilled — see docs/LOOP_ENGINEERING.md,
+"Forgetting is a designed stage".)
 
   ./.venv/bin/python scripts/sync.py
 
@@ -40,6 +42,10 @@ STEPS = [
     ("Claude Code",  [str(ROOT / "scripts" / "claude_code.py")],        None),
     ("Wiki refresh", [str(ROOT / "oracle" / "agent" / "wiki.py"), "--refresh"], None),
     ("Consolidate",  [str(ROOT / "scripts" / "consolidate.py")],        None),
+    # forgetting stages, in the only safe order: distill first (Consolidate, above), THEN
+    # rotate raw logs whose lessons are distilled, then report what the human should curate
+    ("Memory expiry", [str(ROOT / "scripts" / "memory_expire.py"), "--apply"],  None),
+    ("Memory review", [str(ROOT / "scripts" / "memory_review.py"), "--write"],  None),
     ("Registry",     [str(ROOT / "scripts" / "build_registry.py")],     None),  # auto-detect what's built
 ]
 

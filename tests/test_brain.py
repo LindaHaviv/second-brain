@@ -471,6 +471,218 @@ def test_memory_stale_detector():
     assert not is_stale_candidate("", 400)
 
 
+def test_memory_expiry_pure_helpers():
+    """Retention parsing fails toward 'disabled' (never toward deleting), and question
+    normalization groups trivial rewordings for the repeated-question signal."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from memory_expire import license_verdict, retention_days
+    from memory_review import normalize_question
+    assert retention_days({}) == 90                       # the default window
+    assert retention_days({"MEMORY_RETENTION_DAYS": "30"}) == 30
+    assert retention_days({"MEMORY_RETENTION_DAYS": "0"}) == 0     # explicit off
+    assert retention_days({"MEMORY_RETENTION_DAYS": "-5"}) == 0    # never negative
+    assert retention_days({"MEMORY_RETENTION_DAYS": "soon"}) == 0  # junk = off, not crash
+    # rotation license: only a consolidation that exists AND ran recently permits deletion
+    assert license_verdict(None), "missing snapshot must refuse rotation"
+    assert license_verdict(30), "a stale distill must refuse rotation (broken-Consolidate case)"
+    assert license_verdict(0) == "" and license_verdict(7) == "", "fresh distill must license"
+    assert normalize_question("What's my  best hook?") == normalize_question("whats my best hook")
+    assert normalize_question("") == ""
+
+
+def test_memory_expiry_rotates_only_old_rows():
+    """Raw-log rotation: a row far past the window is counted and deleted; a fresh row
+    survives. Probes are backdated ~98 years so the applied window (35000d) can never
+    catch a real row, only the probes."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import memory_expire
+    c = db.connect()
+    cur = c.cursor()
+    try:
+        cur.execute("INSERT INTO agent_memory (run_id, task, action, outcome, created_at) "
+                    "VALUES ('test-expire', 'zqxexpold probe', 'a', 'success', "
+                    "SYSTIMESTAMP - NUMTODSINTERVAL(36000,'DAY'))")
+        cur.execute("INSERT INTO agent_memory (run_id, task, action, outcome) "
+                    "VALUES ('test-expire', 'zqxexpnew probe', 'a', 'success')")
+        cur.execute("INSERT INTO conversations (session_id, seq, role, content, created_at) "
+                    "VALUES ('test-expire', 1, 'user', 'zqxexpold turn', "
+                    "SYSTIMESTAMP - NUMTODSINTERVAL(36000,'DAY'))")
+        c.commit()
+        counts = memory_expire.expiry_counts(c, 35000)
+        assert sum(counts["agent_memory"].values()) >= 1, "old run not counted"
+        assert sum(counts["conversations"].values()) >= 1, "old turn not counted"
+        deleted = memory_expire.apply_expiry(c, 35000)
+        assert deleted["agent_memory"] >= 1 and deleted["conversations"] >= 1, deleted
+        cur.execute("SELECT task FROM agent_memory WHERE run_id = 'test-expire'")
+        tasks = [r[0] for r in cur.fetchall()]
+        assert tasks == ["zqxexpnew probe"], f"rotation touched the wrong rows: {tasks}"
+        cur.execute("SELECT COUNT(*) FROM conversations WHERE session_id = 'test-expire'")
+        assert cur.fetchone()[0] == 0, "old turn survived rotation"
+    finally:
+        cur.execute("DELETE FROM agent_memory WHERE run_id = 'test-expire'")
+        cur.execute("DELETE FROM conversations WHERE session_id = 'test-expire'")
+        c.commit()
+        c.close()
+
+
+def test_memory_expiry_tombstone_is_content_scope():
+    """Rotation archives what it deletes — but ONLY content-scope rows. Tombstoning a
+    business-tagged row would quietly undo the privacy floor (quarantined raw rows are
+    supposed to actually die at expiry, not survive in a file)."""
+    import tempfile
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import memory_expire
+    c = db.connect()
+    cur = c.cursor()
+    tmp = pathlib.Path(tempfile.mkdtemp()) / "tombstones.jsonl"
+    try:
+        cur.execute("INSERT INTO agent_memory (run_id, task, action, outcome, visibility, "
+                    "created_at) VALUES ('test-tomb', 'zqxtombok content run', 'a', 'success', "
+                    "'content', SYSTIMESTAMP - NUMTODSINTERVAL(36000,'DAY'))")
+        cur.execute("INSERT INTO agent_memory (run_id, task, action, outcome, visibility, "
+                    "created_at) VALUES ('test-tomb', 'zqxtombbiz deal run', 'a', 'success', "
+                    "'business', SYSTIMESTAMP - NUMTODSINTERVAL(36000,'DAY'))")
+        cur.execute("INSERT INTO conversations (session_id, seq, role, content, visibility, "
+                    "created_at) VALUES ('test-tomb', 1, 'user', 'zqxtombturn question', "
+                    "'content', SYSTIMESTAMP - NUMTODSINTERVAL(36000,'DAY'))")
+        c.commit()
+        n = memory_expire.archive_expiring(c, 35000, path=tmp)
+        assert n >= 2, f"expected both content probes archived, got {n}"
+        text = tmp.read_text()
+        assert "zqxtombok" in text and "zqxtombturn" in text, "content rows missing from tombstone"
+        assert "zqxtombbiz" not in text, "PRIVACY LEAK: business row was tombstoned"
+        memory_expire.apply_expiry(c, 35000)   # the probes themselves rotate out
+        cur.execute("SELECT COUNT(*) FROM agent_memory WHERE run_id = 'test-tomb'")
+        assert cur.fetchone()[0] == 0, "expired probes survived apply"
+    finally:
+        if tmp.exists():
+            tmp.unlink()
+        cur.execute("DELETE FROM agent_memory WHERE run_id = 'test-tomb'")
+        cur.execute("DELETE FROM conversations WHERE session_id = 'test-tomb'")
+        c.commit()
+        c.close()
+
+
+def test_mcp_query_logging_feeds_conversation_signal():
+    """Search queries are the purest 'what does the user keep needing' signal: _log_query
+    must write them into conversations (an mcp-<day> session), stay silent under the env
+    kill-switch, and write NOTHING on a read-only deployment."""
+    c = db.connect()
+    cur = c.cursor()
+
+    def probe_count():
+        cur.execute("SELECT COUNT(*) FROM conversations WHERE content LIKE 'zqxmcplog%'")
+        return cur.fetchone()[0]
+
+    real_ro = mcp_server.READONLY
+    real_env = os.environ.get("MCP_LOG_QUERIES")
+    try:
+        mcp_server._log_query(c, "zqxmcplog what is my best hook")
+        assert probe_count() == 1, "query was not logged into conversations"
+        cur.execute("SELECT session_id FROM conversations WHERE content LIKE 'zqxmcplog%'")
+        assert cur.fetchone()[0].startswith("mcp-"), "logged query not in an mcp-<day> session"
+        os.environ["MCP_LOG_QUERIES"] = "0"
+        mcp_server._log_query(c, "zqxmcplog kill switch")
+        assert probe_count() == 1, "kill switch did not stop query logging"
+        del os.environ["MCP_LOG_QUERIES"]
+        mcp_server.READONLY = True
+        mcp_server._log_query(c, "zqxmcplog readonly")
+        assert probe_count() == 1, "READONLY deployment wrote a conversation row"
+    finally:
+        mcp_server.READONLY = real_ro
+        if real_env is None:
+            os.environ.pop("MCP_LOG_QUERIES", None)
+        else:
+            os.environ["MCP_LOG_QUERIES"] = real_env
+        cur.execute("DELETE FROM conversations WHERE content LIKE 'zqxmcplog%'")
+        c.commit()
+        c.close()
+
+
+def test_failing_streaks_flags_only_consecutive_fails():
+    """Loop-health escalation: 3 straight FAILs headline; an interrupted streak or a
+    repeated deliberate SKIP (unconfigured source) must not — alarm fatigue kills reports."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from memory_review import failing_streaks
+
+    def run(at, **status_by_label):
+        return {"run_at": at, "steps": [{"label": lbl, "status": st}
+                                        for lbl, st in status_by_label.items()]}
+
+    hist = [run("2026-07-18T09:00", Obsidian="fail", Instagram="skip", Notion="ok"),
+            run("2026-07-19T09:00", Obsidian="fail", Instagram="skip", Notion="fail"),
+            run("2026-07-20T09:00", Obsidian="fail", Instagram="skip", Notion="fail")]
+    flagged = failing_streaks(hist, min_runs=3)
+    assert [f["step"] for f in flagged] == ["Obsidian"], flagged     # not Notion (2x), not skip
+    assert flagged[0]["consecutive_fails"] == 3
+    assert failing_streaks(hist[:2], min_runs=3) == []               # not enough history
+    assert failing_streaks([], min_runs=3) == []
+
+
+def test_watchdog_alerts_only_when_a_human_is_needed():
+    """Silence means healthy: no message for ok or one-off degraded runs; a message for
+    down / no-heartbeat / consecutive-fail streaks. A watchdog that pings daily gets
+    muted, then ignored — this pins the quiet."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from watchdog import compose_alert
+    ok = {"state": "ok", "hours_since": 2.0, "trouble": []}
+    degraded = {"state": "degraded", "hours_since": 3.0, "trouble": ["Instagram: skip"]}
+    down = {"state": "down", "hours_since": 49.0, "trouble": []}
+    fresh = {"state": "no-heartbeat", "hours_since": None, "trouble": []}
+    streak = [{"step": "Obsidian", "consecutive_fails": 3, "last_run": "2026-07-20T09:55"}]
+    assert compose_alert(ok, []) is None
+    assert compose_alert(degraded, []) is None          # skips/one-offs stay quiet
+    assert "DOWN" in compose_alert(down, [])
+    assert "no sync run recorded" in compose_alert(fresh, [])
+    msg = compose_alert(ok, streak)
+    assert "Obsidian" in msg and "3+" in msg            # streaks alert even when sync ran
+    assert "Obsidian" in compose_alert(down, streak) and "DOWN" in compose_alert(down, streak)
+
+
+def test_consolidation_inputs_are_content_scope():
+    """Consolidation must never SEE a business-tagged run or turn (AGENTS.md rule 2:
+    private items stay out of memory consolidation). Captures the prompt consolidate()
+    builds — via a stub LLM that raises before any write — and asserts the business
+    probes are absent while the content probes made it in. No LLM call, no DB write."""
+    import llm as llm_mod
+    c = db.connect()
+    cur = c.cursor()
+    captured = {}
+
+    def stub_structured(sys_prompt, prompt, schema, max_tokens=0):
+        captured["prompt"] = prompt
+        raise RuntimeError("stub: stop before any write")
+
+    real = llm_mod.structured
+    try:
+        cur.execute("INSERT INTO agent_memory (run_id, task, action, outcome, visibility) "
+                    "VALUES ('test-consc', 'zqxconsbiz deal run', 'a', 'success', 'business')")
+        cur.execute("INSERT INTO agent_memory (run_id, task, action, outcome, visibility) "
+                    "VALUES ('test-consc', 'zqxconsok search run', 'a', 'success', 'content')")
+        cur.execute("INSERT INTO conversations (session_id, seq, role, content, visibility) "
+                    "VALUES ('test-consc', 1, 'user', 'zqxconvqbiz rate question', 'business')")
+        cur.execute("INSERT INTO conversations (session_id, seq, role, content, visibility) "
+                    "VALUES ('test-consc', 2, 'user', 'zqxconvqok topic question', 'content')")
+        c.commit()
+        llm_mod.structured = stub_structured
+        try:
+            semantic_memory.consolidate(None, c)
+            raise AssertionError("stub LLM should have stopped consolidate()")
+        except RuntimeError:
+            pass
+        prompt = captured["prompt"]
+        assert "zqxconsok" in prompt, "content run missing from consolidation inputs"
+        assert "zqxconvqok" in prompt, "content question missing from consolidation inputs"
+        assert "zqxconsbiz" not in prompt, "PRIVACY LEAK: business run reached the consolidator"
+        assert "zqxconvqbiz" not in prompt, "PRIVACY LEAK: business turn reached the consolidator"
+    finally:
+        llm_mod.structured = real
+        cur.execute("DELETE FROM agent_memory WHERE run_id = 'test-consc'")
+        cur.execute("DELETE FROM conversations WHERE session_id = 'test-consc'")
+        c.commit()
+        c.close()
+
+
 def test_backend_resolution_parity():
     """sync.py and oamp_sweep.py must resolve the backend exactly like the agent does,
     or the daily privacy sweep silently skips on configs where extraction runs."""

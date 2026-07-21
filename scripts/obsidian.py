@@ -108,17 +108,25 @@ def main():
                 "on (p.platform_id=s.id) when not matched then "
                 "insert (platform_id, display_name) values ('obsidian','Obsidian vault')")
 
-    new = updated = unchanged = private = docs = 0
+    new = updated = unchanged = private = docs = skipped = 0
     for path in vault_files(vault, {".md", ".txt"} | DOC_EXTS):
         rel = path.relative_to(vault).as_posix()
         kind = "note"
         meta = {}
-        if path.suffix.lower() == ".pdf":
-            body, kind, docs = extract_pdf(path), "reference", docs + 1
-        elif path.suffix.lower() == ".epub":
-            body, kind, docs = extract_epub(path), "reference", docs + 1
-        else:
-            meta, body = parse_note(path.read_text(errors="replace"))
+        try:
+            if path.suffix.lower() == ".pdf":
+                body, kind, docs = extract_pdf(path), "reference", docs + 1
+            elif path.suffix.lower() == ".epub":
+                body, kind, docs = extract_epub(path), "reference", docs + 1
+            else:
+                meta, body = parse_note(path.read_text(errors="replace"))
+        except OSError as e:
+            # a cloud-synced vault can hold placeholder files that aren't materialized
+            # locally (reads raise e.g. 'Resource deadlock avoided'); one unreadable
+            # note must not sink the whole step — skip it LOUDLY and keep loading
+            print(f"  !! skipping unreadable note: {rel} ({e})")
+            skipped += 1
+            continue
         if len(body) < 15:
             continue
         url = f"obsidian://{rel}"
@@ -169,7 +177,10 @@ def main():
     conn.close()
     print(f"obsidian: {new} new, {updated} updated, {unchanged} unchanged"
           + (f", {docs} documents (reference)" if docs else "")
-          + (f", {private} kept non-content" if private else ""))
+          + (f", {private} kept non-content" if private else "")
+          + (f", {skipped} SKIPPED unreadable" if skipped else ""))
+    if skipped and not (new or updated or unchanged):
+        sys.exit(1)   # every note unreadable = the vault itself is broken, fail loud
 
 
 if __name__ == "__main__":

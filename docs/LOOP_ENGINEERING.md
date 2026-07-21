@@ -29,7 +29,11 @@ the loops that maintain it, and then you hold those loops to the rules below:
   (`sync_runs`, via `oracle/agent/health.py`, as the sync's last act); anything failing
   or skipping repeatedly should headline your weekly review, not hide in a log. (A
   missing API token once silently skipped a source here for weeks — this exists so that
-  can't happen quietly again.)
+  can't happen quietly again.) The headline is automated: the hygiene report
+  (`scripts/memory_review.py`, run daily by the sync) prints any step that FAILED three
+  or more consecutive runs at the very top, before any hygiene finding. Deliberate
+  skips are not escalated — a known-unconfigured source alarming daily would train you
+  to ignore the report.
 - **Downtime is visible from anywhere.** The machine that runs your sync will sometimes
   be off or asleep — and a system that can't say so just looks quietly stale. Because the
   heartbeat lives in the *database*, the hosted MCP's `source_status` panel can tell you
@@ -77,10 +81,36 @@ the loops that maintain it, and then you hold those loops to the rules below:
   personal (a break-glass CLI with credentials in the OS keychain — never scheduled,
   never hosted, every use consented). Standing automation belongs only behind the first
   two fences; personal scopes get hand tools, not infrastructure.
-- **Forgetting is a designed stage.** A memory store that only grows drifts toward noise.
-  `scripts/memory_review.py` is the report-only audit: stale time-bound facts, near-duplicate
-  pairs, volume growth. Review it, retire by hand — deleting memories is the one loop that
-  should never run unattended first.
+- **Forgetting is a designed stage.** A memory store that only grows drifts toward noise —
+  not because it fills a disk, but because recall degrades: retrieval is top-k, so every
+  stale or duplicate row makes the *wrong* five results a little more likely. The answer is
+  a three-stage lifecycle, and the order is the safety mechanism:
+  1. **Distill** — the daily consolidation folds episodic runs *and recent conversation
+     questions* into durable semantic facts (cumulative: keep/revise/dedupe, capped). A
+     question asked repeatedly becomes a fact; a correction outranks what it contradicts.
+     The MCP server feeds this signal from real usage: first-page `search` queries are
+     logged into the conversation store (deny-list tagged at write, skipped entirely on
+     read-only deployments, `MCP_LOG_QUERIES=0` to disable) — so what you keep asking
+     your brain from any device is itself input to what it learns.
+  2. **Rotate the raw logs** — `scripts/memory_expire.py` expires `agent_memory` and
+     `conversations` rows past the retention window (`MEMORY_RETENTION_DAYS`, default 90;
+     0 disables). This is log rotation, not memory curation: it touches ONLY the raw
+     layers whose lessons step 1 has already distilled dozens of times, and runs
+     immediately AFTER consolidation in the sync. Its license to delete is a consolidation
+     snapshot that exists **and is fresh** (within days) — the sync continues past a failed
+     step, so without the freshness check a silently-broken consolidator would let
+     undistilled experience rotate away while old facts satisfied an exists-only guard.
+     Before deleting, content-scope rows are appended to a local gitignored tombstone
+     (`exports/memory_tombstones.jsonl`) — insurance against the distilled cap's
+     lossiness. Retention doubles as a privacy floor: raw rows the deny-list quarantined
+     as private don't live forever either, and they are deliberately NOT tombstoned.
+  3. **Curate the distilled layer** — `scripts/memory_review.py` stays the report-only
+     audit: stale time-bound facts, near-duplicate pairs, volume growth, plus the
+     conversation signals (questions asked 3+ times → wiki/fact candidates; failed runs →
+     where recall let a question down). The sync writes it to `exports/memory_review.json`;
+     review it, retire by hand. Deleting *distilled* memories is the one loop that should
+     never run unattended — only the raw-log rotation in step 2 earned automation, and only
+     behind its guards.
 
 The privacy filter is part of the loop, not an afterthought: consolidation and the wiki only read
 `visibility = 'content'`, so a private item can never be laundered into a "learned" fact. Accuracy
