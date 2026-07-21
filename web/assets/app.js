@@ -399,27 +399,17 @@
   // Optional doc link: set localStorage 'brain_memory_doc' to a URL to reveal a "learn more".
   var MEMORY_DOC_URL = localStorage.getItem("brain_memory_doc") || "";
   var FLOW = [
-    { t: "Ask", k: "neu", dot: "var(--ink-soft)", l: "A question or task arrives.",
-      d: "Everything starts with a prompt, from you or a scheduled job." },
-    { t: "Recall", k: "sem", dot: "var(--k-sem)", l: "Pull relevant past experience + tools, by meaning.",
-      d: "Before acting, the agent semantic-searches its own memory: what worked on similar tasks (<b>episodic</b> and <b>semantic</b>) and which tools fit (<b>procedural</b>). It starts informed, not blank." },
-    { t: "Act", k: "act", dot: "var(--k-act)", l: "Research and answer.",
-      d: "It runs the task with the recalled tools, grounded in your content and wiki." },
-    { t: "Record", k: "epi", dot: "var(--k-epi)", l: "Write an episodic memory of what happened.",
-      d: "One row per run: the task, what it did, the outcome, a reward. Auditable in plain SQL, so you can literally query its <b>success rate per tool</b>." },
-    { t: "Consolidate", k: "sem", dot: "var(--k-sem)", l: "Distill runs into durable facts.",
-      d: "Periodically an LLM reads the episodic log and updates the <b>semantic</b> facts (themes, audience, formats, gaps). Experience compounds into reusable knowledge." }
+    { t: "Ask", d: "Everything starts with a prompt, from you or a scheduled job." },
+    { t: "Recall", d: "Before acting, the agent semantic-searches its own memory: what worked on similar tasks (<b>episodic</b> and <b>semantic</b>) and which tools fit (<b>procedural</b>). It starts informed, not blank." },
+    { t: "Act", d: "It runs the task with the recalled tools, grounded in your content and wiki." },
+    { t: "Record", d: "One row per run: the task, what it did, the outcome, a reward. Auditable in plain SQL, so you can literally query its <b>success rate per tool</b>." },
+    { t: "Consolidate", d: "Periodically an LLM reads the episodic log and updates the <b>semantic</b> facts (themes, audience, formats, gaps). Experience compounds into reusable knowledge." }
   ];
   var flowDone = false;
   function renderFlow() {
     if (flowDone) return; flowDone = true;
-    el("flow-track").innerHTML = FLOW.map(function (s, i) {
-      var arrow = i < FLOW.length - 1 ? '<span class="flow-arrow">→</span>' : "";
-      return '<div class="flow-stage k-' + s.k + '" data-i="' + i + '"><div class="fs-i">step ' + (i + 1) +
-        '</div><div class="fs-t"><span class="kdot" style="background:' + s.dot + '"></span>' + esc(s.t) +
-        '</div><div class="fs-l">' + esc(s.l) + "</div></div>" + arrow;
-    }).join("");
-    var stages = el("flow-track").querySelectorAll(".flow-stage");
+    // the loop diagram is static markup (the layout IS the concept); JS only wires the steps
+    var stages = el("mem-flow").querySelectorAll(".flow-stage");
     function activate(i) {
       stages.forEach(function (n, j) { n.classList.toggle("active", j === i); n.classList.remove("pulse"); });
       stages[i].classList.add("pulse");

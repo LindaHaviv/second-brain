@@ -83,16 +83,43 @@
 
           <div class="mem-flow" id="mem-flow">
             <div class="flow-head"><span class="flow-title">The lifecycle</span><span class="flow-clickhint">click each step to read it</span></div>
-            <div class="flow-track" id="flow-track"></div>
-            <div class="flow-return" aria-hidden="true">
-              <svg viewBox="0 0 1000 44" preserveAspectRatio="none">
-                <path d="M 900 4 C 870 40, 640 42, 490 41 C 420 40, 355 36, 332 10"
-                      fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-dasharray="7 5"
-                      vector-effect="non-scaling-stroke"/>
-                <path d="M 320 22 L 332 6 L 344 20" fill="none" stroke="var(--ink)"
-                      stroke-width="1.6" vector-effect="non-scaling-stroke"/>
+            <!-- the loop drawn AS a loop: four steps cycle on a ring; an ask enters from outside -->
+            <div class="flow-circle">
+              <div class="flow-ring" aria-hidden="true"></div>
+              <span class="fc-chev fc-chev-tr" aria-hidden="true"><svg viewBox="0 0 14 16"><path d="M2 2 L12 8 L2 14" fill="none" stroke="var(--ink)" stroke-width="2"/></svg></span>
+              <span class="fc-chev fc-chev-br" aria-hidden="true"><svg viewBox="0 0 14 16"><path d="M2 2 L12 8 L2 14" fill="none" stroke="var(--ink)" stroke-width="2"/></svg></span>
+              <span class="fc-chev fc-chev-bl" aria-hidden="true"><svg viewBox="0 0 14 16"><path d="M2 2 L12 8 L2 14" fill="none" stroke="var(--ink)" stroke-width="2"/></svg></span>
+              <span class="fc-chev fc-chev-tl" aria-hidden="true"><svg viewBox="0 0 14 16"><path d="M2 2 L12 8 L2 14" fill="none" stroke="var(--ink)" stroke-width="2"/></svg></span>
+              <div class="fc-center" aria-hidden="true"><div class="fc-glyph">↻</div><div class="fc-lbl">experience<br>compounds</div></div>
+              <svg class="fc-entry" aria-hidden="true" viewBox="0 0 220 70">
+                <path d="M6 14 C 66 8, 140 20, 196 50" fill="none" stroke="var(--ink)" stroke-width="1.6" stroke-dasharray="6 5"/>
+                <path d="M186 38 L198 51 L181 56" fill="none" stroke="var(--ink)" stroke-width="1.6"/>
               </svg>
-              <span class="lbl">consolidate feeds recall, so experience compounds</span>
+              <div class="flow-stage k-neu fc-ask" data-i="0">
+                <div class="fs-i">step 1</div>
+                <div class="fs-t"><span class="kdot" style="background:var(--ink-soft)"></span>Ask</div>
+                <div class="fs-l">A question or task arrives.</div>
+              </div>
+              <div class="flow-stage k-sem fc-recall" data-i="1">
+                <div class="fs-i">step 2</div>
+                <div class="fs-t"><span class="kdot" style="background:var(--k-sem)"></span>Recall</div>
+                <div class="fs-l">Pull past experience + tools, by meaning.</div>
+              </div>
+              <div class="flow-stage k-act fc-act" data-i="2">
+                <div class="fs-i">step 3</div>
+                <div class="fs-t"><span class="kdot" style="background:var(--k-act)"></span>Act</div>
+                <div class="fs-l">Research and answer.</div>
+              </div>
+              <div class="flow-stage k-epi fc-record" data-i="3">
+                <div class="fs-i">step 4</div>
+                <div class="fs-t"><span class="kdot" style="background:var(--k-epi)"></span>Record</div>
+                <div class="fs-l">Write an episodic memory of what happened.</div>
+              </div>
+              <div class="flow-stage k-sem fc-consolidate" data-i="4">
+                <div class="fs-i">step 5</div>
+                <div class="fs-t"><span class="kdot" style="background:var(--k-sem)"></span>Consolidate</div>
+                <div class="fs-l">Distill runs into durable facts.</div>
+              </div>
             </div>
             <div class="flow-detail" id="flow-detail"></div>
             <div class="flow-notes">
