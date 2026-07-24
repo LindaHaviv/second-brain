@@ -46,7 +46,7 @@ def statements(sql_text):
 
 def main():
     dry = "--dry-run" in sys.argv
-    files = sorted(SCHEMA_DIR.glob("0*.sql"))
+    files = sorted(SCHEMA_DIR.glob("[0-9]*.sql"))
     conn = None if dry else db.connect()
     ok = skipped = errors = 0
     for f in files:

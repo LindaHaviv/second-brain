@@ -334,10 +334,12 @@ def render_parking(ranked, top, today):
 
 HEADER = """# Backlog — the one place that owns priority
 
-<!-- Managed by private/agents/backlog.py. The `## Items` section is the source of truth:
-     append there, hand-edit freely, or run `backlog.py add "<brain dump>"`. Everything
-     above it is a DERIVED VIEW — regenerated every review, don't hand-edit it.
-     Financial terms (rates, payment) stay in the Notion tracker / invoicing, NOT here. -->
+<!-- Managed by the backlog agent. File-backed store: the `## Items` section is the
+     source of truth — append or hand-edit freely there. DB-backed store: this whole
+     file is a DERIVED SNAPSHOT (rewritten on every command); a deliberate hand-edit
+     needs `backlog.py import-file` to stick. Either way everything above `## Items`
+     is regenerated on review — don't hand-edit it. Financial terms (rates, payment)
+     stay in the tracker / invoicing, NOT here. -->
 """
 
 
