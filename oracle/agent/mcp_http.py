@@ -4,7 +4,7 @@ ChatGPT, or any device can reach the brain over the internet.
 It reuses the exact same FastMCP instance + tools from mcp_server.py and connects to whatever
 oracle/.env points at (the cloud Autonomous DB). Auth: WorkOS OAuth + allowlist when AUTHKIT_DOMAIN
 is set, else an `Authorization: Bearer $MCP_AUTH_TOKEN` header. Open probes:
-  GET /health  — shallow liveness (no DB), for the load balancer's fast check
+  GET /health  — shallow liveness (no DB) + build stamp, for the load balancer's fast check
   GET /ready   — readiness: actually touches the DB (SELECT 1), 200 if reachable else 503
 
 Run locally:
@@ -25,6 +25,11 @@ import db                       # noqa: E402
 from mcp_server import mcp   # same FastMCP server + all tools (see mcp_server.py's registry)
 
 TOKEN = os.environ.get("MCP_AUTH_TOKEN")
+
+# Build stamp, baked in at image build (Dockerfile ARG -> ENV). "dev" means a build that
+# didn't pass the args — visible, so a stampless deploy is noticeable rather than silent.
+BUILD_SHA = os.environ.get("BUILD_SHA", "dev")
+BUILD_DATE = os.environ.get("BUILD_DATE", "unknown")
 
 # FAIL CLOSED: a hosted brain must never start without auth. OAuth (AUTHKIT_DOMAIN) or a bearer
 # token (MCP_AUTH_TOKEN) — one of them is required. MCP_ALLOW_ANON=1 is an explicit, deliberate
@@ -74,6 +79,13 @@ def _keep_warm():
 
 if os.environ.get("KEEP_WARM", "1") == "1":
     threading.Thread(target=_keep_warm, daemon=True).start()
+
+# Vendor-neutral pipeline backstop: notices a dead sync from the always-on server and
+# pushes a Telegram alert with no AI vendor in the loop (see sentinel.py; needs
+# min_machines_running >= 1 to be meaningful). SENTINEL=0 disables.
+if os.environ.get("SENTINEL", "1") == "1":
+    import sentinel
+    threading.Thread(target=sentinel.run_forever, daemon=True).start()
 
 
 _READY_CACHE = {"at": 0.0, "ok": False}   # /ready is unauthenticated — cache so it can't be
@@ -177,7 +189,7 @@ class Gateway(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         path = request.url.path
         if path == "/health":
-            return JSONResponse({"ok": True})
+            return JSONResponse({"ok": True, "version": BUILD_SHA, "built": BUILD_DATE})
         if path == "/ready":
             return _readiness()
         # Read-only web UI (static shell + /api/*). Like http_ext it runs BEFORE auth and

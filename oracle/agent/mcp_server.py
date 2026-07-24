@@ -97,6 +97,12 @@ Tool routing:
 - Write tools (if present) always ask the user first: ingest_note saves an idea,
   save_chat archives this conversation.
 
+RECALL, THEN RECORD: search the brain BEFORE answering anything about the user's own
+content, past thinking, or work — don't guess from chat context alone. And when a
+conversation produces something worth keeping (a decision, an approved draft, a new idea,
+a lesson learned), OFFER to save it (ingest_note for the nugget, save_chat for the whole
+exchange). Ask first, never write silently. Chats that don't record don't compound.
+
 AGENT PLAYBOOKS: this server also exposes PROMPTS (research_brief, interview_prep,
 caption_pack, weekly_review). Each is a ready-to-run agent recipe that YOU execute with
 the tools above — prefer them when the user asks for that kind of deliverable."""
@@ -346,12 +352,17 @@ def overview() -> dict:
     """A high-level map of the brain: how many items, broken down by platform and by content
     series, how many compiled wiki topics, and the date range covered.
     WHEN TO USE: "what's in my brain", "how much content do I have", "what sources are loaded" —
-    or as a first call to orient before a broad research task. Do NOT use it to answer content
-    questions; that's search(). (Counts reflect only searchable content; private items excluded.)"""
+    or as a first call to orient before a broad research task. Also reports server_version (the
+    deployed build's git SHA + date) so any client can confirm which deployment it's talking to.
+    Do NOT use it to answer content questions; that's search(). (Counts reflect only searchable
+    content; private items excluded.)"""
     conn = None
     try:
         conn = db.connect()
-        return content.stats(conn)
+        out = content.stats(conn)
+        out["server_version"] = {"sha": os.environ.get("BUILD_SHA", "dev"),
+                                 "built": os.environ.get("BUILD_DATE", "unknown")}
+        return out
     except Exception as e:
         _unavailable("overview", e)
     finally:

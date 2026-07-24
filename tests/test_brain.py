@@ -639,6 +639,27 @@ def test_watchdog_alerts_only_when_a_human_is_needed():
     assert "Obsidian" in compose_alert(down, streak) and "DOWN" in compose_alert(down, streak)
 
 
+def test_sentinel_backstop_alerts_only_when_pipeline_is_dead():
+    """The Fly-side backstop is narrower than the local watchdog: ok AND degraded stay
+    silent (richer layers own those); only down / no-heartbeat alert. And down throttles
+    statelessly: day 0 past the window, then every 3rd day — never a daily nag."""
+    import sentinel
+    ok = {"state": "ok", "hours_since": 2.0, "trouble": []}
+    degraded = {"state": "degraded", "hours_since": 3.0, "trouble": ["Instagram: skip"]}
+    fresh = {"state": "no-heartbeat", "hours_since": None, "trouble": []}
+    assert sentinel.should_alert(ok, expected_hours=26) is None
+    assert sentinel.should_alert(degraded, expected_hours=26) is None
+    assert "no sync run recorded" in sentinel.should_alert(fresh, expected_hours=26)
+    day0 = {"state": "down", "hours_since": 28.0, "trouble": []}     # 2h past window
+    day1 = {"state": "down", "hours_since": 52.0, "trouble": []}     # ~1 day past
+    day2 = {"state": "down", "hours_since": 76.0, "trouble": []}     # ~2 days past
+    day3 = {"state": "down", "hours_since": 100.0, "trouble": []}    # ~3 days past
+    assert "backstop" in sentinel.should_alert(day0, expected_hours=26)
+    assert sentinel.should_alert(day1, expected_hours=26) is None
+    assert sentinel.should_alert(day2, expected_hours=26) is None
+    assert "backstop" in sentinel.should_alert(day3, expected_hours=26)
+
+
 def test_consolidation_inputs_are_content_scope():
     """Consolidation must never SEE a business-tagged run or turn (AGENTS.md rule 2:
     private items stay out of memory consolidation). Captures the prompt consolidate()

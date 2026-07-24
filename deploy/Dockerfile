@@ -18,6 +18,13 @@ RUN chmod +x ./entrypoint.sh
 WORKDIR /app/agent
 ENV PORT=8000
 EXPOSE 8000
+# Build stamp: pass at deploy time so /health and the overview tool can report which build is
+# live (defaults keep a stampless build working, visibly marked "dev"):
+#   fly deploy ... --build-arg GIT_SHA=$(git rev-parse --short HEAD) \
+#                  --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%MZ)
+ARG GIT_SHA=dev
+ARG BUILD_DATE=unknown
+ENV BUILD_SHA=$GIT_SHA BUILD_DATE=$BUILD_DATE
 # entrypoint unpacks the wallet (BRAIN_WALLET_B64) then runs uvicorn. Other config comes from
 # Fly secrets (DB_DSN, DB_USER, APP_PWD, DB_WALLET_PASSWORD, MCP_AUTH_TOKEN).
 CMD ["/app/entrypoint.sh"]

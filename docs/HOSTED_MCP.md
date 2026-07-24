@@ -46,9 +46,13 @@ fly secrets set \
   APP_PWD='<the CCC app-user password>' \
   MCP_AUTH_TOKEN='<a long random token you generate>'
 
-fly deploy
+fly deploy --build-arg GIT_SHA=$(git rev-parse --short HEAD) \
+           --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%MZ)
 ```
 Your server is then at `https://<your-app>.fly.dev` (health: `/health`, MCP: `/mcp`).
+The two build args stamp the image: `/health` and the `overview` tool report the deployed
+git SHA + date, so any connected client can confirm which build it's talking to (a stamp
+of `dev` means the args were omitted).
 
 > Prefer mTLS over walletless? Ship the wallet as a Fly secret: tar.gz the **unzipped** wallet dir,
 > base64 it into the `BRAIN_WALLET_B64` secret (the entrypoint decodes it at start), and set
