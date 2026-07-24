@@ -369,14 +369,14 @@ you do:
 
 ## Build yours with your AI (three prompts)
 
-This repo is the map, not the territory — my sources aren't your sources, and my questions
-aren't your questions. To build *your* second brain, hand this repo to your AI as the
-reference and use these three prompts, in order, to make it build yours. Your coding agent
-gets its own briefing: **[AGENTS.md](AGENTS.md)** tells Claude Code / Cursor / any agent the
-house rules — the privacy constraints it must preserve, and which tests and evals gate every
-change — so "open your coding tool and point it at this repo" is a first-class path, not a hack.
+My sources aren't your sources, and my questions aren't your questions. So don't copy this
+repo. Give it to your AI as a reference and have it build YOUR version. These three prompts
+do exactly that, in order. Your coding agent gets its own briefing too:
+**[AGENTS.md](AGENTS.md)** gives Claude Code, Cursor, or any coding agent the house rules:
+the privacy constraints to keep, and the tests and evals that gate every change. Pointing
+your coding tool at this repo is the intended path.
 
-**1. The Architect Prompt** — plan first, no code:
+**1. The Architect Prompt** (plan first, no code):
 
 > I want to build my own second brain: a private, searchable home for everything I create and
 > think. Use this repo as a REFERENCE, not a template:
@@ -386,13 +386,13 @@ change — so "open your coding tool and point it at this repo" is a first-class
 > Before you write any code, interview me:
 > 1. What do I create, and where does it live? (platforms, notes apps, docs, chats)
 > 2. What are the 5 real questions I'd actually ask my second brain?
-> 3. What must stay private vs. what could ever be shared — and are any of my 5 questions
+> 3. What must stay private vs. what could ever be shared? Are any of my 5 questions
 >    about the private stuff? (If so, plan a local-only scope for them.)
 >
 > Then propose MY architecture: which parts of the reference apply to me, which don't, and what
-> I need that it doesn't have. Plan only — don't build anything yet.
+> I need that it doesn't have. Plan only. Don't build anything yet.
 
-**2. The First-Source Prompt** — build small, prove it:
+**2. The First-Source Prompt** (build small, prove it):
 
 > From the plan we agreed on, build ONE source end-to-end: ingest → store → search → answer one
 > of my 5 real questions with it. Nothing else. Rules: secrets go in environment variables or a
@@ -400,26 +400,29 @@ change — so "open your coding tool and point it at this repo" is a first-class
 > real question before we call it done.
 >
 > Only after I've asked it something and gotten a real answer do we add source #2.
->
-> (Useful pointers: a folder of markdown is the fastest first source — `scripts/obsidian.py`
-> + `OBSIDIAN_VAULT` handles any such folder, and a `visibility:` frontmatter key is the
-> privacy switch.)
 
-**3. The Hand-Off Prompt** — the rest of the build already has a guide
-([docs/TUTORIAL.md](docs/TUTORIAL.md)); this prompt puts your AI on it, carrying the two
-rules that keep the build safe and the finish line that tells you when you're done:
+Pick a first source you actually care about. Your YouTube channel is a great one, and it's
+the same path the Quickstart already proved with sample data: `scripts/youtube.py` works on
+any public channel, no API key needed, so swapping in your own channel is one command. Live
+in your notes app instead? Any folder of markdown works: point `scripts/obsidian.py` +
+`OBSIDIAN_VAULT` at it, and a `visibility:` frontmatter key is the privacy switch.
 
-> My single-source brain works. From here, walk docs/TUTORIAL.md with me — its labs are
+**3. The Hand-Off Prompt** (the rest of the build has a guide,
+[docs/TUTORIAL.md](docs/TUTORIAL.md); this prompt puts your AI on it):
+
+> My single-source brain works. From here, walk docs/TUTORIAL.md with me. Its labs are
 > the build-out: my other sources, the privacy scope, the wiki, the daily sync, and MCP
 > into the AI I use every day. Two rules: one lab at a time, and show me PROOF before we
-> move on (a real answer, a compiled page, a heartbeat — not "done"). Set up my private
+> move on (a real answer, a compiled page, a heartbeat, not just "done"). Set up my private
 > scope BEFORE we load real volume. The finish line: my brain answering one of my 5 real
 > questions inside the AI I actually use.
 
-When that happens, it stopped being a demo and became your brain. **For later:** once it
-starts drafting things you'll publish, split the roles — writer in one AI, verifier in
-another, claims checked against your brain before anything ships under your name (the
-same recall → act → verify → record rule your agents already live by).
+When that happens, it stopped being a demo and became your brain.
+
+**For later:** once your brain starts drafting things you'll publish, split the roles.
+Writer in one AI, verifier in another, claims checked against your brain before anything
+ships under your name. It's the same recall → act → verify → record rule your agents
+already live by.
 
 ## Notes
 

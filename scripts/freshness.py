@@ -30,7 +30,7 @@ RULES = {
     "claude":      ("export", 30, "request a Claude export (Settings > Privacy); the watcher does the rest"),
     "instagram":   ("auto",    3, "daily sync may not be running - check the sync log / API token"),
     "linkedin":    ("auto",    9, "weekly Apify self-scrape may not be running - check sync log / Apify credit"),
-    "youtube":     ("auto",    3, "daily sync may not be running - check the sync log"),
+    "youtube":     ("auto",   16, "scheduled harvest may be failing - check the sync log (14d cadence + slack)"),
     "notion":      ("auto",    3, "daily sync may not be running - check the sync log"),
     "claude_code": ("auto",    3, "daily sync may not be running - check the sync log"),
 }
