@@ -68,8 +68,8 @@ the **Always Free tier** includes **two Autonomous AI Databases** (1 OCPU + 20 G
 whole build fits in one), an Arm VM that can host the MCP server, 200 GB of block storage, and
 10 TB/month of outbound transfer — permanently, not a 12-month trial.
 
-> **Already keep a markdown vault?** This build keeps markdown at its core — `sources/` is the
-> portable, canonical layer. The database adds what files alone can't: semantic search with the
+> **Already keep a markdown vault?** This build keeps markdown at its core — your vault stays
+> the portable, canonical layer, read in place. The database adds what files alone can't: semantic search with the
 > embeddings *and* the model in one indexed engine, privacy as an enforced `visibility` constraint
 > on every read path (not a folder convention), wiki citations as foreign keys that stay consistent,
 > and agent memory that consolidates transactionally while the MCP server, sync job, and agents
@@ -278,7 +278,10 @@ that catch silent quality regressions — is in
 | `sources/` | Your canonical content as Markdown + frontmatter — the source of truth |
 | `docs/` | TUTORIAL (start here) · ARCHITECTURE · EXPORT_GUIDE · CLOUD_MIGRATION · HOSTED_MCP · WEB_UI · LOOP_ENGINEERING · BLOG |
 
-`sources/` is the canonical layer; the database is a derived, rebuildable view of it.
+File-first sources are canonical markdown on disk — `sources/` for collected content (YouTube),
+or your own vault read in place — and the database's view of them is rebuildable. API loaders
+(Notion, Drive, socials, chat exports) write to the database directly and can re-pull anytime;
+Autonomous auto-backup covers the rest.
 
 ## What's included
 
