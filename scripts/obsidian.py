@@ -29,7 +29,9 @@ import hashlib
 import os
 import pathlib
 import re
+import subprocess
 import sys
+import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "oracle" / "agent"))
 import db                      # noqa: E402
@@ -93,6 +95,25 @@ def vault_files(vault, exts):
             yield p
 
 
+def read_note(path, retries=2):
+    """read_text with an iCloud nudge: a cloud-synced vault holds DATALESS placeholder
+    files whose reads raise EDEADLK ('Resource deadlock avoided') until the file
+    provider materializes them. Ask for the download (brctl, macOS) and retry briefly;
+    still unreadable after that -> raise, and the caller's loud-skip path takes over."""
+    for attempt in range(retries + 1):
+        try:
+            return path.read_text(errors="replace")
+        except OSError:
+            if attempt == retries:
+                raise
+            try:
+                subprocess.run(["brctl", "download", str(path)],
+                               capture_output=True, timeout=30)
+            except Exception:
+                pass   # no brctl (non-mac) — the plain retry below still gets a chance
+            time.sleep(2)
+
+
 def main():
     vault = os.environ.get("OBSIDIAN_VAULT")
     if not vault or not pathlib.Path(vault).is_dir():
@@ -119,7 +140,7 @@ def main():
             elif path.suffix.lower() == ".epub":
                 body, kind, docs = extract_epub(path), "reference", docs + 1
             else:
-                meta, body = parse_note(path.read_text(errors="replace"))
+                meta, body = parse_note(read_note(path))
         except OSError as e:
             # a cloud-synced vault can hold placeholder files that aren't materialized
             # locally (reads raise e.g. 'Resource deadlock avoided'); one unreadable
