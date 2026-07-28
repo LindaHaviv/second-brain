@@ -219,6 +219,18 @@
           "scope": "generic"
         },
         {
+          "name": "Tiktok apify",
+          "desc": "Collect step (TikTok): scheduled self-scrape of YOUR OWN public videos via a",
+          "where": "scripts/tiktok_apify.py",
+          "scope": "generic"
+        },
+        {
+          "name": "X apify",
+          "desc": "Collect step (X/Twitter): scheduled self-scrape of YOUR OWN public posts via a",
+          "where": "scripts/x_apify.py",
+          "scope": "generic"
+        },
+        {
           "name": "Youtube",
           "desc": "Collect step (YouTube): yt-dlp metadata -> canonical Markdown + Oracle.",
           "where": "scripts/youtube.py",
@@ -295,6 +307,12 @@
           "name": "Oamp sweep",
           "desc": "Daily privacy sweep of the OAMP memory store (the default backend).",
           "where": "scripts/oamp_sweep.py",
+          "scope": "generic"
+        },
+        {
+          "name": "Reconcile content",
+          "desc": "Reconcile the content calendar with reality: Notion plans, the brain knows.",
+          "where": "scripts/reconcile_content.py",
           "scope": "generic"
         },
         {

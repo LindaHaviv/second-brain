@@ -49,6 +49,8 @@ SECRET_KEYS = [
     "OPENAI_API_KEY",       # llm.py
     "NOTION_TOKEN",         # notion.py imports db before reading it
     "GEMINI_API_KEY",       # gemini_video.py uses keychain_secrets.getenv()
+    "IG_ACCESS_TOKEN",      # instagram.py imports db; instagram_token.py resolves + refreshes in place
+    "IG_APP_SECRET",        # instagram_token.py resolves (only needed to mint tokens)
 ]
 # DELIBERATELY EXCLUDED — verify the consumer resolves keychain: BEFORE adding:
 #   EXCALIDRAW_API_KEY — no local Python reads it; it is consumed by the Fly

@@ -1132,6 +1132,96 @@ def test_linkedin_apify_parse_guards():
     assert la.parse_items([foreign], "lindahaviv") == []
 
 
+def test_tiktok_apify_parse_guards():
+    """Pure parse: foreign authors and missing URLs are dropped; good items come
+    through with allowlisted fields only, parsed date, and engagement counts."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import tiktok_apify as tt
+    good = {"authorMeta": {"name": "lindavivah"},
+            "webVideoUrl": "https://www.tiktok.com/@lindavivah/video/123?lang=en",
+            "text": "Second brain in 60 seconds\n#ai #secondbrain",
+            "createTimeISO": "2026-07-11T16:58:53.000Z",
+            "diggCount": 42, "commentCount": 7, "playCount": 1234,
+            "musicMeta": {"dropped": True}}
+    foreign = dict(good, authorMeta={"name": "someone-else"})
+    nourl = dict(good, webVideoUrl="")
+    out = tt.parse_items([good, foreign, nourl, "junk"], "lindavivah")
+    assert len(out) == 1
+    row = out[0]
+    assert sorted(row.keys()) == ["comments", "likes", "published_at",
+                                  "text", "title", "url", "views"]
+    assert row["url"] == "https://www.tiktok.com/@lindavivah/video/123"  # ?lang stripped
+    assert row["title"] == "Second brain in 60 seconds"
+    assert (row["likes"], row["comments"], row["views"]) == (42, 7, 1234)
+    assert row["published_at"].year == 2026
+    # all-foreign payload -> parse yields nothing (main() turns that into a hard FAIL)
+    assert tt.parse_items([foreign], "lindavivah") == []
+
+
+def test_x_apify_parse_guards():
+    """Pure parse: foreign authors, retweets, and missing URL/text are dropped; both
+    X date formats parse; allowlisted fields only."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import x_apify as xa
+    good = {"author": {"userName": "lindavivah"},
+            "url": "https://x.com/lindavivah/status/123?s=20",
+            "fullText": "Shipping the reconciliation agent today.",
+            "createdAt": "Tue Dec 10 07:00:30 +0000 2024",
+            "likeCount": 9, "replyCount": 2, "viewCount": 500,
+            "entities": {"dropped": True}}
+    foreign = dict(good, author={"userName": "someone-else"})
+    retweet = dict(good, isRetweet=True)
+    notext = dict(good, fullText="", text="")
+    out = xa.parse_items([good, foreign, retweet, notext, "junk"], "lindavivah")
+    assert len(out) == 1
+    row = out[0]
+    assert sorted(row.keys()) == ["comments", "likes", "published_at",
+                                  "text", "title", "url", "views"]
+    assert row["url"] == "https://x.com/lindavivah/status/123"  # ?s stripped
+    assert row["published_at"].year == 2024                     # classic format parsed
+    assert xa._parse_date("2026-07-11T16:58:53.000Z").year == 2026  # ISO too
+    # all-foreign payload -> parse yields nothing (main() turns that into a hard FAIL)
+    assert xa.parse_items([foreign], "lindavivah") == []
+
+
+def test_reconcile_matching():
+    """Pure reconcile logic: title matching is emoji/punctuation-proof, containment
+    counts, weak matches are refused, link merging is idempotent, and the candidate
+    window follows the expected date."""
+    import datetime
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import reconcile_content as rc
+    # normalization strips emoji/punctuation; similar titles match across platforms
+    assert rc.score("🔹 Second Brain, explained!", "second brain explained") > 0.8
+    # containment: a caption that EMBEDS the planned title is a strong match
+    assert rc.score("How I built my second brain",
+                    "How I built my second brain (and why you should too) #ai") >= 0.85
+    # unrelated titles stay below threshold
+    assert rc.score("Kafka vs SQS deep dive", "My morning routine") < rc.MATCH_THRESHOLD
+    # distinctive-word overlap: same nouns, different phrasing -> match
+    assert rc.score("Tech Walks: The Friction That Built Datadog (Alexis Le-Quoc)",
+                    "Datadog was born out of the friction between Dev & Ops. Let's walk "
+                    "with co-founder & CTO Alexis Le-Quoc") > rc.MATCH_THRESHOLD
+    # ...but merely sharing a brand name is NOT enough (guards the phase flip)
+    assert rc.score("Claude Code — 7 Extension Types Mindmap (90s Reel)",
+                    "THIS is one of my favorite underrated Claude Code features!"
+                    ) < rc.MATCH_THRESHOLD
+    # best_match picks the closest candidate above threshold, else None
+    cands = [("u1", "My morning routine", None),
+             ("u2", "Second brain explained for engineers", None)]
+    assert rc.best_match("Second Brain, explained", cands)[0] == "u2"
+    assert rc.best_match("Quarterly taxes 101", cands) is None
+    # merge_links: appends new, never duplicates, preserves existing lines
+    merged = rc.merge_links("Instagram: https://a/1", [("TikTok", "https://b/2")])
+    assert merged == "Instagram: https://a/1\nTikTok: https://b/2"
+    assert rc.merge_links(merged, [("TikTok", "https://b/2")]) == merged
+    # window: anchored to the expected date when present
+    exp = datetime.datetime(2026, 7, 1)
+    lo, hi = rc.window_for(exp)
+    assert lo == exp - datetime.timedelta(days=rc.BEFORE_DAYS)
+    assert hi == exp + datetime.timedelta(days=rc.AFTER_DAYS)
+
+
 if __name__ == "__main__":
     tests = [(n, f) for n, f in sorted(globals().items())
              if n.startswith("test_") and callable(f)]

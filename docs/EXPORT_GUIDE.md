@@ -21,17 +21,22 @@ Facebook Page required, no scraping**. One-time setup:
 3. **Generate access token →** connect your Creator account, grant **`instagram_business_basic`** +
    **`instagram_business_manage_insights`**. Copy the (short-lived) token shown.
 4. In **App settings → Basic**, copy the **App secret**.
-5. Mint a long-lived (~60-day) token:
+5. Mint a long-lived (~60-day) token and store it in the OS keychain (nothing printed,
+   nothing in plaintext on disk):
    ```bash
-   IG_APP_SECRET=<app secret> ./.venv/bin/python scripts/instagram_token.py <short-lived token>
+   IG_APP_SECRET=<app secret> ./.venv/bin/python scripts/instagram_token.py <short-lived token> --store
    ```
-   Paste the printed `IG_ACCESS_TOKEN=...` into `oracle/.env` (it's a **secret** — keep it out of git).
+   Then add the **pointer** (not the token) to `oracle/.env`:
+   `IG_ACCESS_TOKEN=keychain:ig-access-token`.
+   (Prefer plaintext? Drop `--store` and paste the printed value instead — it works, but the
+   keychain route keeps the secret encrypted at rest.)
 6. Load it (incremental — only adds new media each run):
    ```bash
    ./.venv/bin/python scripts/instagram.py
    ```
-   Refresh the token every ~60 days with `scripts/instagram_token.py --refresh` (set a reminder —
-   the scheduled sync pulls new posts but does **not** refresh the token).
+   Keychain-backed tokens are refreshed **automatically** by the scheduled sync (weekly, in
+   place — see `instagram_token.py --auto`). Plain-`.env` tokens still need a manual
+   `scripts/instagram_token.py --refresh` every ~60 days.
 
 **Alternative: one-time export** (good for a full historical backfill):
 Instagram → **Profile → ☰ → Accounts Center → Your information and permissions → Download your

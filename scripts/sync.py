@@ -33,13 +33,22 @@ LLM_KEY = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}.get(
 
 # (label, argv, required_env) — a loader is skipped when its credential isn't configured.
 STEPS = [
+    # weekly in-place token refresh (keychain-backed tokens only) — keeps the 60-day
+    # Meta expiry permanently reset so the loader can't go quietly dark again
+    ("IG token refresh", [str(ROOT / "scripts" / "instagram_token.py"),
+                          "--refresh", "--auto"],                       "IG_ACCESS_TOKEN"),
     ("Instagram",    [str(ROOT / "scripts" / "instagram.py")],          "IG_ACCESS_TOKEN"),
     ("LinkedIn",     [str(ROOT / "scripts" / "linkedin_apify.py")],     "APIFY_TOKEN"),
+    ("TikTok",       [str(ROOT / "scripts" / "tiktok_apify.py")],       "TIKTOK_HANDLE"),
+    ("X",            [str(ROOT / "scripts" / "x_apify.py")],            "X_HANDLE"),
     ("YouTube",      [str(ROOT / "scripts" / "youtube_harvest.py")],    "YT_CHANNEL_URL"),
     ("Obsidian",     [str(ROOT / "scripts" / "obsidian.py")],           "OBSIDIAN_VAULT"),
     ("Google Drive", [str(ROOT / "scripts" / "gdrive.py")],             "GDRIVE_KEY"),
     ("Notion",       [str(ROOT / "scripts" / "notion.py")],             "NOTION_TOKEN"),
     ("Substack",     [str(ROOT / "scripts" / "substack.py")],           "SUBSTACK_URL"),
+    # after the loaders, before the derived layers: stamp the content calendar with
+    # what actually shipped (its report-note then rides the wiki/consolidate rebuild)
+    ("Reconcile",    [str(ROOT / "scripts" / "reconcile_content.py")],  "NOTION_CONTENT_TRACKER"),
     ("Claude Code",  [str(ROOT / "scripts" / "claude_code.py")],        None),
     ("Wiki refresh", [str(ROOT / "oracle" / "agent" / "wiki.py"), "--refresh"], None),
     ("Consolidate",  [str(ROOT / "scripts" / "consolidate.py")],        None),
