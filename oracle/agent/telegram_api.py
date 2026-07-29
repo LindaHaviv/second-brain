@@ -2,13 +2,17 @@
 messages in. Runs headlessly from a launchd job, where the interactive Telegram tool isn't
 available.
 
-PUSH (send): zero-setup — if a Claude Code Telegram channel is already configured on this
-machine (`~/.claude/channels/telegram/{.env,access.json}`), reuse THAT bot + the allow-listed
-chat. Override via env (keychain-aware): TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID.
+PUSH (send): when a DEDICATED brain bot is configured (TELEGRAM_DUMP_BOT_TOKEN), pushes
+prefer it — so the chat that accepts your brain-dumps is the same chat that sends your
+briefs and digests: one two-way thread. Otherwise zero-setup fallback: reuse the Claude
+Code channel bot on this machine (`~/.claude/channels/telegram/{.env,access.json}`).
+Override via env (keychain-aware): TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID. (A private
+chat's id is the user's id, so the same TELEGRAM_CHAT_ID works for every bot — the user
+just has to /start the new bot once before it may message them.)
 
-DRAIN (read via getUpdates): use a SEPARATE, dedicated bot token — never the channel bot.
+DRAIN (read via getUpdates): use the SAME dedicated bot token — never the channel bot.
 getUpdates consumes each update for exactly one reader, so a drain on the channel bot would
-steal messages from your live Claude sessions (and vice versa). A dedicated backlog bot has
+steal messages from your live Claude sessions (and vice versa). A dedicated brain bot has
 no such conflict. Pass its token explicitly to get_updates()/send_message(token=...).
 
 Absent everywhere -> `configured()` is False and callers skip gracefully.
@@ -24,6 +28,11 @@ _CHANNEL = pathlib.Path.home() / ".claude" / "channels" / "telegram"
 
 
 def _token():
+    # the dedicated two-way brain bot wins when configured: pushes come from the same
+    # chat that accepts brain-dumps (see module docstring)
+    t = getenv("TELEGRAM_DUMP_BOT_TOKEN")
+    if t:
+        return t
     t = getenv("TELEGRAM_BOT_TOKEN")
     if t:
         return t
