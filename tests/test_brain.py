@@ -1041,6 +1041,46 @@ Text with a [[Wiki Link]] and an [[page|aliased link]].""")
     assert meta2 == {} and body2 == "no frontmatter at all"
 
 
+def test_obsidian_read_note_materialize_wait():
+    """read_note polls (nudging brctl) until iCloud delivers a dataless placeholder,
+    and raises once the wait budget is spent — the caller's loud-skip path from there."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import obsidian
+
+    calls = {"reads": 0, "nudges": 0}
+
+    class SlowCloudFile:
+        name = "note.md"
+
+        def __str__(self):
+            return "/vault/note.md"
+
+        def read_text(self, errors="replace"):
+            calls["reads"] += 1
+            if calls["reads"] < 4:            # EDEADLK until the 4th poll
+                raise OSError(11, "Resource deadlock avoided")
+            return "materialized body"
+
+    class NeverThereFile(SlowCloudFile):
+        def read_text(self, errors="replace"):
+            raise OSError(11, "Resource deadlock avoided")
+
+    real_run, real_sleep = obsidian.subprocess.run, obsidian.time.sleep
+    obsidian.subprocess.run = (
+        lambda *a, **k: calls.__setitem__("nudges", calls["nudges"] + 1))
+    obsidian.time.sleep = lambda s: None
+    try:
+        assert obsidian.read_note(SlowCloudFile()) == "materialized body"
+        assert calls["reads"] == 4 and calls["nudges"] == 3   # kept nudging, not one-shot
+        try:
+            obsidian.read_note(NeverThereFile(), wait=0)      # budget spent -> raises
+            raise AssertionError("expected OSError")
+        except OSError:
+            pass
+    finally:
+        obsidian.subprocess.run, obsidian.time.sleep = real_run, real_sleep
+
+
 # --- pipeline health (heartbeat + verdict): the closed-laptop / silent-skip alarm ------------
 
 def test_health_verdict_states():

@@ -95,23 +95,31 @@ def vault_files(vault, exts):
             yield p
 
 
-def read_note(path, retries=2):
+def read_note(path, wait=90):
     """read_text with an iCloud nudge: a cloud-synced vault holds DATALESS placeholder
     files whose reads raise EDEADLK ('Resource deadlock avoided') until the file
-    provider materializes them. Ask for the download (brctl, macOS) and retry briefly;
-    still unreadable after that -> raise, and the caller's loud-skip path takes over."""
-    for attempt in range(retries + 1):
+    provider materializes them. A fixed couple of retries proved too short in practice
+    (the 9am launchd run kept losing the race), so ask for the download (brctl, macOS)
+    and poll until the read succeeds or the wait budget runs out — then raise, and the
+    caller's loud-skip path takes over."""
+    deadline = time.monotonic() + wait
+    waiting = False
+    while True:
         try:
             return path.read_text(errors="replace")
         except OSError:
-            if attempt == retries:
+            if time.monotonic() >= deadline:
                 raise
+            if not waiting:
+                waiting = True
+                print(f"  .. waiting for iCloud to materialize {path.name} "
+                      f"(up to {wait}s)", flush=True)
             try:
                 subprocess.run(["brctl", "download", str(path)],
                                capture_output=True, timeout=30)
             except Exception:
                 pass   # no brctl (non-mac) — the plain retry below still gets a chance
-            time.sleep(2)
+            time.sleep(3)
 
 
 def main():
