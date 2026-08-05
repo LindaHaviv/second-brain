@@ -1,0 +1,8 @@
+{
+  "_": "Declared relationships for the Map view. Nodes auto-detect (registry.json); edges are declared here because delegation cannot be honestly inferred from code. A private deployment extends this via map.private.json (same shape) copied beside the server. Keys: chief (name of the orchestrator agent), hide (registry names to omit, e.g. aliases), reports [{from,to,label}] agent-to-agent delegation, doors [{skill,agent}] skills that open an agent, clock [{job,to,cadence}] scheduled jobs that trigger an agent.",
+  "chief": null,
+  "hide": [],
+  "reports": [],
+  "doors": [],
+  "clock": []
+}

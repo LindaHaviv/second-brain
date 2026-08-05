@@ -44,3 +44,38 @@ def registry():
             cats.append(c)
         c["items"].extend(pc["items"])
     return {"categories": cats}
+
+
+# ---- the map: DECLARED relationships over the auto-detected nodes ----------------------
+# Nodes auto-detect (the registry); edges cannot be honestly inferred from code, so they are
+# declared: web/map.json (generic template, ships empty) + map.private.json (a private
+# deployment's real structure, copied beside this module exactly like the registry overlay).
+_WEB_MAP = next((p / "web" / "map.json" for p in (HERE.parent, HERE.parent.parent, HERE.parent.parent.parent)
+                 if (p / "web" / "map.json").is_file()), None)
+_PRIV_MAP = next((p for p in (HERE / "map.private.json",
+                              HERE.parent.parent / "private" / "server" / "map.private.json",
+                              HERE.parent.parent.parent / "private" / "server" / "map.private.json")
+                  if p.is_file()), None)
+
+
+def _load_map(path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8")) if path else {}
+    except Exception:
+        return {}
+
+
+def map_data():
+    """Merged relationship declarations for the Map view:
+    {chief, hide:[names], reports:[{from,to,label}], doors:[{skill,agent}],
+     clock:[{job,to,cadence}]}. Private declarations extend (lists) or override (chief)."""
+    base = _load_map(_WEB_MAP)
+    priv = _load_map(_PRIV_MAP)
+    out = {
+        "chief": priv.get("chief") or base.get("chief"),
+        "hide": list(base.get("hide", [])) + list(priv.get("hide", [])),
+        "reports": list(base.get("reports", [])) + list(priv.get("reports", [])),
+        "doors": list(base.get("doors", [])) + list(priv.get("doors", [])),
+        "clock": list(base.get("clock", [])) + list(priv.get("clock", [])),
+    }
+    return out

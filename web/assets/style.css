@@ -564,6 +564,59 @@ button.tile.mem-tab { font: inherit; text-align: left; cursor: pointer; color: v
   #memory-body.swap { animation: shRise .26s ease-out; }
 }
 
+/* ---- the Map view: the architecture drawn live on a paper sheet ---- */
+.map-sheet { position: relative; padding-bottom: 14px; }
+.map-edges { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.map-edges.tracing .medge { opacity: .14; }
+.map-edges.tracing .medge.lit { opacity: 1; stroke-width: 1.8; }
+.map-sheet .hand { font-family: "Excalifont", var(--serif); }
+.map-row { position: relative; z-index: 2; display: flex; gap: 16px; justify-content: center;
+  align-items: flex-start; flex-wrap: wrap; margin: 0 0 52px; }
+.map-row.map-mid { align-items: flex-start; }
+.mnode { position: relative; background: var(--paper-2); border: 1.5px solid var(--ink); border-radius: 10px;
+  padding: 10px 14px; cursor: pointer; min-width: 168px; max-width: 232px; color: var(--ink);
+  transition: box-shadow .15s; }
+.mnode:hover, .mnode:focus-visible { box-shadow: 2px 2px 0 rgba(36,31,24,.25); }
+.mnode .tag { font-family: var(--mono); font-size: 9.5px; letter-spacing: .6px; text-transform: uppercase;
+  color: var(--ink-soft); }
+.mnode .t { font-weight: 600; font-size: 13.5px; }
+.mnode .t.hand { font-weight: 400; font-size: 19px; }
+.mnode .d { font-size: 11px; color: var(--ink-soft); margin-top: 2px; line-height: 1.35; }
+.mnode.gold { background: var(--k-sem-t); }
+.mnode.blue { background: var(--k-con-t); text-align: center; }
+.mnode.mchief { border-width: 2px; max-width: 340px; }
+.mcad { float: right; font-family: var(--mono); font-size: 9.5px; color: var(--ink-soft);
+  border: 1px solid rgba(36,31,24,.35); border-radius: 10px; padding: 0 7px; margin-left: 8px; }
+.mgroup { position: relative; z-index: 2; border: 1.5px solid var(--ink); border-radius: 12px;
+  background: #f8f4ec; padding: 14px 16px; color: var(--ink); }
+.mgroup h3 { font-weight: 400; font-size: 16px; margin: 0 0 2px; }
+.mgroup .gd { color: var(--ink-soft); font-size: 11px; margin: 0 0 10px; }
+.mgroup.sage { background: var(--k-pro-t); margin: 0 0 52px; }
+.mgroup.terra { background: var(--k-epi-t); }
+.mgroup.mbrain { background: var(--paper-2); border-width: 2px; display: flex; flex-wrap: wrap;
+  align-items: baseline; gap: 8px 14px; }
+.mgroup.mbrain h3 { font-size: 17px; margin: 0; }
+.mstudio { flex: 0 1 480px; }
+.mgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+.mgrid .mnode { min-width: 0; max-width: none; }
+.mchips { display: flex; flex-wrap: wrap; gap: 7px; position: relative; z-index: 2; }
+.mchip { border: 1.2px solid var(--ink); border-radius: 15px; padding: 3px 12px; font-size: 12px;
+  background: var(--paper-2); color: var(--ink); cursor: pointer; }
+.mchip.door { background: var(--k-sem-t); }
+.mchip:hover { box-shadow: 1.5px 1.5px 0 rgba(36,31,24,.25); }
+.map-down { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center;
+  gap: 10px; margin: 14px 0; color: var(--ink-soft); font-size: 14px; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 8px 22px; justify-content: center; align-items: center;
+  margin-top: 18px; color: var(--ink-soft); font-size: 11.5px; }
+.map-legend svg { vertical-align: middle; margin-right: 4px; }
+.map-legend .cap { flex-basis: 100%; text-align: center; font-size: 14px; margin-top: 4px; }
+.hand-svg { font-family: "Excalifont", var(--serif); }
+@media (max-width: 880px) {
+  .map-edges { display: none; }           /* stacked bands read top-down; lines would tangle */
+  .map-row { margin-bottom: 18px; }
+  .mgroup.sage { margin-bottom: 18px; }
+}
+
 /* ---- narrow screens: the whole Memory page adapts ---- */
 @media (max-width: 720px) {
   .view { padding: 20px 16px; }

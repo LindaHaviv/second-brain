@@ -127,6 +127,8 @@ def _api(request):
             return _json({"ok": True, "auth": "public" if PUBLIC_RO else "token", "title": UI_TITLE})
         if path == "/api/agents":
             return _json(registry.registry())   # static catalog; no DB needed
+        if path == "/api/map":
+            return _json(registry.map_data())   # declared relationships; no DB needed
         conn = db.connect()
         if path == "/api/graph":
             return _json(content.graph_data(conn))

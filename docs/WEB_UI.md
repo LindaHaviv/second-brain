@@ -25,8 +25,8 @@ Your install **starts empty** and fills as you load content — nothing is baked
 
 ## What it shows
 
-Three views: **Home** (the dashboard), **Memory**, and **Agents**. Search, feed, and overview
-aren't separate places — they're instruments on Home.
+Four views: **Home** (the dashboard), **Memory**, **Map**, and **Agents**. Search, feed, and
+overview aren't separate places — they're instruments on Home.
 
 | Where | What it is |
 |-------|------------|
@@ -37,6 +37,7 @@ aren't separate places — they're instruments on Home.
 | **Home — Agent memory** | The four memory counts + a link into the Memory page. |
 | **Home — Hide instruments** | Collapses the search bar + widgets to a pure star-map (nice on camera). |
 | **Memory** | The agent's four memory kinds + an educational header: the record→recall→consolidate **lifecycle**, a **four-kinds** panel, and a **"one database, two shapes"** visual, above the live memory data. |
+| **Map** | The architecture drawn live: who delegates to whom (real subtask lines), which skills are **doors** that open agents, what the clock triggers. Nodes come from the registry; edges are **declared** (see below). Click a node for its connections; hover to trace its lines. |
 | **Agents** | A registry of **everything built on the brain** — agents, playbooks, tools, jobs, sources, integrations, skills, schedules — auto-detected (see below). |
 
 Structural privacy holds throughout: every read filters `visibility='content'`, so business/deal
@@ -63,6 +64,22 @@ and writes:
 If `.git/hooks` is ever wiped, reinstall from the committed copy: `cp scripts/git-hooks/pre-commit
 .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit` (the private repo has its own under
 `private/.git/hooks/`).
+
+## The Map declares its edges
+
+Nodes on the Map auto-detect (the registry). The **lines** can't be honestly inferred from
+code, so they're declared: `web/map.json` (generic template, ships empty) and, on a private
+deployment, `map.private.json` copied beside the server (exactly like the registry overlay,
+so personal structure never enters the public repo). Keys:
+
+- `chief` — the orchestrator agent's registry name (drawn under You, its reports below it)
+- `hide` — registry names to omit (e.g. aliases)
+- `reports` — `[{from, to, label}]` agent-to-agent delegation (real subtasks)
+- `doors` — `[{skill, agent}]` skills that open an agent
+- `clock` — `[{job, to, cadence}]` scheduled jobs that trigger an agent
+
+`/api/map` serves the merge; the view degrades gracefully — with no declarations it still
+draws the bands (agents, skills, clockwork, brain) without lines.
 
 ## Enabling / deploying
 

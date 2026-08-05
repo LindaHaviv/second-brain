@@ -328,8 +328,10 @@ Autonomous auto-backup covers the rest.
 - **Web UI** — a read-only view of the brain. **Home** puts the knowledge graph center stage
   with instruments floating over it: a semantic **search** command bar (⌘K), an **at-a-glance**
   widget (counts + source health, with a full overview one click away), the **latest** items,
-  and the agent-**memory** pulse. Two deeper pages: **Memory** (the four memory kinds + how
-  they work) and **Agents** (a registry that auto-lists everything you've built on top).
+  and the agent-**memory** pulse. Three deeper pages: **Memory** (the four memory kinds + how
+  they work), **Map** (your agent architecture drawn live — registry nodes + declared
+  delegation/schedule edges), and **Agents** (a registry that auto-lists everything you've
+  built on top).
   Served by the same hosted app, token-gated and off by default ([docs/WEB_UI.md](docs/WEB_UI.md)).
   **Your install starts empty and fills as you load your content:**
 

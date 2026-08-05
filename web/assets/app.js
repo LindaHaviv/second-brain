@@ -80,7 +80,7 @@
   }
 
   // ---- router (Home / Memory / Agents) -----------------------------------------
-  var VIEWS = { graph: 1, memory: 1, agents: 1 };
+  var VIEWS = { graph: 1, memory: 1, map: 1, agents: 1 };
   var loaded = {};
   document.querySelectorAll("nav button").forEach(function (b) {
     b.addEventListener("click", function () { route(b.dataset.view); });
@@ -96,6 +96,7 @@
     });
     location.hash = view;
     if (view === "graph") bootGraph();
+    else if (view === "map") BrainMap.load(api, esc);   // draws once, then redraws (edges track layout)
     else if (!loaded[view]) { loaded[view] = true; view === "memory" ? loadMemory() : loadAgents(); }
     if (view === "graph" && window.BrainGraph && BrainGraph.__g) BrainGraph.__g.width(el("graph").clientWidth).height(el("graph").clientHeight);
   }

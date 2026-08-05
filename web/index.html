@@ -14,6 +14,7 @@
       <nav>
         <button data-view="graph" class="active">Home</button>
         <button data-view="memory">Memory</button>
+        <button data-view="map">Map</button>
         <button data-view="agents">Agents</button>
       </nav>
       <span class="spacer"></span>
@@ -188,6 +189,14 @@
         <div id="memory-body"></div>
       </section>
 
+      <!-- Map: the architecture drawn live from the registry + declared relationships -->
+      <section class="view" id="view-map">
+        <h1 class="page">Map</h1>
+        <p class="sub">How everything connects: who delegates to whom, which skills open agents, what the clock triggers. Nodes come from the auto-detected registry; the lines are declared in <code>map.json</code>, because delegation can't be honestly inferred from code. Click anything for its connections.</p>
+        <div class="sheet map-sheet" id="map-sheet"><div class="loading">loading the map…</div></div>
+        <div class="panel" id="map-panel"></div>
+      </section>
+
       <!-- Agents -->
       <section class="view" id="view-agents">
         <h1 class="page">Agents &amp; tools</h1>
@@ -214,6 +223,7 @@
 
   <script src="/assets/vendor/force-graph.min.js"></script>
   <script src="/assets/graph.js"></script>
+  <script src="/assets/map.js"></script>
   <script src="/assets/app.js"></script>
 </body>
 </html>
