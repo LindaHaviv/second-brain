@@ -55,6 +55,12 @@
           "scope": "generic"
         },
         {
+          "name": "list_agents",
+          "desc": "THE ROSTER: every agent, skill, playbook, tool, and scheduled job built on this brain ,",
+          "where": "mcp_server.py",
+          "scope": "generic"
+        },
+        {
           "name": "source_status",
           "desc": "LIVE health + freshness: is the sync pipeline ALIVE (heartbeat from its machine),",
           "where": "mcp_server.py",

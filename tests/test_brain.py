@@ -335,7 +335,7 @@ def test_mcp_tools_registered():
         return {t.name for t in tools}
     got = asyncio.run(names())
     assert {"search", "fetch", "wiki", "topics", "recent", "related",
-            "ingest_note"} <= got, got
+            "list_agents", "ingest_note"} <= got, got
 
 
 def test_related_tool_registered_readonly():
@@ -810,9 +810,9 @@ def test_mcp_public_layout_is_generic():
     out = subprocess.run([_sys.executable, "-c", code], capture_output=True, text=True,
                          cwd=str(pathlib.Path(__file__).resolve().parent.parent))
     tools = out.stdout.strip().split(",")
-    assert tools == ["by_series", "fetch", "ingest_note", "overview", "recent",
-                     "related", "save_chat", "search", "source_status", "topics",
-                     "wiki"], tools
+    assert tools == ["by_series", "fetch", "ingest_note", "list_agents", "overview",
+                     "recent", "related", "save_chat", "search", "source_status",
+                     "topics", "wiki"], tools
 
 
 def _reload_webui(**env):
