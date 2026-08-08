@@ -90,6 +90,40 @@ def test_long_thread_only_last_sender_decides_the_court():
     assert core.thread_verdict(froms, ME, _days_ago(6), NOW) == "chase"
 
 
+# ---- the mirror verdict: does the OWNER owe a reply? --------------------------------
+
+def test_owed_empty_and_self_only():
+    assert core.owed_reply([], ME, _days_ago(10), NOW) == "empty"
+    froms = ["Linda H <linda@example.com>", "Linda H <linda@example.com>"]
+    assert core.owed_reply(froms, ME, _days_ago(30), NOW) == "self-only"
+
+
+def test_owner_spoke_last_owes_nothing():
+    """Her message last -> the other direction's problem (thread_verdict), never 'owes'."""
+    froms = ["Editor <cut@editor.com>", "Linda H <linda@example.com>"]
+    assert core.owed_reply(froms, ME, _days_ago(30), NOW) == "waiting-on-them"
+
+
+def test_their_recent_message_is_fresh_not_owed():
+    froms = ["Linda H <linda@example.com>", "Editor <cut@editor.com>"]
+    assert core.owed_reply(froms, ME, _days_ago(1), NOW) == "fresh"
+
+
+def test_their_stale_message_is_owed():
+    """They sent the edit back days ago and nothing went out — the owner owes them."""
+    froms = ["Linda H <linda@example.com>", "Editor <cut@editor.com>"]
+    assert core.owed_reply(froms, ME, _days_ago(5), NOW) == "owes"
+
+
+def test_owed_boundary_is_inclusive_and_tunable():
+    froms = ["Linda H <linda@example.com>", "Editor <cut@editor.com>"]
+    assert core.owed_reply(froms, ME, _days_ago(core.OWE_DAYS), NOW) == "owes"
+    just_under = NOW - datetime.timedelta(days=core.OWE_DAYS) + datetime.timedelta(minutes=1)
+    assert core.owed_reply(froms, ME, just_under, NOW) == "fresh"
+    assert core.owed_reply(froms, ME, _days_ago(4), NOW, owe_days=7) == "fresh"
+    assert core.owed_reply(froms, ME, _days_ago(4), NOW, owe_days=2) == "owes"
+
+
 if __name__ == "__main__":
     tests = [(n, f) for n, f in sorted(globals().items())
              if n.startswith("test_") and callable(f)]
