@@ -35,6 +35,13 @@ whom the owner owes one. Same inputs, same first-match-wins style:
 
 Shared by: private follow-up agents (the personal layer adds queries, lane
 configs, nudge copy, and reporting); tests/test_followup.py pins every rule.
+
+A counterparty's work calendar matters: a message sent Friday and unanswered
+Monday has waited one working day, not three, if they don't work weekends —
+and chasing someone over days they were never at their desk poisons the
+verdict's fairness. Both verdicts accept an optional `workdays` (a set of
+weekday ints, Monday=0); when given, quiet time is counted in whole working
+days instead of calendar time. Omitted = calendar time, exactly as before.
 """
 import datetime
 
@@ -48,7 +55,25 @@ def sender_is(owner, from_header):
     return bool(owner) and owner.lower() in (from_header or "").lower()
 
 
-def thread_verdict(froms, owner, last_at, now, quiet_days=QUIET_DAYS):
+def working_days(last_at, now, workdays):
+    """Whole working days elapsed from last_at to now, counting only days whose
+    weekday is in `workdays` (Monday=0). A Friday-evening message checked on
+    Monday with mon-fri workdays has waited 1 working day (the Monday)."""
+    days, cur = 0, last_at
+    while cur + datetime.timedelta(days=1) <= now:
+        cur += datetime.timedelta(days=1)
+        if cur.weekday() in workdays:
+            days += 1
+    return days
+
+
+def _quiet_enough(last_at, now, threshold_days, workdays):
+    if workdays is None:
+        return (now - last_at) >= datetime.timedelta(days=threshold_days)
+    return working_days(last_at, now, workdays) >= threshold_days
+
+
+def thread_verdict(froms, owner, last_at, now, quiet_days=QUIET_DAYS, workdays=None):
     """froms: From-header per message, oldest first. Returns one of
     'empty' | 'self-only' | 'answered' | 'too-recent' | 'chase'."""
     if not froms:
@@ -57,12 +82,12 @@ def thread_verdict(froms, owner, last_at, now, quiet_days=QUIET_DAYS):
         return "self-only"
     if not sender_is(owner, froms[-1]):
         return "answered"
-    if (now - last_at) < datetime.timedelta(days=quiet_days):
+    if not _quiet_enough(last_at, now, quiet_days, workdays):
         return "too-recent"
     return "chase"
 
 
-def owed_reply(froms, owner, last_at, now, owe_days=OWE_DAYS):
+def owed_reply(froms, owner, last_at, now, owe_days=OWE_DAYS, workdays=None):
     """The mirror of thread_verdict: does the OWNER owe this thread a reply?
     froms: From-header per message, oldest first. Returns one of
     'empty' | 'self-only' | 'waiting-on-them' | 'fresh' | 'owes'."""
@@ -72,6 +97,6 @@ def owed_reply(froms, owner, last_at, now, owe_days=OWE_DAYS):
         return "self-only"
     if sender_is(owner, froms[-1]):
         return "waiting-on-them"
-    if (now - last_at) < datetime.timedelta(days=owe_days):
+    if not _quiet_enough(last_at, now, owe_days, workdays):
         return "fresh"
     return "owes"

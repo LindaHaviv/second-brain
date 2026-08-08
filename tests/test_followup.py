@@ -124,6 +124,45 @@ def test_owed_boundary_is_inclusive_and_tunable():
     assert core.owed_reply(froms, ME, _days_ago(4), NOW, owe_days=2) == "owes"
 
 
+# ---- work calendars ------------------------------------------------------------------
+
+MON_FRI = frozenset(range(5))
+
+
+def test_weekend_does_not_count_against_a_mon_fri_team():
+    """Friday-evening message checked Monday morning: zero WHOLE working days
+    have passed for a mon-fri team (Monday isn't over), while the all-week
+    count sees the weekend. NOW elsewhere is Fri 2026-07-17."""
+    fri = datetime.datetime(2026, 7, 10, 17, 0)
+    mon = datetime.datetime(2026, 7, 13, 9, 0)
+    assert core.working_days(fri, mon, MON_FRI) == 0          # Mon isn't over yet
+    assert core.working_days(fri, mon, frozenset(range(7))) == 2  # Sat + Sun elapsed
+    froms = ["Brand <person@brand.com>", "Linda H <linda@example.com>"]
+    # her Friday message by the NEXT Friday: chase either way (a full week passed,
+    # 4 whole workdays of it), but a midweek message stays too-recent for a
+    # mon-fri team while the calendar count would already flag it
+    assert core.thread_verdict(froms, ME, fri, NOW, quiet_days=3) == "chase"
+    assert core.thread_verdict(froms, ME, fri, NOW, quiet_days=3,
+                               workdays=MON_FRI) == "chase"   # Mon..Thu = 4 >= 3
+    wed = datetime.datetime(2026, 7, 15, 17, 0)
+    assert core.thread_verdict(froms, ME, wed, NOW, quiet_days=2) == "too-recent"
+    assert core.thread_verdict(froms, ME, wed, NOW, quiet_days=1,
+                               workdays=MON_FRI) == "chase"   # Thu elapsed = 1 >= 1
+    assert core.thread_verdict(froms, ME, wed, NOW, quiet_days=3,
+                               workdays=MON_FRI) == "too-recent"  # only Thu = 1 < 3
+
+
+def test_owed_reply_respects_workdays_too():
+    """Their Friday-evening message, checked Monday morning: an all-week team is
+    owed (3 calendar days), a mon-fri sender has waited one working day."""
+    froms = ["Linda H <linda@example.com>", "Editor <cut@editor.com>"]
+    fri = datetime.datetime(2026, 7, 10, 18, 0)
+    mon = datetime.datetime(2026, 7, 13, 9, 0)
+    assert core.owed_reply(froms, ME, fri, mon, owe_days=2) == "owes"
+    assert core.owed_reply(froms, ME, fri, mon, owe_days=2,
+                           workdays=MON_FRI) == "fresh"
+
+
 if __name__ == "__main__":
     tests = [(n, f) for n, f in sorted(globals().items())
              if n.startswith("test_") and callable(f)]
