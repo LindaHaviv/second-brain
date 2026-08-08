@@ -112,6 +112,46 @@ def _plist(p):
     return label, when
 
 
+def _inputs(path, sibling_stems):
+    """Auto-detect an agent's INPUTS from its source (generic rules, no hand lists):
+    imports of sibling agents / *_core engines / *_api bridges, plus .md files and
+    <name>-*.md report globs it references. Feeds the Map's 'what does this read' story."""
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    inp = []
+
+    def add(label):
+        if label and label not in inp:
+            inp.append(label)
+
+    def classify(mod):
+        mod = (mod or "").split(".")[0]
+        if mod == path.stem or mod.startswith(SKIP_PREFIX):
+            return
+        if mod in sibling_stems:
+            add(_title(mod) + " agent")
+        elif mod.endswith("_core"):
+            add(_title(mod[:-5]) + " engine")
+        elif mod.endswith("_api"):
+            add(_title(mod[:-4]))
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for a in node.names:
+                classify(a.name)
+        elif isinstance(node, ast.ImportFrom):
+            classify(node.module)
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+            v = node.value
+            if re.fullmatch(r"[A-Za-z0-9_\-]+\.md", v):
+                add(v)
+            elif re.fullmatch(r"[A-Za-z0-9_\-]+-\*\.md", v):
+                add(_title(v[:-5].rstrip("-")) + " reports")
+    return inp[:10]
+
+
 def _cat(cats, key, label, desc=""):
     for c in cats:
         if c["key"] == key:
@@ -187,10 +227,16 @@ def build_private():
         return []
     cats = []
     ag = _cat(cats, "agents", "Agents")
-    for f in sorted((ROOT / "private" / "agents").glob("*.py")) if (ROOT / "private" / "agents").is_dir() else []:
+    afiles = sorted((ROOT / "private" / "agents").glob("*.py")) if (ROOT / "private" / "agents").is_dir() else []
+    stems = {f.stem for f in afiles}
+    for f in afiles:
         if f.name.startswith(SKIP_PREFIX):
             continue
-        ag["items"].append({"name": _title(f.stem), "desc": _module_doc(f), "where": _rel(f), "scope": "private"})
+        item = {"name": _title(f.stem), "desc": _module_doc(f), "where": _rel(f), "scope": "private"}
+        ins = _inputs(f, stems)
+        if ins:
+            item["inputs"] = ins
+        ag["items"].append(item)
     ext = ROOT / "private" / "server" / "server_ext.py"
     if ext.exists():
         tl = _cat(cats, "tools", "Tools")

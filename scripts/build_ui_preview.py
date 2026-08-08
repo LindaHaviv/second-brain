@@ -73,7 +73,8 @@ def build():
 
     REG = json.dumps({"categories": [
         {"key": "agents", "label": "Agents", "items": [
-            {"name": "Chief of staff", "desc": "The on-demand brief that owns the morning: one thing now, top three, health, fresh reports.", "scope": "private", "where": "agents/chief.py"},
+            {"name": "Chief of staff", "desc": "The on-demand brief that owns the morning: one thing now, top three, health, fresh reports.", "scope": "private", "where": "agents/chief.py",
+             "inputs": ["Backlog engine", "Followup engine", "Slack", "Telegram", "NOW.md", "BACKLOG.md", "Pipeline reports"]},
             {"name": "Backlog", "desc": "The to-do that actually prioritizes.", "scope": "private", "where": "agents/backlog.py"},
             {"name": "Freshness", "desc": "Source + loop health, one pager.", "scope": "private", "where": "agents/freshness.py"},
             {"name": "Digest", "desc": "What the brain did last week.", "scope": "generic", "where": "agents/digest.py"},
@@ -92,7 +93,12 @@ def build():
             {"name": "Chief of staff", "desc": "Weekly job.", "scope": "private"},
             {"name": "Backlog-Drain", "desc": "Hourly job.", "scope": "private"},
             {"name": "Sync", "desc": "Daily job.", "scope": "generic"},
-            {"name": "Watchdog", "desc": "Weekly job.", "scope": "generic"}]}]})
+            {"name": "Watchdog", "desc": "Weekly job.", "scope": "generic"}]},
+        {"key": "integrations", "label": "Integrations", "items": [
+            {"name": "Hosted MCP", "desc": "The brain's tools over HTTP.", "scope": "generic"},
+            {"name": "Web UI", "desc": "This read-only view.", "scope": "generic"},
+            {"name": "Telegram", "desc": "Idea capture + push.", "scope": "generic"},
+            {"name": "Slack", "desc": "Brain-dump channel.", "scope": "generic"}]}]})
 
     MAP = json.dumps({"chief": "Chief of staff", "hide": [],
                       "reports": [{"from": "Chief of staff", "to": "Backlog", "label": "Top-3"},

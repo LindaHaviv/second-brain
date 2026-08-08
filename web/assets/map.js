@@ -53,13 +53,22 @@
     var sheet = el("map-sheet");
     var html = '<svg class="map-edges" id="map-edges" aria-hidden="true"></svg>';
 
-    // -- you --
+    // -- you: surfaces auto-detected from the integrations the repo actually has --
+    var surfaces = cat(REG, "integrations", "integrations").map(function (i) { return i.name; });
+    var surfLine = surfaces.length ? "reaches you via: " + surfaces.slice(0, 5).join(" · ")
+                                   : "every surface: Claude Code, claude.ai, chat";
     html += '<div class="map-row"><div class="mnode blue myou" data-nid="you" tabindex="0">' +
       '<div class="tag">you</div><div class="t hand" id="map-you-name">You</div>' +
-      '<div class="d">every surface: Claude Code, claude.ai, chat</div></div></div>';
+      '<div class="d">' + esc(surfLine) + "</div></div></div>";
 
-    // -- chief + studio --
+    // -- inputs + chief + studio --
     html += '<div class="map-row map-mid">';
+    if (chief && chief.inputs && chief.inputs.length) {
+      html += '<div class="mgroup teal minputs" id="map-inputs"><h3 class="hand">Inputs</h3>' +
+        '<p class="gd">what the chief reads, detected from code</p><div class="mchips">' +
+        chief.inputs.map(function (i) { return '<span class="mchip">' + esc(i) + "</span>"; }).join("") +
+        "</div></div>";
+    }
     if (chief) {
       html += '<div class="mnode gold mchief" data-nid="agent:' + esc(chief.name) + '" tabindex="0">' +
         '<div class="tag">chief of staff · agent</div><div class="t hand">' + esc(chief.name) + '</div>' +
@@ -131,6 +140,7 @@
       });
     }
     if (studio.length) EDGES.push({ a: "you", b: "#map-studio", label: "you call directly" });
+    if (chief && chief.inputs && chief.inputs.length) EDGES.push({ a: "#map-inputs", b: "agent:" + chief.name, label: "reads" });
     (MAP.clock || []).forEach(function (e) {
       EDGES.push({ a: "job:" + e.job, b: "agent:" + e.to, dash: true, label: "" });
     });
@@ -150,7 +160,9 @@
     if (!n) return null;
     var r = n.getBoundingClientRect(), s = sheet.getBoundingClientRect();
     return { top: { x: r.left - s.left + r.width / 2, y: r.top - s.top },
-             bot: { x: r.left - s.left + r.width / 2, y: r.bottom - s.top } };
+             bot: { x: r.left - s.left + r.width / 2, y: r.bottom - s.top },
+             left: { x: r.left - s.left, y: r.top - s.top + r.height / 2 },
+             right: { x: r.right - s.left, y: r.top - s.top + r.height / 2 } };
   }
 
   function draw() {
@@ -162,8 +174,15 @@
     EDGES.forEach(function (e, i) {
       var A = anchor(e.a), B = anchor(e.b);
       if (!A || !B) return;
-      var x1 = A.bot.x, y1 = A.bot.y, x2 = B.top.x, y2 = B.top.y;
-      if (y2 < y1) { x1 = A.top.x; y1 = A.top.y; x2 = B.bot.x; y2 = B.bot.y; }   // upward edge
+      var x1, y1, x2, y2;
+      if (Math.abs(B.top.y - A.top.y) < 40) {          // same band: connect side to side
+        if (B.left.x >= A.right.x) { x1 = A.right.x; y1 = A.right.y; x2 = B.left.x; y2 = B.left.y; }
+        else { x1 = A.left.x; y1 = A.left.y; x2 = B.right.x; y2 = B.right.y; }
+      } else if (B.top.y >= A.bot.y) {                 // downward edge
+        x1 = A.bot.x; y1 = A.bot.y; x2 = B.top.x; y2 = B.top.y;
+      } else {                                         // upward edge
+        x1 = A.top.x; y1 = A.top.y; x2 = B.bot.x; y2 = B.bot.y;
+      }
       var cx = (x1 + x2) / 2 + (x2 - x1 !== 0 ? 0 : 14), cy = (y1 + y2) / 2;
       var dash = e.dash ? ' stroke-dasharray="6 5"' : "";
       out += '<path class="medge" data-a="' + esc(e.a) + '" data-b="' + esc(e.b) + '" d="M' + x1 + " " + y1 +
@@ -224,6 +243,7 @@
     p.innerHTML = '<button class="close" aria-label="close">×</button><h2>' + esc(name) +
       '</h2><div class="kind">' + esc(kind) + (it.scope ? " · " + esc(it.scope) : "") + '</div>' +
       '<div class="pbody"><div class="body">' + esc(it.desc || "") + "</div>" +
+      (it.inputs && it.inputs.length ? '<div class="kind" style="margin-top:10px">reads: ' + esc(it.inputs.join(" · ")) + "</div>" : "") +
       (it.where ? '<div class="kind" style="margin-top:10px">' + esc(it.where) + "</div>" : "") +
       (rels.length ? '<div class="cites"><h3>connections</h3>' + rels.map(function (r) {
         return '<div class="cite">' + esc(r) + "</div>";

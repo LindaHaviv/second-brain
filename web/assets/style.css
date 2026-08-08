@@ -572,7 +572,7 @@ button.tile.mem-tab { font: inherit; text-align: left; cursor: pointer; color: v
 .map-sheet .hand { font-family: "Excalifont", var(--serif); }
 .map-row { position: relative; z-index: 2; display: flex; gap: 16px; justify-content: center;
   align-items: flex-start; flex-wrap: wrap; margin: 0 0 52px; }
-.map-row.map-mid { align-items: flex-start; }
+.map-row.map-mid { align-items: flex-start; gap: 48px; }
 .mnode { position: relative; background: var(--paper-2); border: 1.5px solid var(--ink); border-radius: 10px;
   padding: 10px 14px; cursor: pointer; min-width: 168px; max-width: 232px; color: var(--ink);
   transition: box-shadow .15s; }
@@ -592,6 +592,7 @@ button.tile.mem-tab { font: inherit; text-align: left; cursor: pointer; color: v
 .mgroup h3 { font-weight: 400; font-size: 16px; margin: 0 0 2px; }
 .mgroup .gd { color: var(--ink-soft); font-size: 11px; margin: 0 0 10px; }
 .mgroup.sage { background: var(--k-pro-t); margin: 0 0 52px; }
+.mgroup.teal { background: var(--k-act-t); flex: 0 1 260px; }
 .mgroup.terra { background: var(--k-epi-t); }
 .mgroup.mbrain { background: var(--paper-2); border-width: 2px; display: flex; flex-wrap: wrap;
   align-items: baseline; gap: 8px 14px; }
