@@ -75,7 +75,7 @@ def _authorized(request):
 _SEC_HEADERS = {
     "Content-Security-Policy": (
         "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
-        "img-src 'self' data:; connect-src 'self'; font-src 'self'; "
+        "img-src 'self' data:; connect-src 'self'; font-src 'self'; manifest-src 'self'; "
         "frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
     ),
     "X-Content-Type-Options": "nosniff",
