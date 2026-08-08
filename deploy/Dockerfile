@@ -15,6 +15,11 @@ COPY web/ ./web/
 COPY deploy/entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 
+# run unprivileged: the server needs no root. /wallet is pre-created so the
+# entrypoint's unpack (BRAIN_WALLET_B64 -> /wallet) still works without it.
+RUN useradd --create-home appuser && mkdir -p /wallet && chown -R appuser /app /wallet
+USER appuser
+
 WORKDIR /app/agent
 ENV PORT=8000
 EXPOSE 8000

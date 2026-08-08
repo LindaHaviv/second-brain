@@ -340,6 +340,12 @@
           "scope": "generic"
         },
         {
+          "name": "Security check",
+          "desc": "Routine security check: the repo and the brain audit themselves.",
+          "where": "scripts/security_check.py",
+          "scope": "generic"
+        },
+        {
           "name": "Sync",
           "desc": "Keep the brain current: and never let the derived layers go stale.",
           "where": "scripts/sync.py",

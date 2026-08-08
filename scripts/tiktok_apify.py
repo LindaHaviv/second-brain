@@ -94,7 +94,9 @@ def main():
     backfill = existing == 0
     cap = BACKFILL_MAX if backfill else INCREMENTAL_MAX
     import requests
-    r = requests.post(API, params={"timeout": 300, "token": token},
+    # token travels in the Authorization header, never the URL (query strings land in logs)
+    r = requests.post(API, params={"timeout": 300},
+                      headers={"Authorization": f"Bearer {token}"},
                       json={"profiles": [handle], "resultsPerPage": cap,
                             "profileScrapeSections": ["videos"],
                             "excludePinnedPosts": False},
