@@ -28,11 +28,12 @@ _CHANNEL = pathlib.Path.home() / ".claude" / "channels" / "telegram"
 
 
 def _token():
-    # the dedicated two-way brain bot wins when configured: pushes come from the same
-    # chat that accepts brain-dumps (see module docstring)
-    t = getenv("TELEGRAM_DUMP_BOT_TOKEN")
-    if t:
-        return t
+    # Pushes must come from a bot the chat has actually STARTED, and the default chat id
+    # comes from the channel plugin's pairing (access.json) — so the CHANNEL bot's token
+    # is the one that matches it. The dedicated dump bot is last resort only: a chat that
+    # never pressed Start on it gets "400 chat not found" (which silently broke every
+    # scheduled push once the dump token appeared). Drain flows are unaffected — they
+    # pass the dump token explicitly.
     t = getenv("TELEGRAM_BOT_TOKEN")
     if t:
         return t
@@ -41,8 +42,10 @@ def _token():
         for line in envp.read_text().splitlines():
             line = line.strip()
             if line.startswith("TELEGRAM_BOT_TOKEN="):
-                return line.split("=", 1)[1].strip().strip('"').strip("'") or None
-    return None
+                tok = line.split("=", 1)[1].strip().strip('"').strip("'")
+                if tok:
+                    return tok
+    return getenv("TELEGRAM_DUMP_BOT_TOKEN")
 
 
 def _chat_id():
@@ -64,15 +67,19 @@ def configured() -> bool:
     return bool(_token() and _chat_id())
 
 
-def send_message(text: str, token: str | None = None, chat_id: str | None = None) -> dict:
+def send_message(text: str, token: str | None = None, chat_id: str | None = None,
+                 silent: bool = False) -> dict:
     """Send a message. Default (no token) uses the push/channel bot + allow-listed chat;
-    pass token+chat_id explicitly to reply from a dedicated bot."""
+    pass token+chat_id explicitly to reply from a dedicated bot. `silent=True` delivers
+    without a notification ping — for messages that should be waiting, not waking."""
     tok = token or _token()
     cid = chat_id or _chat_id()
     if not (tok and cid):
         raise RuntimeError("telegram not configured (no token / chat id)")
-    data = urllib.parse.urlencode(
-        {"chat_id": cid, "text": text, "disable_web_page_preview": "true"}).encode()
+    payload = {"chat_id": cid, "text": text, "disable_web_page_preview": "true"}
+    if silent:
+        payload["disable_notification"] = "true"
+    data = urllib.parse.urlencode(payload).encode()
     req = urllib.request.Request(
         f"https://api.telegram.org/bot{tok}/sendMessage", data=data)
     with urllib.request.urlopen(req, timeout=30) as r:
