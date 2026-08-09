@@ -82,12 +82,17 @@ def webhook_alert(expected_url, info, now=None):
 
 def _check_webhook():
     """Fetch getWebhookInfo when TELEGRAM_WEBHOOK_URL is configured; a fetch
-    failure is itself alert-worthy (can't-check must not read as healthy)."""
+    failure is itself alert-worthy (can't-check must not read as healthy).
+    SELF-REPAIR: when the webhook is unset/wrong and TELEGRAM_WEBHOOK_SECRET is
+    available, re-run setWebhook instead of only complaining — a stray polling
+    listener deletes the webhook as a side effect of starting, and the fix is
+    deterministic. The alert still fires, downgraded to a repair notice."""
     expected = os.environ.get("TELEGRAM_WEBHOOK_URL", "").strip()
     if not expected:
         return None
     import telegram_api
     import time
+    import urllib.parse
     import urllib.request
     tok = telegram_api._token()
     if not tok:
@@ -98,7 +103,24 @@ def _check_webhook():
             info = json.loads(r.read()).get("result", {})
     except Exception as e:
         return f"second brain: webhook check FAILED ({type(e).__name__}) — front door state unknown"
-    return webhook_alert(expected, info, now=time.time())
+    alert = webhook_alert(expected, info, now=time.time())
+    secret = os.environ.get("TELEGRAM_WEBHOOK_SECRET", "").strip()
+    if alert and ("UNSET" in alert or "WRONG" in alert) and secret:
+        try:
+            data = urllib.parse.urlencode({
+                "url": expected, "secret_token": secret,
+                "allowed_updates": '["message"]'}).encode()
+            with urllib.request.urlopen(
+                    f"https://api.telegram.org/bot{tok}/setWebhook", data=data,
+                    timeout=30) as r:
+                ok = json.loads(r.read()).get("ok")
+            if ok:
+                return ("second brain: chat webhook was UNSET (a polling listener "
+                        "stole it) — REPAIRED, front door is back. Root fix: stop "
+                        "whatever polls this bot.")
+        except Exception as e:
+            return alert + f" (auto-repair failed: {type(e).__name__})"
+    return alert
 
 
 def main():
