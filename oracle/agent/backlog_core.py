@@ -57,6 +57,11 @@ class Config:
     admin_words: tuple = ("sign ", "send ", "invoice", "submit", " form", "contract",
                           "w-9", "w9 ", "password", "logistics", "transfer",
                           "register", "renew", "reply", "complete ", "paperwork")
+    # Craft words OVERRIDE admin words (the user's rule: thinking through a script
+    # or concept is craft, even when the title says 'send') — a title carrying one
+    # of these never classifies admin.
+    craft_words: tuple = ("concept", "script", "film", "pre-cut", "precut", "shoot",
+                          "record", "storyboard")
     admin_top_n: int = 3
 
 
@@ -168,8 +173,12 @@ def rank(items: list[Item], today: datetime.date, cfg: Config = CFG) -> list[Ite
 def is_admin(it: Item, cfg: Config = CFG) -> bool:
     """Admin-lane classification, deliberately dumb and word-based: a title carrying
     an admin verb is paperwork, whatever its type — a brand deal can be both 'film
-    the video' (maker) and 'sign the contract' (admin). Tune via cfg.admin_words."""
+    the video' (maker) and 'sign the contract' (admin). Craft words win over admin
+    words ('Send the Megaport concepts' is concept-writing, not paperwork). Tune
+    via cfg.admin_words / cfg.craft_words."""
     text = f" {it.title.lower()} "
+    if any(w in text for w in cfg.craft_words):
+        return False
     return any(w in text for w in cfg.admin_words)
 
 

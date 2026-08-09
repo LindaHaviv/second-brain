@@ -71,10 +71,19 @@ def test_admin_never_takes_a_maker_seat():
 
 
 def test_admin_words_are_title_based_and_tunable():
-    assert core.is_admin(_it("Send the script to the editor"), CFG)      # a send is admin
+    assert core.is_admin(_it("Send the invoice to the agency"), CFG)    # a send is admin
     assert not core.is_admin(_it("Script the launch video"), CFG)       # scripting is craft
     assert not core.is_admin(_it("Film contract-review vlog") , core.Config(
         admin_words=("invoice",)))                                      # tunable vocabulary
+
+
+def test_craft_words_override_admin_words():
+    """Her rule 2026-08-09: concepts and scripts are craft — 'thinking through my
+    script and concept is not admin' — even when the title says send/submit."""
+    assert not core.is_admin(_it("Send Megaport concepts"), CFG)
+    assert not core.is_admin(_it("Submit the GitLab script"), CFG)
+    assert not core.is_admin(_it("Send the pre-cut to the editor"), CFG)
+    assert core.is_admin(_it("Send the W-9 back"), CFG)                 # pure paperwork stays
 
 
 def test_admin_lane_appears_in_renders():
