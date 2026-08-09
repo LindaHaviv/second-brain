@@ -89,6 +89,37 @@ def send_message(text: str, token: str | None = None, chat_id: str | None = None
     return out
 
 
+def send_document(path, caption="", token=None, chat_id=None):
+    """Send a file to the chat — work product travels to the phone, not just news
+    of it. Multipart via stdlib; Telegram caps bot uploads at 50MB."""
+    import pathlib
+    tok = token or _token()
+    cid = chat_id or _chat_id()
+    if not (tok and cid):
+        raise RuntimeError("telegram not configured (no token / chat id)")
+    p = pathlib.Path(path)
+    data = p.read_bytes()
+    if len(data) > 50 * 1024 * 1024:
+        raise ValueError(f"{p.name} exceeds Telegram's 50MB bot limit")
+    boundary = "----braindoc51c2ae"
+    body = b"".join([
+        f"--{boundary}\r\nContent-Disposition: form-data; name=\"chat_id\"\r\n\r\n"
+        f"{cid}\r\n".encode(),
+        f"--{boundary}\r\nContent-Disposition: form-data; name=\"caption\"\r\n\r\n"
+        f"{caption[:1000]}\r\n".encode(),
+        f"--{boundary}\r\nContent-Disposition: form-data; name=\"document\"; "
+        f"filename=\"{p.name}\"\r\nContent-Type: application/octet-stream\r\n\r\n".encode(),
+        data, f"\r\n--{boundary}--\r\n".encode()])
+    req = urllib.request.Request(
+        f"https://api.telegram.org/bot{tok}/sendDocument", data=body,
+        headers={"content-type": f"multipart/form-data; boundary={boundary}"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        out = json.loads(r.read())
+    if not out.get("ok"):
+        raise RuntimeError(f"telegram sendDocument failed: {out.get('description', '?')}")
+    return out
+
+
 def get_updates(token: str, offset: int | None = None) -> list:
     """Poll a DEDICATED bot for new messages (getUpdates, non-blocking). `offset` is the
     next update_id to fetch (last seen + 1) — Telegram then also acks everything before it."""
