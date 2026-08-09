@@ -83,6 +83,7 @@ def test_craft_words_override_admin_words():
     assert not core.is_admin(_it("Send Megaport concepts"), CFG)
     assert not core.is_admin(_it("Submit the GitLab script"), CFG)
     assert not core.is_admin(_it("Send the pre-cut to the editor"), CFG)
+    assert not core.is_admin(_it("Send Splunk proposal"), CFG)          # proposal-writing is craft
     assert core.is_admin(_it("Send the W-9 back"), CFG)                 # pure paperwork stays
 
 

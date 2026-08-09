@@ -61,7 +61,7 @@ class Config:
     # or concept is craft, even when the title says 'send') — a title carrying one
     # of these never classifies admin.
     craft_words: tuple = ("concept", "script", "film", "pre-cut", "precut", "shoot",
-                          "record", "storyboard")
+                          "record", "storyboard", "proposal", "pitch")
     admin_top_n: int = 3
 
 
