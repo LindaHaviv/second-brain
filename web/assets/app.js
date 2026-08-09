@@ -13,14 +13,18 @@
   // before first paint (this script is parser-blocking at the end of body). ----
   var THEME_KEY = "brain_theme";
   function applyTheme(name) {
-    if (name === "china") document.documentElement.dataset.theme = "china";
+    if (name === "light") document.documentElement.dataset.theme = "light";
     else delete document.documentElement.dataset.theme;
     var b = document.getElementById("theme-toggle");
-    if (b) b.textContent = name === "china" ? "Console" : "China Blue";   // the button offers the OTHER face
+    if (b) b.textContent = name === "light" ? "Dark mode" : "Light mode";   // the button offers the OTHER mode
     if (window.BrainGraph && BrainGraph.retheme) BrainGraph.retheme();
     if (window.BrainMap && BrainMap.redraw) BrainMap.redraw();
   }
-  try { applyTheme(localStorage.getItem(THEME_KEY) || ""); } catch (e) {}
+  var savedTheme = "";
+  try { savedTheme = localStorage.getItem(THEME_KEY) || ""; } catch (e) {}
+  if (savedTheme === "china") savedTheme = "light";      // migrate early-build values
+  else if (savedTheme === "console") savedTheme = "dark";
+  applyTheme(savedTheme || "light");                     // light is the default face
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -199,9 +203,44 @@
     return '<div class="g-tile"><div class="n">' + esc(n == null ? "–" : n) + '</div><div class="l">' + esc(l) + "</div></div>";
   }
 
+  // ---- health: one glance, four dots — the brain, the sync pipeline, the sources, the agents
+  function hrow(color, label, note) {
+    return '<div class="hrow"><span class="hdot" style="background:' + color + '"></span><span>' +
+      esc(label) + '</span><span class="hnote">' + esc(note || "") + "</span></div>";
+  }
+  async function loadHealth() {
+    var box = el("health-rows");
+    try {
+      var h = await api("/api/health");
+      var AMBER = "#d9a94f", rows = hrow("var(--ok)", "Brain", "online");
+      var p = h.pipeline || {};
+      var pc = p.state === "ok" ? "var(--ok)" : (p.state === "degraded" ? AMBER : "var(--danger)");
+      var pn = p.state === "no-heartbeat" ? "no heartbeat yet"
+        : (p.hours_since != null ? "sync " + p.hours_since + "h ago" +
+           (p.trouble && p.trouble.length ? " · " + p.trouble.length + " issue" + (p.trouble.length > 1 ? "s" : "") : "") : "");
+      rows += hrow(pc, "Pipeline", (p.state || "?") + (pn ? " · " + pn : ""));
+      var srcs = h.sources || [];
+      var stale = srcs.filter(function (s) { return s.newest_item_days == null || s.newest_item_days > 30; });
+      var aging = srcs.filter(function (s) { var d = s.newest_item_days; return d != null && d > 7 && d <= 30; });
+      var sc = stale.length ? "var(--danger)" : (aging.length ? AMBER : "var(--ok)");
+      var sn = stale.length ? stale.map(function (s) { return s.platform; }).join(", ") + " stale"
+        : (aging.length ? aging.length + " aging" : "all fresh");
+      rows += hrow(sc, "Sources (" + srcs.length + ")", sn);
+      var a = h.activity || {}, ah = a.last_run_hours;
+      var ac = ah == null ? "var(--danger)" : (ah < 48 ? "var(--ok)" : (ah < 168 ? AMBER : "var(--danger)"));
+      var an = ah == null ? "no runs recorded"
+        : (ah < 1 ? "ran under 1h ago" : "ran " + Math.round(ah) + "h ago") + " · " + (a.runs_7d || 0) + " this week";
+      rows += hrow(ac, "Agents", an);
+      box.innerHTML = rows;
+    } catch (e) {
+      box.innerHTML = hrow("var(--danger)", "Brain", "unreachable: " + e.message);
+    }
+  }
+
   async function loadWidgets() {
     if (state.widgetsLoaded) return;
     state.widgetsLoaded = true;
+    loadHealth();
     var ov = state.ov || {};
     var mem = ov.memory || {};
     el("glance-tiles").innerHTML =
@@ -226,11 +265,12 @@
   }
 
   el("glance-more").addEventListener("click", function (e) { e.preventDefault(); openOverviewPanel(el("graph-panel")); });
+  el("health-more").addEventListener("click", function (e) { e.preventDefault(); openOverviewPanel(el("graph-panel")); });
   el("latest-more").addEventListener("click", function (e) { e.preventDefault(); openFeedPanel(el("graph-panel")); });
   el("mem-more").addEventListener("click", function (e) { e.preventDefault(); route("memory"); });
 
   el("theme-toggle").addEventListener("click", function () {
-    var next = document.documentElement.dataset.theme === "china" ? "" : "china";
+    var next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
     try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
     applyTheme(next);
   });

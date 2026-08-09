@@ -215,6 +215,25 @@ def _api(request):
             })
         if path == "/api/status":
             return _json(_srv._source_status_data(conn))
+        if path == "/api/health":
+            # one-glance observability: the sync heartbeat verdict, per-source freshness, and
+            # agent activity (episodic memory recency = "are the agents actually running").
+            # If the DB itself is down this route 503s, which the UI shows as the brain being
+            # unreachable — that IS the health signal in that case.
+            d = _srv._source_status_data(conn)
+            with conn.cursor() as cur:
+                cur.execute("SELECT MAX(created_at), "
+                            "SUM(CASE WHEN created_at > SYSDATE - 7 THEN 1 ELSE 0 END) "
+                            "FROM agent_memory WHERE NVL(visibility,'content') = 'content'")
+                last_run, runs_7d = cur.fetchone()
+            import datetime as _dt2
+            hours = None
+            if last_run is not None:
+                if last_run.tzinfo:
+                    last_run = last_run.replace(tzinfo=None)
+                hours = round(max(0.0, (_dt2.datetime.now() - last_run).total_seconds() / 3600), 1)
+            return _json({"pipeline": d["pipeline"], "sources": d["sources"], "panel": d["panel"],
+                          "activity": {"last_run_hours": hours, "runs_7d": int(runs_7d or 0)}})
         return _err("not found", 404)
     except Exception as e:
         print(f"[webui] {path} {e}", flush=True)

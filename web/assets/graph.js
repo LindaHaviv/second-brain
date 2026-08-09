@@ -15,7 +15,7 @@
     C_EDGE = v('--topic-dim', '#6d5bd0');
     C_BG = v('--bg', '#16161c');
     C_TEXT = v('--text', '#d7d7e0');
-    LIGHT = document.documentElement.dataset.theme === "china";
+    LIGHT = document.documentElement.dataset.theme === "light";
     if (Graph) Graph.backgroundColor(C_BG);
   }
   refreshTheme();

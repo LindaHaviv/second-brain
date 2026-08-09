@@ -90,9 +90,9 @@ a:hover { text-decoration: underline; }
 /* keyboard users get the cyan the mouse users get on hover */
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ---- China Blue: the light face. A data-theme flip swaps the tokens; components never
-   change. Dusty-blue structure + warm terracotta content on porcelain; no glow anywhere. ---- */
-:root[data-theme="china"] {
+/* ---- Light mode (the China Blue palette). A data-theme flip swaps the tokens; components
+   never change. Dusty-blue structure + warm terracotta content on porcelain; no glow. ---- */
+:root[data-theme="light"] {
   --bg: #f4f2ee;
   --bg-panel: #ffffff;
   --bg-elev: #e9ecef;
@@ -112,26 +112,26 @@ a:hover { text-decoration: underline; }
   --glow-topic: 0 0 0 rgba(0,0,0,0);
   --glow-cyan: 0 0 0 rgba(0,0,0,0);
 }
-[data-theme="china"] body::before, [data-theme="china"] body::after { display: none; }
-[data-theme="china"] header { background: rgba(250,249,246,.88); }
-[data-theme="china"] nav button:hover { background: rgba(45,58,75,.06); color: var(--text); }
-[data-theme="china"] nav button.active { background: rgba(45,58,75,.05); text-shadow: none; }
-[data-theme="china"] .brand, [data-theme="china"] h1.page, [data-theme="china"] .mem-section > h2,
-[data-theme="china"] .reg-cat-h h2, [data-theme="china"] .onboard-box h2, [data-theme="china"] .overlay h2 { text-shadow: none; }
-[data-theme="china"] .hud-search, [data-theme="china"] .hud, [data-theme="china"] .graph-legend,
-[data-theme="china"] .graph-toggle, [data-theme="china"] .rail-toggle { background: rgba(255,255,255,.88); }
-[data-theme="china"] .hud-results { background: rgba(255,255,255,.98); }
-[data-theme="china"] .panel { background: rgba(255,255,255,.98); box-shadow: -18px 0 40px rgba(45,58,75,.14); }
-[data-theme="china"] .overlay { background: rgba(244,242,238,.8); }
-[data-theme="china"] .overlay .box { background: #ffffff; box-shadow: 0 20px 60px rgba(45,58,75,.18); }
-[data-theme="china"] button.go { color: #ffffff; }
-[data-theme="china"] .tile .n, [data-theme="china"] .g-tile .n { text-shadow: none; }
-[data-theme="china"] .graph-hint { text-shadow: none; opacity: .85; }
-[data-theme="china"] .onboard { background: rgba(244,242,238,.92); }
-[data-theme="china"] .sheet, [data-theme="china"] .map-sheet {
+[data-theme="light"] body::before, [data-theme="light"] body::after { display: none; }
+[data-theme="light"] header { background: rgba(250,249,246,.88); }
+[data-theme="light"] nav button:hover { background: rgba(45,58,75,.06); color: var(--text); }
+[data-theme="light"] nav button.active { background: rgba(45,58,75,.05); text-shadow: none; }
+[data-theme="light"] .brand, [data-theme="light"] h1.page, [data-theme="light"] .mem-section > h2,
+[data-theme="light"] .reg-cat-h h2, [data-theme="light"] .onboard-box h2, [data-theme="light"] .overlay h2 { text-shadow: none; }
+[data-theme="light"] .hud-search, [data-theme="light"] .hud, [data-theme="light"] .graph-legend,
+[data-theme="light"] .graph-toggle, [data-theme="light"] .rail-toggle { background: rgba(255,255,255,.88); }
+[data-theme="light"] .hud-results { background: rgba(255,255,255,.98); }
+[data-theme="light"] .panel { background: rgba(255,255,255,.98); box-shadow: -18px 0 40px rgba(45,58,75,.14); }
+[data-theme="light"] .overlay { background: rgba(244,242,238,.8); }
+[data-theme="light"] .overlay .box { background: #ffffff; box-shadow: 0 20px 60px rgba(45,58,75,.18); }
+[data-theme="light"] button.go { color: #ffffff; }
+[data-theme="light"] .tile .n, [data-theme="light"] .g-tile .n { text-shadow: none; }
+[data-theme="light"] .graph-hint { text-shadow: none; opacity: .85; }
+[data-theme="light"] .onboard { background: rgba(244,242,238,.92); }
+[data-theme="light"] .sheet, [data-theme="light"] .map-sheet {
   background: #fdfcf9; border: 1px solid rgba(45,58,75,.15); box-shadow: 0 10px 34px rgba(45,58,75,.12); }
-[data-theme="china"] .hud-search:focus-within { box-shadow: 0 0 0 3px rgba(81,104,138,.15); }
-[data-theme="china"] .mem-tab.active { background: rgba(81,104,138,.06); }
+[data-theme="light"] .hud-search:focus-within { box-shadow: 0 0 0 3px rgba(81,104,138,.15); }
+[data-theme="light"] .mem-tab.active { background: rgba(81,104,138,.06); }
 
 /* the theme toggle in the header */
 .theme-btn { background: none; border: 1px solid var(--border); border-radius: 16px;
@@ -744,6 +744,10 @@ button.tile.mem-tab { font: inherit; text-align: left; cursor: pointer; color: v
 .latest .t { font-size: 12.5px; color: var(--text); }
 .latest .m { font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); margin-top: 2px; }
 .memrow { display: flex; gap: 10px; justify-content: space-between; }
+.hrow { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; color: var(--text); }
+.hdot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.hnote { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--text-faint);
+  text-align: right; }
 .memrow .n { font-size: 19px; }
 .hud .foot { margin-top: 10px; font-size: 11.5px; }
 .hud .loading, .hud .empty { padding: 4px 0; font-size: 12px; text-align: left; }

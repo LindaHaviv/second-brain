@@ -21,7 +21,7 @@
         <button data-view="agents">Agents</button>
       </nav>
       <span class="spacer"></span>
-      <button class="theme-btn" id="theme-toggle" title="Switch look">China Blue</button>
+      <button class="theme-btn" id="theme-toggle" title="Switch look">Light mode</button>
       <span class="meta" id="header-meta"></span>
     </header>
 
@@ -40,6 +40,10 @@
 
         <button class="rail-toggle" id="rail-toggle" title="Hide the instruments for a pure graph view">Hide instruments</button>
         <aside class="hud-col" id="hud-col" aria-label="Brain instruments">
+          <div class="hud">
+            <h3>Health <a href="#" id="health-more">details →</a></h3>
+            <div id="health-rows"><div class="loading">checking…</div></div>
+          </div>
           <div class="hud">
             <h3>At a glance <a href="#" id="glance-more">details →</a></h3>
             <div class="glance" id="glance-tiles"><div class="loading">loading…</div></div>

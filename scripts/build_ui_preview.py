@@ -120,15 +120,16 @@ def build():
   // theme toggle (Console <-> China Blue)
   var tbtn = el('theme-toggle');
   function applyTheme(name){
-    if (name === 'china') document.documentElement.dataset.theme = 'china';
+    if (name === 'light') document.documentElement.dataset.theme = 'light';
     else delete document.documentElement.dataset.theme;
-    tbtn.textContent = name === 'china' ? 'Console' : 'China Blue';
+    tbtn.textContent = name === 'light' ? 'Dark mode' : 'Light mode';
     if (window.BrainGraph && BrainGraph.retheme) BrainGraph.retheme();
     if (window.BrainMap && BrainMap.redraw) BrainMap.redraw();
   }
   tbtn.addEventListener('click', function(){
-    applyTheme(document.documentElement.dataset.theme === 'china' ? '' : 'china');
+    applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
   });
+  applyTheme('light');   // matches the product default
 
   // tab switching
   var btns = document.querySelectorAll('nav button');
@@ -153,6 +154,13 @@ def build():
   });
 
   // widgets
+  function hrow(c,l,n){ return '<div class="hrow"><span class="hdot" style="background:'+c+'"></span><span>'+l+'</span><span class="hnote">'+n+'</span></div>'; }
+  el('health-rows').innerHTML =
+    hrow('var(--ok)','Brain','online') +
+    hrow('var(--ok)','Pipeline','ok · sync 3.2h ago') +
+    hrow('#d9a94f','Sources (5)','talk aging') +
+    hrow('var(--ok)','Agents','ran 2h ago · 14 this week');
+  el('health-more').addEventListener('click', function(e){ e.preventDefault(); el('glance-more').click(); });
   function gTile(n,l){ return '<div class="g-tile"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
   el('glance-tiles').innerHTML = gTile(247,'Items')+gTile(14,'Topics')+gTile(41,'Memories')+gTile(5,'Sources');
   el('mem-pulse').innerHTML = gTile(41,'Episodic')+gTile(24,'Semantic')+gTile(5,'Tools')+gTile(8,'Convo');
@@ -250,7 +258,7 @@ def build():
 <button data-view="map">Map</button>
 <button data-view="agents">Agents</button>
 </nav>
-<span class="spacer"></span><button class="theme-btn" id="theme-toggle" title="Switch look">China Blue</button><span class="meta">generic sample data</span></header>
+<span class="spacer"></span><button class="theme-btn" id="theme-toggle" title="Switch look">Light mode</button><span class="meta">generic sample data</span></header>
 <main>
 {sections}
 </main>
