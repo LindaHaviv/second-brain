@@ -26,7 +26,8 @@ import urllib.request
 API_URL = "https://api.anthropic.com/v1/messages"
 API_VERSION = "2023-06-01"
 MAX_TOOL_TURNS = 6
-MAX_TOKENS = 1024
+MAX_TOKENS = 2048        # a truncated reply mid-tool-call once produced an illegal
+                         # history (tool_use with no tool_result) — see respond()
 TOOL_RESULT_CAP = 6000   # chars per tool result handed back to the model
 RETRY_CODES = {429, 500, 502, 503, 504, 529}   # transient: retry with backoff
 RETRY_WAITS = (2, 8)                           # seconds before attempt 2 and 3
@@ -94,34 +95,58 @@ async def respond(mcp, api_key, model, persona, user_text, tool_allow):
     async with Client(mcp) as client:
         tools = to_anthropic_tools(await client.list_tools(), tool_allow)
         messages = [{"role": "user", "content": user_text}]
+        final = []
         for _ in range(MAX_TOOL_TURNS):
             resp = await anyio.to_thread.run_sync(
                 lambda: _call_api(api_key, model, persona, messages, tools))
             blocks = resp.get("content", [])
             messages.append({"role": "assistant", "content": blocks})
             uses = [b for b in blocks if b.get("type") == "tool_use"]
-            if not uses or resp.get("stop_reason") != "tool_use":
+            # INVARIANT: an assistant message containing tool_use MUST be followed
+            # by tool_results for every id — even when the reply was truncated
+            # (stop_reason max_tokens mid-call once built an illegal history that
+            # made every retry fail identically). Execute on a clean tool turn;
+            # cancel formally on a truncated one.
+            if uses:
+                truncated = resp.get("stop_reason") != "tool_use"
+                results = []
+                for u in uses:
+                    if truncated:
+                        text = "(call cancelled — your reply was cut off; answer " \
+                               "from what you already have)"
+                    else:
+                        try:
+                            out = await client.call_tool(u["name"], u.get("input") or {})
+                            text = "\n".join(
+                                c.text for c in out.content
+                                if getattr(c, "type", "") == "text")[:TOOL_RESULT_CAP]
+                        except Exception as e:
+                            text = f"(tool error: {type(e).__name__}: {e})"[:500]
+                    results.append({"type": "tool_result", "tool_use_id": u["id"],
+                                    "content": text or "(empty)"})
+                messages.append({"role": "user", "content": results})
+                if truncated:
+                    continue        # give it one clean turn to wrap up
+            else:
+                final = [b.get("text", "") for b in blocks
+                         if isinstance(b, dict) and b.get("type") == "text"]
                 break
-            results = []
-            for u in uses:
-                try:
-                    out = await client.call_tool(u["name"], u.get("input") or {})
-                    text = "\n".join(
-                        c.text for c in out.content
-                        if getattr(c, "type", "") == "text")[:TOOL_RESULT_CAP]
-                except Exception as e:
-                    text = f"(tool error: {type(e).__name__}: {e})"[:500]
-                results.append({"type": "tool_result", "tool_use_id": u["id"],
-                                "content": text or "(empty)"})
-            messages.append({"role": "user", "content": results})
-        final = [b.get("text", "") for b in messages[-1]["content"]
-                 if isinstance(b, dict) and b.get("type") == "text"] \
-            if messages[-1]["role"] == "assistant" else []
-        if not final:   # loop ended on a tool turn — ask for the wrap-up
+            if resp.get("stop_reason") != "tool_use" and not uses:
+                break
+        if not final:   # turns exhausted on tool work — one last no-tools wrap-up.
+            # messages ends with a user(tool_results) entry; fold the instruction
+            # into THAT message — consecutive user messages are also illegal.
+            tail = messages[-1]
+            if tail["role"] == "user" and isinstance(tail["content"], list):
+                tail["content"].append({"type": "text",
+                                        "text": "Wrap up: answer from what you "
+                                                "have, briefly."})
+            else:
+                messages.append({"role": "user",
+                                 "content": "Wrap up: answer from what you have, "
+                                            "briefly."})
             resp = await anyio.to_thread.run_sync(
-                lambda: _call_api(api_key, model, persona, messages + [
-                    {"role": "user",
-                     "content": "Wrap up: answer from what you have, briefly."}], []))
+                lambda: _call_api(api_key, model, persona, messages, []))
             final = [b.get("text", "") for b in resp.get("content", [])
                      if b.get("type") == "text"]
         return "\n".join(t for t in final if t).strip() or "(no reply)"
