@@ -32,8 +32,9 @@ sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "oracle" / "agent"))
 from redaction import SECRET_PATTERNS  # noqa: E402
 
-# files that legitimately CONTAIN the patterns (scanners/scrubbers/this file)
-PATTERN_HOLDERS = {"scripts/redaction.py", "scripts/review.py", "scripts/security_check.py"}
+# files that legitimately CONTAIN the patterns (scanners/scrubbers + their tests)
+PATTERN_HOLDERS = {"scripts/redaction.py", "scripts/review.py", "scripts/security_check.py",
+                   "tests/test_security_check.py"}
 TEXT_SUFFIXES = {".py", ".md", ".txt", ".json", ".sql", ".sh", ".yml", ".yaml", ".toml",
                  ".html", ".js", ".css", ".webmanifest", ".example", ".gitignore",
                  ".dockerignore", ""}
@@ -149,9 +150,19 @@ def check_db(findings):
                          f"credential shapes in the brain: {hits or 'none'}"
                          + (" — scripts/review.py shows masked detail" if hits else "")))
         from oamp_memory import violates_privacy
-        cur.execute("SELECT title, caption FROM posts WHERE platform_id='note' "
+        # triage knobs: SECURITY_CHECK_NOTE_ALLOW = comma-separated title prefixes for
+        # recurring generated reports whose deny hits are reviewed-benign (they get new
+        # ids every run); SECURITY_CHECK_ACK_IDS = one-off post ids reviewed and accepted
+        allow = [p.strip() for p in
+                 os.environ.get("SECURITY_CHECK_NOTE_ALLOW", "").split(",") if p.strip()]
+        acked = {int(i) for i in
+                 os.environ.get("SECURITY_CHECK_ACK_IDS", "").split(",") if i.strip().isdigit()}
+        cur.execute("SELECT post_id, title, caption FROM posts WHERE platform_id='note' "
                     "AND NVL(visibility,'content')='content'")
-        leaked = [t[:60] for t, c in cur.fetchall() if violates_privacy(f"{t}\n{c or ''}")]
+        leaked = [f"[{pid}] {t[:60]}" for pid, t, c in cur.fetchall()
+                  if pid not in acked
+                  and not any(t.startswith(p) for p in allow)
+                  and violates_privacy(f"{t}\n{c or ''}")]
         findings.append(("RED" if leaked else "OK",
                          f"agent notes vs privacy deny-list: {leaked or 'all clean'}"))
     finally:
