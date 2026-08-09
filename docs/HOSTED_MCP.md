@@ -179,6 +179,27 @@ repo; the public repo stays a teaching artifact. (This split is how the referenc
 runs its own video→diagram intake.)
 
 
+## Optional: a phone-chat front door (Telegram webhook)
+
+The server can answer your phone. Two public engines make it a small extension, not a
+second system: `oracle/agent/chat_gate.py` (the pure security gate for an unauthenticated
+webhook route — shared-secret header, chat allowlist, text-only parsing; every verdict
+unit-tested) and `oracle/agent/chat_agent.py` (a bounded tool-use loop over the server's
+OWN MCP tools via fastmcp's in-memory client — no second registry to drift, stdlib HTTP
+only, hard caps on turns/tokens/result sizes, tools filtered by an explicit allowlist).
+
+Wire it in your private `http_ext.py`: claim a route (say `/telegram`), gate the request,
+run `chat_agent.respond(...)` with your persona and tool allowlist, send the reply via the
+Bot API, and ALWAYS return 200 for authentic traffic (5xx makes Telegram retry-storm).
+Point Telegram at it with `setWebhook` (`url=https://<app>.fly.dev/telegram`,
+`secret_token=<random>`); the same values live as Fly secrets. Fail closed: any missing
+env var should 404 the route. Note webhook mode replaces `getUpdates` polling for that
+bot — session-based channel plugins on the same token stop receiving by design.
+
+Scale-to-zero works: the webhook wakes a stopped machine. Process inline (no background
+tasks a stopped machine would kill) and dedupe on `update_id` — Telegram redelivers
+unacknowledged updates.
+
 ## Memory UI (read-only web view)
 
 The same Fly app can also serve a **browser view of the brain** — an Obsidian-style graph

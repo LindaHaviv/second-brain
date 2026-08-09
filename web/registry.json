@@ -12,6 +12,12 @@
           "scope": "generic"
         },
         {
+          "name": "Chat agent",
+          "desc": "A minimal chat agent over this brain's own MCP tools: the engine of a",
+          "where": "oracle/agent/chat_agent.py",
+          "scope": "generic"
+        },
+        {
           "name": "Digest agent",
           "desc": "Weekly digest agent: what the brain did last week, readable with Monday coffee.",
           "where": "oracle/agent/digest_agent.py",
