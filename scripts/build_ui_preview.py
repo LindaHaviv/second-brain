@@ -117,6 +117,19 @@ def build():
   var SAMPLE = { "/api/agents": __REG__, "/api/map": __MAP__ };
   function fakeApi(p){ return Promise.resolve(SAMPLE[p.split('?')[0]]); }
 
+  // theme toggle (Console <-> China Blue)
+  var tbtn = el('theme-toggle');
+  function applyTheme(name){
+    if (name === 'china') document.documentElement.dataset.theme = 'china';
+    else delete document.documentElement.dataset.theme;
+    tbtn.textContent = name === 'china' ? 'Console' : 'China Blue';
+    if (window.BrainGraph && BrainGraph.retheme) BrainGraph.retheme();
+    if (window.BrainMap && BrainMap.redraw) BrainMap.redraw();
+  }
+  tbtn.addEventListener('click', function(){
+    applyTheme(document.documentElement.dataset.theme === 'china' ? '' : 'china');
+  });
+
   // tab switching
   var btns = document.querySelectorAll('nav button');
   btns.forEach(function(b){ b.addEventListener('click', function(){
@@ -237,7 +250,7 @@ def build():
 <button data-view="map">Map</button>
 <button data-view="agents">Agents</button>
 </nav>
-<span class="spacer"></span><span class="meta">generic sample data</span></header>
+<span class="spacer"></span><button class="theme-btn" id="theme-toggle" title="Switch look">China Blue</button><span class="meta">generic sample data</span></header>
 <main>
 {sections}
 </main>

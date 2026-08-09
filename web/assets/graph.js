@@ -5,13 +5,20 @@
 (function () {
   "use strict";
 
-  var CSS = getComputedStyle(document.documentElement);
-  function v(name, fallback) { return (CSS.getPropertyValue(name).trim() || fallback); }
-  var C_TOPIC = v('--topic', '#a78bfa'),
-      C_ITEM = v('--item', '#f5b971'),
-      C_EDGE = v('--topic-dim', '#6d5bd0'),
-      C_BG = v('--bg', '#16161c'),
-      C_TEXT = v('--text', '#d7d7e0');
+  // colors re-read on theme change (BrainGraph.retheme), so the map re-skins live
+  var C_TOPIC, C_ITEM, C_EDGE, C_BG, C_TEXT, LIGHT;
+  function refreshTheme() {
+    var CSS = getComputedStyle(document.documentElement);
+    function v(name, fallback) { return (CSS.getPropertyValue(name).trim() || fallback); }
+    C_TOPIC = v('--topic', '#a78bfa');
+    C_ITEM = v('--item', '#f5b971');
+    C_EDGE = v('--topic-dim', '#6d5bd0');
+    C_BG = v('--bg', '#16161c');
+    C_TEXT = v('--text', '#d7d7e0');
+    LIGHT = document.documentElement.dataset.theme === "china";
+    if (Graph) Graph.backgroundColor(C_BG);
+  }
+  refreshTheme();
 
   // content embers: warm hues only (terracotta -> amber, 14-40deg) with a stable per-platform
   // variation in hue + lightness, so sources read as stars at different distances — never the
@@ -85,20 +92,21 @@
       var fs = Math.max(3, (node.type === 'topic' ? 5 : 3.6));
       ctx.font = fs + 'px -apple-system, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      ctx.fillStyle = node.type === 'topic' ? C_TEXT : 'rgba(215,215,224,.7)';
+      ctx.fillStyle = node.type === 'topic' ? C_TEXT : (LIGHT ? 'rgba(30,36,48,.62)' : 'rgba(215,215,224,.7)');
       var label = node.label.length > 34 ? node.label.slice(0, 33) + '…' : node.label;
       ctx.fillText(label, node.x, node.y + r + 1);
     }
     ctx.globalAlpha = 1;
   }
 
-  function linkColor(l) {   // holo-cyan hyperspace lanes
+  function linkColor(l) {   // holo-cyan hyperspace lanes; dusty-blue threads on paper
+    var lit = LIGHT ? '81,104,138' : '87,214,255';
     if (HOVER) {   // on hover, only the hovered node's edges stay lit
       var s = l.source.id || l.source, t = l.target.id || l.target;
-      if (s !== HOVER.id && t !== HOVER.id) return 'rgba(120,140,170,.05)';
-      return l.type === 'semantic' ? 'rgba(87,214,255,.8)' : 'rgba(87,214,255,.45)';
+      if (s !== HOVER.id && t !== HOVER.id) return 'rgba(120,140,170,.06)';
+      return l.type === 'semantic' ? 'rgba(' + lit + ',.8)' : 'rgba(' + lit + ',.45)';
     }
-    return l.type === 'semantic' ? 'rgba(87,214,255,.55)' : 'rgba(87,214,255,.16)';
+    return l.type === 'semantic' ? 'rgba(' + lit + ',.55)' : 'rgba(' + lit + ',' + (LIGHT ? '.28' : '.16') + ')';
   }
 
   // a fixed faint starfield, generated once per canvas size (deterministic — no flicker)
@@ -111,8 +119,10 @@
     STARS = { w: w, h: h, pts: pts };
     return pts;
   }
-  // paint the deep-space backdrop (nebula glow + stars) in screen space, under the graph
+  // paint the deep-space backdrop (nebula glow + stars) in screen space, under the graph.
+  // The light theme is paper, not space: skip it entirely there.
   function paintSpace(ctx) {
+    if (LIGHT) return;
     var w = Graph.width(), h = Graph.height();
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -209,5 +219,6 @@
   }
 
   window.BrainGraph = { init: init, setData: setData, merge: merge, focus: focus,
-    toggleFocus: toggleFocus, highlight: highlight, has: function (id) { return !!IDS[id]; } };
+    toggleFocus: toggleFocus, highlight: highlight, retheme: refreshTheme,
+    has: function (id) { return !!IDS[id]; } };
 })();

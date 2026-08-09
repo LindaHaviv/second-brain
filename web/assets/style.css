@@ -90,6 +90,54 @@ a:hover { text-decoration: underline; }
 /* keyboard users get the cyan the mouse users get on hover */
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* ---- China Blue: the light face. A data-theme flip swaps the tokens; components never
+   change. Dusty-blue structure + warm terracotta content on porcelain; no glow anywhere. ---- */
+:root[data-theme="china"] {
+  --bg: #f4f2ee;
+  --bg-panel: #ffffff;
+  --bg-elev: #e9ecef;
+  --border: rgba(45,58,75,.18);
+  --border-accent: #51688a;
+  --overline: #51688a;
+  --text: #1e2430;
+  --text-dim: #5c6b80;
+  --text-faint: #93a0b0;
+  --topic: #6d87a8;
+  --topic-dim: #51688a;
+  --item: #c97a58;
+  --accent: #51688a;
+  --danger: #a04b2e;
+  --ok: #7d9367;
+  --lock: #a04b2e;
+  --glow-topic: 0 0 0 rgba(0,0,0,0);
+  --glow-cyan: 0 0 0 rgba(0,0,0,0);
+}
+[data-theme="china"] body::before, [data-theme="china"] body::after { display: none; }
+[data-theme="china"] header { background: rgba(250,249,246,.88); }
+[data-theme="china"] nav button:hover { background: rgba(45,58,75,.06); color: var(--text); }
+[data-theme="china"] nav button.active { background: rgba(45,58,75,.05); text-shadow: none; }
+[data-theme="china"] .brand, [data-theme="china"] h1.page, [data-theme="china"] .mem-section > h2,
+[data-theme="china"] .reg-cat-h h2, [data-theme="china"] .onboard-box h2, [data-theme="china"] .overlay h2 { text-shadow: none; }
+[data-theme="china"] .hud-search, [data-theme="china"] .hud, [data-theme="china"] .graph-legend,
+[data-theme="china"] .graph-toggle, [data-theme="china"] .rail-toggle { background: rgba(255,255,255,.88); }
+[data-theme="china"] .hud-results { background: rgba(255,255,255,.98); }
+[data-theme="china"] .panel { background: rgba(255,255,255,.98); box-shadow: -18px 0 40px rgba(45,58,75,.14); }
+[data-theme="china"] .overlay { background: rgba(244,242,238,.8); }
+[data-theme="china"] .overlay .box { background: #ffffff; box-shadow: 0 20px 60px rgba(45,58,75,.18); }
+[data-theme="china"] button.go { color: #ffffff; }
+[data-theme="china"] .tile .n, [data-theme="china"] .g-tile .n { text-shadow: none; }
+[data-theme="china"] .graph-hint { text-shadow: none; opacity: .85; }
+[data-theme="china"] .onboard { background: rgba(244,242,238,.92); }
+[data-theme="china"] .sheet, [data-theme="china"] .map-sheet {
+  background: #fdfcf9; border: 1px solid rgba(45,58,75,.15); box-shadow: 0 10px 34px rgba(45,58,75,.12); }
+[data-theme="china"] .hud-search:focus-within { box-shadow: 0 0 0 3px rgba(81,104,138,.15); }
+[data-theme="china"] .mem-tab.active { background: rgba(81,104,138,.06); }
+
+/* the theme toggle in the header */
+.theme-btn { background: none; border: 1px solid var(--border); border-radius: 16px;
+  color: var(--text-dim); font: inherit; font-size: 11.5px; padding: 4px 12px; cursor: pointer; }
+.theme-btn:hover { color: var(--text); border-color: var(--border-accent); }
+
 /* ---- deep-space backdrop: a faint nebula + starfield behind everything, and a subtle
    cockpit-screen scanline/vignette over the top. Both are inert (pointer-events:none).
    The graph canvas paints its own space over this; the other tabs let it show through. ---- */

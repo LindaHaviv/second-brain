@@ -9,6 +9,19 @@
   var state = { token: localStorage.getItem(TOKEN_KEY) || "", authed: false,
                 graphBooted: false, widgetsLoaded: false, ov: null };
 
+  // ---- theme: Console (dark, default) or China Blue; remembered per device. Applied here,
+  // before first paint (this script is parser-blocking at the end of body). ----
+  var THEME_KEY = "brain_theme";
+  function applyTheme(name) {
+    if (name === "china") document.documentElement.dataset.theme = "china";
+    else delete document.documentElement.dataset.theme;
+    var b = document.getElementById("theme-toggle");
+    if (b) b.textContent = name === "china" ? "Console" : "China Blue";   // the button offers the OTHER face
+    if (window.BrainGraph && BrainGraph.retheme) BrainGraph.retheme();
+    if (window.BrainMap && BrainMap.redraw) BrainMap.redraw();
+  }
+  try { applyTheme(localStorage.getItem(THEME_KEY) || ""); } catch (e) {}
+
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -215,6 +228,12 @@
   el("glance-more").addEventListener("click", function (e) { e.preventDefault(); openOverviewPanel(el("graph-panel")); });
   el("latest-more").addEventListener("click", function (e) { e.preventDefault(); openFeedPanel(el("graph-panel")); });
   el("mem-more").addEventListener("click", function (e) { e.preventDefault(); route("memory"); });
+
+  el("theme-toggle").addEventListener("click", function () {
+    var next = document.documentElement.dataset.theme === "china" ? "" : "china";
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+    applyTheme(next);
+  });
 
   // pure-graph mode: hide the instruments (nice on camera, nice on small screens)
   el("rail-toggle").addEventListener("click", function () {
