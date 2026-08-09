@@ -53,6 +53,33 @@ def test_overdue_beats_due_soon():
     assert ranked[0].title == "Overdue 3d"
 
 
+def test_overdue_grace_boundary_pins_then_releases():
+    """Freshly overdue (inside grace) is urgency and still pins; one day past grace it
+    stops ruling the ranking — a blown date is a question, not a plan."""
+    at_grace = _it("at grace", type="obligation", deadline="2026-07-09")    # overdue 3d
+    past_grace = _it("past grace", type="obligation", deadline="2026-07-08")  # overdue 4d
+    assert core.score_item(at_grace, TODAY, CFG)[0] == 0
+    tier, _, reason = core.score_item(past_grace, TODAY, CFG)
+    assert tier == 1
+    assert "recommit or kill" in reason
+
+
+def test_overdue_past_grace_joins_kill_or_commit_even_when_young():
+    """The stale_days road isn't the only way into the pile: blowing a deadline past
+    grace puts the item up for the kill-or-commit question regardless of its age —
+    and it must NOT quietly rebuild its old #1 seat via the deadline-lean bonus."""
+    items = [_it("Due 1", type="obligation", deadline="2026-07-13"),
+             _it("Due 2", type="obligation", deadline="2026-07-14"),
+             _it("Due 3", type="obligation", deadline="2026-07-15"),
+             _it("Blew its date", type="obligation", deadline="2026-07-05",
+                 since="2026-07-10")]                                        # 2d old
+    ranked = core.rank(items, TODAY, CFG)
+    assert [r.title for r in ranked][:3] == ["Due 1", "Due 2", "Due 3"]
+    top, _ = core.select_top(ranked, CFG)
+    pile = [it.title for _, it in core.aged_items(ranked, top, TODAY, CFG)]
+    assert "Blew its date" in pile
+
+
 def test_far_deadline_does_not_dominate():
     """A deadline 3 months out must NOT crowd out today's strategic work."""
     items = [_it("Strategic now", type="idea", strategic=True),

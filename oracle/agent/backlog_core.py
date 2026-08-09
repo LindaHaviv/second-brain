@@ -41,6 +41,8 @@ EFFORTS = ("S", "M", "L")
 class Config:
     """All the knobs in one place, so the personal layer tunes without touching logic."""
     hard_window_days: int = 14   # deadline within this -> Tier 0 (pins to top, no flex)
+    overdue_grace_days: int = 3  # overdue longer than this stops pinning and becomes a
+                                 # kill-or-commit QUESTION — a blown date is not a plan
     stale_days: int = 21         # active + un-promoted past this -> kill-or-commit flag
     top_n: int = 3               # how many get a seat this week
     w_strategic: float = 3.0     # weight of a bigger-goal item
@@ -104,7 +106,12 @@ def score_item(it: Item, today: datetime.date, cfg: Config = CFG):
     (these sort above everything, by nearness). Tier 1 = ranked by the strategic/momentum
     blend, with a mild lean for a deadline that's approaching but not yet hard."""
     du = days_until(it.deadline, today)
-    if du is not None and du <= cfg.hard_window_days:
+    if du is not None and du < -cfg.overdue_grace_days:
+        # A date blown past the grace window is a QUESTION, not a priority: it falls out
+        # of Tier 0 (aged_items surfaces it as kill-or-commit) and ranks as an ordinary
+        # item on its merits. Freshly-overdue (inside grace) still pins — that's urgency.
+        pass
+    elif du is not None and du <= cfg.hard_window_days:
         # Tier 0. Sort key is nearness: overdue (negative) first. Encode as a big score so
         # it always outranks Tier 1, most-urgent highest.
         reason = f"due in {du}d — hard deadline" if du >= 0 else f"OVERDUE {-du}d"
@@ -122,11 +129,13 @@ def score_item(it: Item, today: datetime.date, cfg: Config = CFG):
         score += cfg.w_obligation
         parts.append(it.type)
     if du is not None:
-        # a deadline outside the hard window leans in as it approaches lean_horizon
-        lean = cfg.w_deadline_lean * max(0.0, 1 - du / max(1, cfg.lean_horizon_days))
+        # a deadline outside the hard window leans in as it approaches lean_horizon;
+        # an overdue date is clamped to "due now" — full lean, but never a bonus that
+        # would quietly rebuild the Tier-0 pinning this item just lost
+        lean = cfg.w_deadline_lean * max(0.0, 1 - max(0, du) / max(1, cfg.lean_horizon_days))
         if lean > 0:
             score += lean
-            parts.append(f"due {du}d")
+            parts.append(f"OVERDUE {-du}d — recommit or kill" if du < 0 else f"due {du}d")
     return 1, score, ", ".join(parts) or "idea"
 
 
@@ -179,8 +188,12 @@ def aged_items(ranked: list[Item], top: list[Item], today: datetime.date, cfg: C
         if id(it) in seen or it.tier == 0:
             continue
         a = age_days(it.since, today)
-        if a is not None and a >= cfg.stale_days:
-            out.append((a, it))
+        du = days_until(it.deadline, today)
+        # two roads in: sat unpromoted past stale_days, OR blew a deadline past the
+        # grace window — either way the honest question is the same
+        if (a is not None and a >= cfg.stale_days) or \
+           (du is not None and du < -cfg.overdue_grace_days):
+            out.append((a if a is not None else 0, it))
     out.sort(key=lambda t: -t[0])
     return out
 
