@@ -24,6 +24,7 @@ hosted status panel remains the real-time view from other devices.
 
 Exit codes: 0 healthy or alert sent, 1 degraded-and-undeliverable (so launchd logs show it).
 """
+import os
 import pathlib
 import sys
 
@@ -57,6 +58,49 @@ def compose_alert(verdict, streaks):
     return "\n".join(lines) or None
 
 
+def webhook_alert(expected_url, info, now=None):
+    """Pure + unit-tested: is the chat webhook (a phone front door pointed at the
+    hosted server) still receiving? Alert when the webhook is unset/wrong — a
+    polling listener silently steals it back — or when Telegram reports delivery
+    errors in the last 24h. `info` = getWebhookInfo()['result']. Silence must be
+    loud: a deaf front door looks identical to a quiet day without this check."""
+    if not expected_url:
+        return None
+    url = (info or {}).get("url") or ""
+    if url != expected_url:
+        what = "UNSET" if not url else f"WRONG ({url})"
+        return (f"second brain: chat webhook {what} — the phone front door is deaf. "
+                f"Expected {expected_url}; a polling listener may have stolen it "
+                f"(re-run setWebhook).")
+    led = (info or {}).get("last_error_date")
+    if led and now and 0 <= (now - led) < 24 * 3600:
+        msg = ((info or {}).get("last_error_message") or "")[:120]
+        return (f"second brain: chat webhook deliveries FAILING — last error "
+                f"{int((now - led) // 3600)}h ago: {msg}")
+    return None
+
+
+def _check_webhook():
+    """Fetch getWebhookInfo when TELEGRAM_WEBHOOK_URL is configured; a fetch
+    failure is itself alert-worthy (can't-check must not read as healthy)."""
+    expected = os.environ.get("TELEGRAM_WEBHOOK_URL", "").strip()
+    if not expected:
+        return None
+    import telegram_api
+    import time
+    import urllib.request
+    tok = telegram_api._token()
+    if not tok:
+        return "second brain: TELEGRAM_WEBHOOK_URL set but no bot token — can't check the front door"
+    try:
+        with urllib.request.urlopen(
+                f"https://api.telegram.org/bot{tok}/getWebhookInfo", timeout=30) as r:
+            info = json.loads(r.read()).get("result", {})
+    except Exception as e:
+        return f"second brain: webhook check FAILED ({type(e).__name__}) — front door state unknown"
+    return webhook_alert(expected, info, now=time.time())
+
+
 def main():
     conn = db.connect()
     try:
@@ -72,6 +116,9 @@ def main():
         streaks = []   # a malformed ledger must not silence the down/no-heartbeat check
 
     alert = compose_alert(verdict, streaks)
+    wh = _check_webhook()
+    if wh:
+        alert = (alert + "\n" + wh) if alert else wh
     if not alert:
         print(f"watchdog: healthy (state={verdict['state']}, "
               f"last run {verdict['hours_since']}h ago) — silence means healthy")

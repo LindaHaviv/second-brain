@@ -619,6 +619,24 @@ def test_failing_streaks_flags_only_consecutive_fails():
     assert failing_streaks([], min_runs=3) == []
 
 
+def test_watchdog_webhook_check_catches_a_deaf_front_door():
+    """The chat webhook's failure mode is SILENCE (messages vanish, no error the
+    user sees) — so unset, stolen, and delivery-failing states must all alert,
+    while healthy and unconfigured stay quiet."""
+    from watchdog import webhook_alert
+    URL = "https://app.example/telegram"
+    now = 1_000_000.0
+    assert webhook_alert("", {"url": ""}, now) is None                  # not configured
+    assert webhook_alert(URL, {"url": URL}, now) is None                # healthy
+    assert "UNSET" in webhook_alert(URL, {"url": ""}, now)              # dropped/stolen
+    assert "WRONG" in webhook_alert(URL, {"url": "https://evil"}, now)  # hijacked
+    recent = {"url": URL, "last_error_date": now - 3600,
+              "last_error_message": "connection refused"}
+    assert "FAILING" in webhook_alert(URL, recent, now)
+    old = {"url": URL, "last_error_date": now - 3 * 24 * 3600}
+    assert webhook_alert(URL, old, now) is None                         # stale error: quiet
+
+
 def test_watchdog_alerts_only_when_a_human_is_needed():
     """Silence means healthy: no message for ok or one-off degraded runs; a message for
     down / no-heartbeat / consecutive-fail streaks. A watchdog that pings daily gets

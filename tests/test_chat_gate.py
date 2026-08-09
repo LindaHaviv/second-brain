@@ -62,8 +62,21 @@ def test_stranger_chat_is_silently_ignored():
 def test_allowed_text_message_passes_with_fields():
     verdict, info = chat_gate.gate(SECRET, SECRET, _update("  hello  "), ALLOWED)
     assert verdict == "ok"
-    assert info == {"chat_id": "12345", "text": "hello", "message_id": 9,
-                    "update_id": 7, "sender": "Linda"}
+    assert info == {"chat_id": "12345", "text": "hello", "voice_file_id": None,
+                    "message_id": 9, "update_id": 7, "sender": "Linda"}
+
+
+def test_voice_message_passes_with_file_id():
+    """A voice note from an allowed chat is admitted (empty text, file id set) —
+    the caller transcribes; a voice note from a stranger still drops silently."""
+    u = {"update_id": 8, "message": {"message_id": 10, "chat": {"id": 12345},
+                                     "from": {"first_name": "Linda"},
+                                     "voice": {"file_id": "VF123", "duration": 4}}}
+    verdict, info = chat_gate.gate(SECRET, SECRET, u, ALLOWED)
+    assert verdict == "ok"
+    assert info["voice_file_id"] == "VF123" and info["text"] == ""
+    u["message"]["chat"]["id"] = 666
+    assert chat_gate.gate(SECRET, SECRET, u, ALLOWED)[0] == "ignore"
 
 
 def test_allowlist_accepts_ints_and_strings():

@@ -31,7 +31,9 @@ def gate(secret_header, expected_secret, update, allowed_chat_ids):
     if not isinstance(msg, dict):
         return "ignore", None          # edits, callbacks, member events, channels
     text = msg.get("text")
-    if not isinstance(text, str) or not text.strip():
+    voice = msg.get("voice") if isinstance(msg.get("voice"), dict) else None
+    has_text = isinstance(text, str) and text.strip()
+    if not has_text and not (voice and voice.get("file_id")):
         return "ignore", None          # media-only, stickers, joins
     chat_id = str((msg.get("chat") or {}).get("id", ""))
     if chat_id not in {str(c) for c in allowed_chat_ids if str(c).strip()}:
@@ -39,7 +41,8 @@ def gate(secret_header, expected_secret, update, allowed_chat_ids):
     sender = (msg.get("from") or {}).get("first_name", "") or "user"
     return "ok", {
         "chat_id": chat_id,
-        "text": text.strip(),
+        "text": text.strip() if has_text else "",
+        "voice_file_id": voice.get("file_id") if voice else None,
         "message_id": msg.get("message_id"),
         "update_id": update.get("update_id"),
         "sender": sender,

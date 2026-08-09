@@ -18,6 +18,9 @@ Design constraints, deliberately:
 tests/test_chat_agent.py; the loop itself is thin I/O around it.
 """
 import json
+import sys
+import time
+import urllib.error
 import urllib.request
 
 API_URL = "https://api.anthropic.com/v1/messages"
@@ -25,6 +28,8 @@ API_VERSION = "2023-06-01"
 MAX_TOOL_TURNS = 6
 MAX_TOKENS = 1024
 TOOL_RESULT_CAP = 6000   # chars per tool result handed back to the model
+RETRY_CODES = {429, 500, 502, 503, 504, 529}   # transient: retry with backoff
+RETRY_WAITS = (2, 8)                           # seconds before attempt 2 and 3
 
 
 def to_anthropic_tools(tools, allow):
@@ -45,14 +50,39 @@ def to_anthropic_tools(tools, allow):
 
 
 def _call_api(api_key, model, system, messages, tools):
+    """One API call, resilient: transient failures (429/5xx/overload, network
+    blips) retry twice with backoff; every failure logs its body to stderr so
+    the server's logs always show WHY, never just that. Non-transient errors
+    raise immediately — a bad request won't get better by asking again."""
     payload = {"model": model, "max_tokens": MAX_TOKENS, "system": system,
                "messages": messages, "tools": tools}
-    req = urllib.request.Request(
-        API_URL, data=json.dumps(payload).encode(),
-        headers={"content-type": "application/json", "x-api-key": api_key,
-                 "anthropic-version": API_VERSION})
-    with urllib.request.urlopen(req, timeout=120) as r:
-        return json.loads(r.read())
+    last = None
+    for attempt in range(1 + len(RETRY_WAITS)):
+        if attempt:
+            time.sleep(RETRY_WAITS[attempt - 1])
+        req = urllib.request.Request(
+            API_URL, data=json.dumps(payload).encode(),
+            headers={"content-type": "application/json", "x-api-key": api_key,
+                     "anthropic-version": API_VERSION})
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            body = ""
+            try:
+                body = e.read().decode()[:500]
+            except Exception:
+                pass
+            print(f"chat_agent: API {e.code} (attempt {attempt + 1}): {body}",
+                  file=sys.stderr)
+            last = e
+            if e.code not in RETRY_CODES:
+                raise
+        except urllib.error.URLError as e:
+            print(f"chat_agent: network error (attempt {attempt + 1}): {e}",
+                  file=sys.stderr)
+            last = e
+    raise last
 
 
 async def respond(mcp, api_key, model, persona, user_text, tool_allow):
