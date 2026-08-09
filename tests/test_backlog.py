@@ -53,6 +53,40 @@ def test_overdue_beats_due_soon():
     assert ranked[0].title == "Overdue 3d"
 
 
+def test_admin_never_takes_a_maker_seat():
+    """Her rule 2026-08-09: the Top-N is craft work — script, filming, prep, cutting.
+    Paperwork (signing, sending, forms, invoices) ranks in its OWN lane, deadline
+    or not, and the maker Top-N is drawn from what remains."""
+    items = [_it("Sign BigCo contract", type="brand-deal", deadline="2026-07-13"),
+             _it("Complete visa entry form", type="obligation", deadline="2026-07-13"),
+             _it("Film BigCo video", type="brand-deal", deadline="2026-07-14"),
+             _it("Pre-cut the walk episode", type="in-flight", strategic=True)]
+    ranked = core.rank(items, TODAY, CFG)
+    top, _ = core.select_top(ranked, CFG)
+    assert [t.title for t in top] == ["Film BigCo video", "Pre-cut the walk episode"]
+    admin = core.admin_top(ranked, CFG)
+    # same deadline -> the stable title tie-break orders them; both are here, neither in top
+    assert sorted(a.title for a in admin) == ["Complete visa entry form",
+                                              "Sign BigCo contract"]
+
+
+def test_admin_words_are_title_based_and_tunable():
+    assert core.is_admin(_it("Send the script to the editor"), CFG)      # a send is admin
+    assert not core.is_admin(_it("Script the launch video"), CFG)       # scripting is craft
+    assert not core.is_admin(_it("Film contract-review vlog") , core.Config(
+        admin_words=("invoice",)))                                      # tunable vocabulary
+
+
+def test_admin_lane_appears_in_renders():
+    items = [_it("Sign BigCo contract", type="brand-deal", deadline="2026-07-13"),
+             _it("Film BigCo video", type="brand-deal", deadline="2026-07-14")]
+    digest = core.render_digest(items, TODAY, CFG)
+    assert "Admin top" in digest and "Sign BigCo contract" in digest
+    assert "1. **Film BigCo video**" in digest       # the maker seat
+    filed = core.render_file(items, TODAY, CFG)
+    assert "Admin top" in filed
+
+
 def test_overdue_grace_boundary_pins_then_releases():
     """Freshly overdue (inside grace) is urgency and still pins; one day past grace it
     stops ruling the ranking — a blown date is a question, not a plan."""

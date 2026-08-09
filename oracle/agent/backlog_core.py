@@ -50,6 +50,14 @@ class Config:
     w_obligation: float = 1.5    # a deadline-less obligation/brand-deal still leans up
     w_deadline_lean: float = 4.0 # max score lean from a deadline still outside the window
     lean_horizon_days: int = 60  # a deadline farther out than this leans ~nothing yet
+    # The Top-N is a MAKER's list (the user's call): items whose title carries an
+    # admin verb — signing, sending, forms, invoices, logistics — never take a seat.
+    # They rank in their own lane instead (admin_top), still deadline-ordered, so
+    # urgent paperwork is visible without ever displacing craft.
+    admin_words: tuple = ("sign ", "send ", "invoice", "submit", " form", "contract",
+                          "w-9", "w9 ", "password", "logistics", "transfer",
+                          "register", "renew", "reply", "complete ", "paperwork")
+    admin_top_n: int = 3
 
 
 CFG = Config()
@@ -157,13 +165,29 @@ def rank(items: list[Item], today: datetime.date, cfg: Config = CFG) -> list[Ite
     return active
 
 
+def is_admin(it: Item, cfg: Config = CFG) -> bool:
+    """Admin-lane classification, deliberately dumb and word-based: a title carrying
+    an admin verb is paperwork, whatever its type — a brand deal can be both 'film
+    the video' (maker) and 'sign the contract' (admin). Tune via cfg.admin_words."""
+    text = f" {it.title.lower()} "
+    return any(w in text for w in cfg.admin_words)
+
+
+def admin_top(ranked: list[Item], cfg: Config = CFG) -> list[Item]:
+    """The admin lane's own top — same ranking order (deadlines first), admin only."""
+    return [it for it in ranked if is_admin(it, cfg)][:cfg.admin_top_n]
+
+
 def select_top(ranked: list[Item], cfg: Config = CFG):
     """Pick the week's Top-N from an already-ranked list, GUARANTEEING a strategic seat.
 
-    Returns (top, strategic_seat_swapped: bool). If the natural Top-N already contains a
-    strategic item, nothing changes. Otherwise the weakest NON-Tier-0 item in the Top-N is
-    swapped for the highest-ranked strategic item below the cut — a hard-deadline item is
-    never displaced. If no strategic item exists at all, the natural Top-N stands."""
+    The pool is MAKER work only — admin items (is_admin) never take a seat, however
+    urgent; they surface via admin_top instead. Returns (top, strategic_seat_swapped:
+    bool). If the natural Top-N already contains a strategic item, nothing changes.
+    Otherwise the weakest NON-Tier-0 item in the Top-N is swapped for the
+    highest-ranked strategic item below the cut — a hard-deadline item is never
+    displaced. If no strategic item exists at all, the natural Top-N stands."""
+    ranked = [it for it in ranked if not is_admin(it, cfg)]
     top = ranked[:cfg.top_n]
     if any(it.strategic for it in top):
         return top, False
@@ -309,6 +333,23 @@ def render_top(top: list[Item], swapped: bool, today: datetime.date):
     return "\n".join(lines)
 
 
+def render_admin(admin, today):
+    """The admin lane's own top — paperwork with its urgency visible, never
+    occupying a maker seat."""
+    if not admin:
+        return ""
+    lines = ["## 🗂 Admin top (paperwork lane — never takes a maker seat)", ""]
+    for it in admin:
+        du = days_until(it.deadline, today)
+        tag = ""
+        if du is not None:
+            tag = (f" · ⏰ OVERDUE {-du}d" if du < 0
+                   else (" · ⏰ due today" if du == 0 else f" · ⏰ due {du}d"))
+        nxt = f" → {it.next_action}" if it.next_action else ""
+        lines.append(f"- **{it.title}**{tag}{nxt}")
+    return "\n".join(lines)
+
+
 def render_kill_commit(aged):
     if not aged:
         return ""
@@ -368,6 +409,9 @@ def render_file(items: list[Item], today: datetime.date, cfg: Config = CFG) -> s
                 f"_Last review: {today.isoformat()}_",
                 "",
                 render_top(top, swapped, today)]
+    adm = render_admin(admin_top(ranked, cfg), today)
+    if adm:
+        sections += ["", adm]
     kc = render_kill_commit(aged)
     if kc:
         sections += ["", kc]
@@ -392,6 +436,9 @@ def render_digest(items: list[Item], today: datetime.date, cfg: Config = CFG) ->
     out = [f"Backlog review — {today.isoformat()}",
            f"({len(ranked)} active · {sum(1 for it in items if it.done)} done)",
            "", render_top(top, swapped, today)]
+    adm = render_admin(admin_top(ranked, cfg), today)
+    if adm:
+        out += ["", adm]
     kc = render_kill_commit(aged)
     if kc:
         out += ["", kc]
