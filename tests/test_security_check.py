@@ -51,6 +51,19 @@ def test_hook_matrix_holds_on_this_repo():
     assert not reds, reds
 
 
+def test_hook_absence_is_a_nudge_not_an_alarm(tmp_root=None):
+    real = sc.ROOT
+    try:
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            sc.ROOT = pathlib.Path(td)
+            findings = []
+            sc.check_hook(findings)
+            assert findings and findings[0][0] == "SKIP", findings
+    finally:
+        sc.ROOT = real
+
+
 def test_deploy_pins_hold_on_this_repo():
     findings = []
     sc.check_pins(findings)

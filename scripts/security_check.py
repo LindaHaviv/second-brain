@@ -87,6 +87,11 @@ def check_ignore_guards(findings):
 
 def check_hook(findings):
     settings = ROOT / ".claude" / "settings.json"
+    if not settings.exists():
+        # some distributions can't ship dotfiles — absent is a setup nudge, not an alarm
+        findings.append(("SKIP", ".claude/settings.json not present — create the "
+                                 "env-guard hook (see AGENTS.md, Enforcement)"))
+        return
     try:
         cfg = json.loads(settings.read_text())
         cmd = cfg["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
