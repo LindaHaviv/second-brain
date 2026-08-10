@@ -19,13 +19,27 @@ import os
 import pathlib
 
 UPLOAD_API = "https://www.googleapis.com/upload/drive/v3/files"
+FILES_API = "https://www.googleapis.com/drive/v3/files"
 GDOC_MIME = "application/vnd.google-apps.document"
+
+
+def _key():
+    """The service-account key, resolving a `keychain:<item>` pointer if the
+    deployment stores it that way (same convention as every other secret here)."""
+    key = os.environ.get("GDRIVE_KEY", "")
+    if key.startswith("keychain:"):
+        try:
+            import keychain_secrets
+            key = keychain_secrets.resolve(key) or ""
+        except Exception:
+            return ""
+    return key
 
 
 def _session():
     from google.oauth2 import service_account
     from google.auth.transport.requests import AuthorizedSession
-    key = os.environ.get("GDRIVE_KEY", "")
+    key = _key()
     if not key:
         raise RuntimeError("GDRIVE_KEY not configured")
     scopes = ["https://www.googleapis.com/auth/drive"]
@@ -38,7 +52,7 @@ def _session():
 
 
 def enabled() -> bool:
-    return bool(os.environ.get("GDRIVE_KEY") and os.environ.get("GDRIVE_REVIEW_FOLDER"))
+    return bool(_key() and os.environ.get("GDRIVE_REVIEW_FOLDER"))
 
 
 def _multipart(metadata: dict, content: bytes, content_type: str):
@@ -48,6 +62,80 @@ def _multipart(metadata: dict, content: bytes, content_type: str):
             f"--{boundary}\r\ncontent-type: {content_type}\r\n\r\n").encode() \
         + content + f"\r\n--{boundary}--\r\n".encode()
     return body, f"multipart/related; boundary={boundary}"
+
+
+def sync_verdict(local_mtime, remote_mtime, last_sync=None, tolerance=2.0):
+    """Pure: which way should this pair move? Returns
+    'push' | 'pull' | 'skip' | 'conflict' | 'missing'.
+
+    Two surfaces editing one document is how drift starts, so the rule is
+    explicit rather than clever: with no sync history, the newer side wins;
+    with history, whichever side changed SINCE the last sync wins; if BOTH
+    changed, that is a conflict and nothing is overwritten — a human decides.
+    `tolerance` absorbs clock skew between the local filesystem and Drive.
+    """
+    if local_mtime is None and remote_mtime is None:
+        return "missing"
+    if local_mtime is None:
+        return "pull"
+    if remote_mtime is None:
+        return "push"
+    if last_sync is None:
+        if local_mtime > remote_mtime + tolerance:
+            return "push"
+        if remote_mtime > local_mtime + tolerance:
+            return "pull"
+        return "skip"
+    local_changed = local_mtime > last_sync + tolerance
+    remote_changed = remote_mtime > last_sync + tolerance
+    if local_changed and remote_changed:
+        return "conflict"
+    if local_changed:
+        return "push"
+    if remote_changed:
+        return "pull"
+    return "skip"
+
+
+def remote_mtime(file_id, sess=None):
+    """Drive's modifiedTime as an epoch float, or None if unreachable."""
+    import datetime
+    sess = sess or _session()
+    r = sess.get(f"{FILES_API}/{file_id}?fields=modifiedTime&supportsAllDrives=true",
+                 timeout=30)
+    if r.status_code != 200:
+        return None
+    ts = r.json().get("modifiedTime")
+    if not ts:
+        return None
+    return datetime.datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+
+
+def push(path, file_id, sess=None):
+    """Overwrite a Drive file's content from a local file. Markdown re-converts
+    to the Google Doc in place, so the reader keeps the same link and history."""
+    p = pathlib.Path(path)
+    is_md = p.suffix.lower() in (".md", ".markdown")
+    ctype = "text/markdown" if is_md else (
+        mimetypes.guess_type(p.name)[0] or "application/octet-stream")
+    sess = sess or _session()
+    r = sess.patch(f"{UPLOAD_API}/{file_id}?uploadType=media&supportsAllDrives=true",
+                   data=p.read_bytes(), headers={"content-type": ctype}, timeout=120)
+    r.raise_for_status()
+    return True
+
+
+def pull(file_id, path, sess=None):
+    """Write a Drive Doc back down to a local file, exported as markdown —
+    so edits made in the readable surface reach the working files."""
+    sess = sess or _session()
+    r = sess.get(f"{FILES_API}/{file_id}/export",
+                 params={"mimeType": "text/markdown"}, timeout=120)
+    r.raise_for_status()
+    p = pathlib.Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_bytes(r.content)
+    return True
 
 
 def upload(path, folder_id=None, title=None) -> str:
