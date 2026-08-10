@@ -97,7 +97,7 @@
   }
 
   // ---- router (Home / Memory / Agents) -----------------------------------------
-  var VIEWS = { graph: 1, memory: 1, map: 1, agents: 1 };
+  var VIEWS = { graph: 1, memory: 1, map: 1, health: 1, agents: 1 };
   var loaded = {};
   document.querySelectorAll("nav button").forEach(function (b) {
     b.addEventListener("click", function () { route(b.dataset.view); });
@@ -114,6 +114,7 @@
     location.hash = view;
     if (view === "graph") bootGraph();
     else if (view === "map") BrainMap.load(api, esc);   // draws once, then redraws (edges track layout)
+    else if (view === "health") loadHealthView();       // always refetch: it is a status page
     else if (!loaded[view]) { loaded[view] = true; view === "memory" ? loadMemory() : loadAgents(); }
     if (view === "graph" && window.BrainGraph && BrainGraph.__g) BrainGraph.__g.width(el("graph").clientWidth).height(el("graph").clientHeight);
   }
@@ -237,6 +238,109 @@
     }
   }
 
+  // ---- the Health view: every signal on one page ----
+  var OKC = "var(--ok)", WARN = "#d9a94f", BAD = "var(--danger)";
+  function pill(state, label) {
+    var c = state === "ok" ? OKC : (state === "warn" ? WARN : BAD);
+    return '<span class="hpill" style="border-color:' + c + ';color:' + c + '">' + esc(label) + "</span>";
+  }
+  function statRow(color, name, note, why) {
+    return '<div class="hitem"><span class="hdot" style="background:' + color + '"></span>' +
+      '<span class="hname">' + esc(name) + "</span>" +
+      '<span class="hnote">' + esc(note || "") + "</span>" +
+      (why ? '<span class="hwhy">' + esc(why) + "</span>" : "") + "</div>";
+  }
+  function healthCard(title, inner, sub) {
+    return '<div class="hcard"><h2 class="ov-h">' + esc(title) + "</h2>" +
+      (sub ? '<p class="hsub">' + esc(sub) + "</p>" : "") + inner + "</div>";
+  }
+
+  async function loadHealthView() {
+    var box = el("health-body");
+    box.innerHTML = '<div class="loading">checking everything…</div>';
+    var h;
+    try { h = await api("/api/health"); }
+    catch (e) {
+      box.innerHTML = healthCard("The brain is unreachable",
+        '<div class="hbanner bad">' + esc(e.message) + "</div>",
+        "Every other signal on this page comes from the database, so nothing else can be checked right now.");
+      return;
+    }
+    var p = h.pipeline || {}, steps = h.steps || [], srcs = h.sources || [],
+        act = h.activity || {}, jobs = h.jobs || [], hist = h.history || [];
+
+    // headline verdict: the worst thing wins
+    var stale = srcs.filter(function (s) { return s.newest_item_days == null || s.newest_item_days > 30; });
+    var bad = steps.filter(function (s) { return s.status === "fail"; });
+    var skipped = steps.filter(function (s) { return s.status === "skip"; });
+    var worst = (p.state === "down" || p.state === "no-heartbeat" || bad.length || stale.length) ? "bad"
+              : (p.state === "degraded" || skipped.length || act.last_run_hours == null || act.last_run_hours > 48) ? "warn" : "ok";
+    var headline = worst === "ok" ? "Everything is running."
+      : worst === "warn" ? "Running, with things worth a look."
+      : "Something needs attention.";
+    var html = '<div class="hbanner ' + worst + '"><span class="hbig">' + esc(headline) + "</span>" +
+      (p.hours_since != null ? '<span class="hwhen">last sync ' + esc(p.hours_since) + "h ago" +
+        (h.host ? " on " + esc(h.host) : "") + "</span>" : "") + "</div>";
+
+    // the four pillars
+    var pillars = statRow(OKC, "Brain", "database answering");
+    var pc = p.state === "ok" ? OKC : (p.state === "degraded" ? WARN : BAD);
+    pillars += statRow(pc, "Sync pipeline", (p.state || "unknown") +
+      (p.hours_since != null ? " · " + p.hours_since + "h ago" : ""));
+    var ah = act.last_run_hours;
+    var ac = ah == null ? BAD : (ah < 48 ? OKC : (ah < 168 ? WARN : BAD));
+    pillars += statRow(ac, "Agents", ah == null ? "no runs recorded"
+      : (ah < 1 ? "ran under 1h ago" : "ran " + Math.round(ah) + "h ago") + " · " + (act.runs_7d || 0) + " runs this week");
+    var sc = stale.length ? BAD : (srcs.filter(function (s) { var d = s.newest_item_days; return d != null && d > 7; }).length ? WARN : OKC);
+    pillars += statRow(sc, "Sources", srcs.length + " connected" + (stale.length ? " · " + stale.length + " stale" : ""));
+    html += healthCard("At a glance", pillars);
+
+    // every step of the last run — this is "is the chat sweep happening"
+    if (steps.length) {
+      var rows = steps.map(function (s) {
+        var c = s.status === "ok" ? OKC : (s.status === "skip" ? WARN : BAD);
+        var note = s.status === "ok" ? "ran" : (s.status === "skip" ? "skipped" : "failed");
+        return statRow(c, s.label, note, s.why || "");
+      }).join("");
+      html += healthCard("Every step of the last sync", rows,
+        steps.length + " steps · skipped usually means a credential or setting is missing");
+    } else {
+      html += healthCard("Every step of the last sync",
+        '<div class="hempty">No heartbeat recorded yet. Once the sync runs once, every step shows up here with its outcome.</div>');
+    }
+
+    // sources freshness
+    if (srcs.length) {
+      var srows = srcs.map(function (s) {
+        var d = s.newest_item_days;
+        var c = (d == null || d > 30) ? BAD : (d > 7 ? WARN : OKC);
+        var when = d == null ? "never" : (d === 0 ? "today" : d + "d ago");
+        return statRow(c, s.platform, s.items + " items · newest " + when);
+      }).join("");
+      html += healthCard("Sources", srows, "newest content is the truth about whether a source is still flowing");
+    }
+
+    // the clockwork
+    if (jobs.length) {
+      html += healthCard("The clockwork", jobs.map(function (j) {
+        return statRow("var(--text-faint)", j.name, (j.desc || "").replace(/\.$/, ""));
+      }).join(""), "scheduled on your machine · the sync heartbeat above proves the daily one ran");
+    }
+
+    // run history strip
+    if (hist.length) {
+      var bars = hist.map(function (r) {
+        var c = r.bad ? (r.bad > 2 ? BAD : WARN) : OKC;
+        return '<span class="hbar" style="background:' + c + '" title="' + esc(r.at) + " · " +
+          r.ok + " ok, " + r.bad + ' issues"></span>';
+      }).join("");
+      html += healthCard("Recent runs", '<div class="hbars">' + bars + "</div>",
+        hist.length + " most recent syncs, oldest first · a repeating amber or red is a pattern worth fixing");
+    }
+
+    box.innerHTML = html;
+  }
+
   async function loadWidgets() {
     if (state.widgetsLoaded) return;
     state.widgetsLoaded = true;
@@ -265,7 +369,7 @@
   }
 
   el("glance-more").addEventListener("click", function (e) { e.preventDefault(); openOverviewPanel(el("graph-panel")); });
-  el("health-more").addEventListener("click", function (e) { e.preventDefault(); openOverviewPanel(el("graph-panel")); });
+  el("health-more").addEventListener("click", function (e) { e.preventDefault(); route("health"); });
   el("latest-more").addEventListener("click", function (e) { e.preventDefault(); openFeedPanel(el("graph-panel")); });
   el("mem-more").addEventListener("click", function (e) { e.preventDefault(); route("memory"); });
 

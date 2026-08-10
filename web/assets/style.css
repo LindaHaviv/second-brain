@@ -748,6 +748,31 @@ button.tile.mem-tab { font: inherit; text-align: left; cursor: pointer; color: v
 .hdot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
 .hnote { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--text-faint);
   text-align: right; }
+
+/* ---- the Health view ---- */
+#health-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 14px; align-items: start; }
+.hbanner { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  border: 1px solid var(--border); border-left-width: 4px; border-radius: var(--radius);
+  background: var(--bg-panel); padding: 16px 20px; }
+.hbanner.ok { border-left-color: var(--ok); }
+.hbanner.warn { border-left-color: #d9a94f; }
+.hbanner.bad { border-left-color: var(--danger); }
+.hbig { font-family: var(--serif); font-size: 21px; }
+.hwhen { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--text-faint); }
+.hcard { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 15px 18px 16px; }
+.hcard .ov-h { margin-bottom: 4px; }
+.hsub { color: var(--text-faint); font-size: 11.5px; margin: 0 0 12px; }
+.hitem { display: flex; align-items: baseline; gap: 9px; padding: 6px 0;
+  border-bottom: 1px solid rgba(148,172,205,.08); font-size: 13px; }
+.hitem:last-child { border-bottom: 0; }
+.hname { color: var(--text); }
+.hitem .hnote { font-size: 11px; }
+.hwhy { flex-basis: 100%; margin-left: 18px; color: var(--text-faint); font-size: 11px; }
+.hempty { color: var(--text-faint); font-size: 12.5px; padding: 6px 0 2px; }
+.hbars { display: flex; gap: 4px; align-items: flex-end; }
+.hbar { flex: 1; height: 26px; border-radius: 3px; min-width: 6px; }
+[data-theme="light"] .hitem { border-bottom-color: rgba(45,58,75,.09); }
 .memrow .n { font-size: 19px; }
 .hud .foot { margin-top: 10px; font-size: 11.5px; }
 .hud .loading, .hud .empty { padding: 4px 0; font-size: 12px; text-align: left; }

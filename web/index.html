@@ -18,6 +18,7 @@
         <button data-view="graph" class="active">Home</button>
         <button data-view="memory">Memory</button>
         <button data-view="map">Map</button>
+        <button data-view="health">Health</button>
         <button data-view="agents">Agents</button>
       </nav>
       <span class="spacer"></span>
@@ -203,6 +204,13 @@
         <p class="sub">How everything connects: who delegates to whom, which skills open agents, what the clock triggers. Nodes come from the auto-detected registry; the lines are declared in <code>map.json</code>, because delegation can't be honestly inferred from code. Click anything for its connections.</p>
         <div class="sheet map-sheet" id="map-sheet"><div class="loading">loading the map…</div></div>
         <div class="panel" id="map-panel"></div>
+      </section>
+
+      <!-- Health: is everything running? one page, every signal -->
+      <section class="view" id="view-health">
+        <h1 class="page">Health</h1>
+        <p class="sub">Is everything running. The brain, the pipeline and every step it runs, your sources, the agents, the clockwork.</p>
+        <div id="health-body"><div class="loading">checking everything…</div></div>
       </section>
 
       <!-- Agents -->

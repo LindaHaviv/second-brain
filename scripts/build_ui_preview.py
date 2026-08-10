@@ -41,7 +41,71 @@ def build():
     def section(id_):
         return re.search(r'(<section class="view[^"]*" id="%s">.*?</section>)' % id_, idx, re.S).group(1)
 
-    sections = "\n".join(section(s) for s in ["view-graph", "view-memory", "view-map", "view-agents"])
+    sections = "\n".join(section(s) for s in
+                         ["view-graph", "view-memory", "view-map", "view-health", "view-agents"])
+
+    HEALTH = json.dumps({
+        "pipeline": {"state": "degraded", "hours_since": 3.2, "trouble": ["Notion: skip (no token)"]},
+        "sources": [{"platform": "blog", "items": 88, "newest_item_days": 2},
+                    {"platform": "video", "items": 61, "newest_item_days": 2},
+                    {"platform": "notes", "items": 44, "newest_item_days": 0},
+                    {"platform": "chat", "items": 34, "newest_item_days": 1},
+                    {"platform": "talk", "items": 20, "newest_item_days": 9}],
+        "activity": {"last_run_hours": 2.4, "runs_7d": 14},
+        "host": "studio", "panel": "",
+        "steps": [{"label": "Chat sweep", "status": "ok", "why": ""},
+                  {"label": "LinkedIn", "status": "ok", "why": ""},
+                  {"label": "Instagram", "status": "ok", "why": ""},
+                  {"label": "YouTube", "status": "ok", "why": ""},
+                  {"label": "Notion", "status": "skip", "why": "no token configured"},
+                  {"label": "Wiki refresh", "status": "ok", "why": ""},
+                  {"label": "Consolidate", "status": "ok", "why": ""},
+                  {"label": "Registry", "status": "ok", "why": ""}],
+        "jobs": [{"name": "Sync", "desc": "Daily job."},
+                 {"name": "Backlog-Drain", "desc": "Hourly job."},
+                 {"name": "Watchdog", "desc": "Weekly job."}],
+        "history": [{"at": "2026-08-01 06:10", "ok": 8, "bad": 0},
+                    {"at": "2026-08-02 06:10", "ok": 8, "bad": 0},
+                    {"at": "2026-08-03 06:11", "ok": 7, "bad": 1},
+                    {"at": "2026-08-04 06:10", "ok": 8, "bad": 0},
+                    {"at": "2026-08-05 06:10", "ok": 8, "bad": 0},
+                    {"at": "2026-08-06 06:12", "ok": 7, "bad": 1},
+                    {"at": "2026-08-07 06:10", "ok": 7, "bad": 1}]})
+
+
+    # the preview renders Health as static markup (same classes as the live renderer)
+    OKC, WARN, BAD = "var(--ok)", "#d9a94f", "var(--danger)"
+    def _row(c, name, note, why=""):
+        return (f'<div class="hitem"><span class="hdot" style="background:{c}"></span>'
+                f'<span class="hname">{name}</span><span class="hnote">{note}</span>'
+                + (f'<span class="hwhy">{why}</span>' if why else "") + "</div>")
+    def _card(title, inner, sub=""):
+        return (f'<div class="hcard"><h2 class="ov-h">{title}</h2>'
+                + (f'<p class="hsub">{sub}</p>' if sub else "") + inner + "</div>")
+    _h = json.loads(HEALTH)
+    _html = ('<div class="hbanner warn"><span class="hbig">Running, with things worth a look.</span>'
+             '<span class="hwhen">last sync 3.2h ago on studio</span></div>')
+    _html += _card("At a glance",
+        _row(OKC, "Brain", "database answering") +
+        _row(WARN, "Sync pipeline", "degraded · 3.2h ago") +
+        _row(OKC, "Agents", "ran 2h ago · 14 runs this week") +
+        _row(WARN, "Sources", "5 connected"))
+    _html += _card("Every step of the last sync",
+        "".join(_row(OKC if st["status"] == "ok" else WARN, st["label"],
+                     "ran" if st["status"] == "ok" else "skipped", st.get("why", ""))
+                for st in _h["steps"]),
+        f'{len(_h["steps"])} steps · skipped usually means a credential or setting is missing')
+    _html += _card("Sources", "".join(
+        _row(OKC if s["newest_item_days"] <= 7 else WARN, s["platform"],
+             f'{s["items"]} items · newest {"today" if s["newest_item_days"] == 0 else str(s["newest_item_days"]) + "d ago"}')
+        for s in _h["sources"]), "newest content is the truth about whether a source is still flowing")
+    _html += _card("The clockwork", "".join(
+        _row("var(--text-faint)", j["name"], j["desc"].rstrip(".")) for j in _h["jobs"]),
+        "scheduled on your machine")
+    _html += _card("Recent runs", '<div class="hbars">' + "".join(
+        f'<span class="hbar" style="background:{BAD if r["bad"] > 2 else (WARN if r["bad"] else OKC)}"></span>'
+        for r in _h["history"]) + "</div>", "7 most recent syncs, oldest first")
+    HEALTHHTML = json.dumps(_html)
 
     # ---- generic sample data ----
     random.seed(7)
@@ -114,8 +178,16 @@ def build():
 (function(){
   function el(id){ return document.getElementById(id); }
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
-  var SAMPLE = { "/api/agents": __REG__, "/api/map": __MAP__ };
+  var SAMPLE = { "/api/agents": __REG__, "/api/map": __MAP__, "/api/health": __HEALTH__ };
   function fakeApi(p){ return Promise.resolve(SAMPLE[p.split('?')[0]]); }
+  // the preview drives the REAL renderers by stubbing fetch for /api/* only
+  var _of = window.fetch;
+  window.fetch = function(u){
+    var k = String(u).split('?')[0];
+    if (SAMPLE[k]) return Promise.resolve(new Response(JSON.stringify(SAMPLE[k]),
+      {status:200, headers:{'content-type':'application/json'}}));
+    return _of.apply(window, arguments);
+  };
 
   // theme toggle (Console <-> China Blue)
   var tbtn = el('theme-toggle');
@@ -140,6 +212,7 @@ def build():
     var v = el('view-' + b.dataset.view); if (v) v.classList.add('active');
     if (b.dataset.view === 'graph' && window.__g) window.__g.width(el('graph').clientWidth).height(el('graph').clientHeight);
     if (b.dataset.view === 'map') BrainMap.load(fakeApi, esc);
+    if (b.dataset.view === 'health') el('health-body').innerHTML = __HEALTHHTML__;
   }); });
 
   // graph
@@ -244,7 +317,7 @@ def build():
 })();
 """
     app = (app.replace("__GRAPH__", GRAPH).replace("__STATUS__", STATUS)
-              .replace("__REG__", REG).replace("__MAP__", MAP))
+              .replace("__REG__", REG).replace("__MAP__", MAP).replace("__HEALTH__", HEALTH).replace("__HEALTHHTML__", HEALTHHTML))
 
     return f"""<title>Second Brain — UI preview (sample data)</title>
 <style>

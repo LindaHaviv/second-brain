@@ -106,7 +106,7 @@
       if (s !== HOVER.id && t !== HOVER.id) return 'rgba(120,140,170,.06)';
       return l.type === 'semantic' ? 'rgba(' + lit + ',.8)' : 'rgba(' + lit + ',.45)';
     }
-    return l.type === 'semantic' ? 'rgba(' + lit + ',.55)' : 'rgba(' + lit + ',' + (LIGHT ? '.28' : '.16') + ')';
+    return l.type === 'semantic' ? 'rgba(' + lit + ',.75)' : 'rgba(' + lit + ',' + (LIGHT ? '.32' : '.42') + ')';
   }
 
   // a fixed faint starfield, generated once per canvas size (deterministic — no flicker)
@@ -151,7 +151,7 @@
         ctx.beginPath(); ctx.arc(node.x, node.y, nodeRadius(node) + 2, 0, 2 * Math.PI); ctx.fill();
       })
       .linkColor(linkColor)
-      .linkWidth(function (l) { return l.type === 'semantic' ? 1.2 : 0.7; })
+      .linkWidth(function (l) { return l.type === 'semantic' ? 1.6 : 1.1; })
       .linkLineDash(function (l) { return l.type === 'semantic' ? [2, 2] : null; })
       .onNodeClick(function (n) {
         if (FOCUS) { FOCUS_ID = n.id; render(); }   // local-graph mode: center on this node

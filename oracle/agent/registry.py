@@ -65,6 +65,15 @@ def _load_map(path):
         return {}
 
 
+def scheduled():
+    """The scheduled-jobs category (name + cadence text), for the Health view's clockwork
+    list. Empty when a deployment has no schedules declared."""
+    for c in registry().get("categories", []):
+        if c.get("key") == "scheduled":
+            return [{"name": i.get("name", ""), "desc": i.get("desc", "")} for i in c.get("items", [])]
+    return []
+
+
 def map_data():
     """Merged relationship declarations for the Map view:
     {chief, hide:[names], reports:[{from,to,label}], doors:[{skill,agent}],

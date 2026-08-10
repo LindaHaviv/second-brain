@@ -232,8 +232,25 @@ def _api(request):
                 if last_run.tzinfo:
                     last_run = last_run.replace(tzinfo=None)
                 hours = round(max(0.0, (_dt2.datetime.now() - last_run).total_seconds() / 3600), 1)
+            # every step of the last sync (chat sweep, LinkedIn, wiki refresh, …) with its
+            # outcome, plus a short run history so a flapping step is visible as a pattern.
+            import health as _health
+            hb = _health.last_heartbeat(conn) or {}
+            steps = [{"label": s.get("label", "?"), "status": s.get("status", "?"),
+                      "why": s.get("why", "")} for s in (hb.get("steps") or [])]
+            history = []
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT TO_CHAR(run_at,'YYYY-MM-DD HH24:MI'), ok_steps, bad_steps "
+                                "FROM sync_runs ORDER BY run_id DESC FETCH FIRST 14 ROWS ONLY")
+                    history = [{"at": r[0], "ok": int(r[1] or 0), "bad": int(r[2] or 0)}
+                               for r in cur.fetchall()][::-1]
+            except Exception:
+                history = []   # table not applied yet: no history, not an error
             return _json({"pipeline": d["pipeline"], "sources": d["sources"], "panel": d["panel"],
-                          "activity": {"last_run_hours": hours, "runs_7d": int(runs_7d or 0)}})
+                          "activity": {"last_run_hours": hours, "runs_7d": int(runs_7d or 0)},
+                          "steps": steps, "history": history,
+                          "host": hb.get("host", ""), "jobs": registry.scheduled()})
         return _err("not found", 404)
     except Exception as e:
         print(f"[webui] {path} {e}", flush=True)
