@@ -630,9 +630,15 @@ def test_watchdog_webhook_check_catches_a_deaf_front_door():
     assert webhook_alert(URL, {"url": URL}, now) is None                # healthy
     assert "UNSET" in webhook_alert(URL, {"url": ""}, now)              # dropped/stolen
     assert "WRONG" in webhook_alert(URL, {"url": "https://evil"}, now)  # hijacked
-    recent = {"url": URL, "last_error_date": now - 3600,
-              "last_error_message": "connection refused"}
-    assert "FAILING" in webhook_alert(URL, recent, now)
+    stuck = {"url": URL, "last_error_date": now - 3600, "pending_update_count": 3,
+             "last_error_message": "connection refused"}
+    assert "FAILING" in webhook_alert(URL, stuck, now)
+    # a delivery error that already healed (nothing pending) must stay QUIET —
+    # on a scale-to-zero host a cold start regularly outruns the sender's
+    # timeout and the retry lands; alerting on that trains her to ignore alerts
+    healed = {"url": URL, "last_error_date": now - 3600, "pending_update_count": 0,
+              "last_error_message": "Read timeout expired"}
+    assert webhook_alert(URL, healed, now) is None
     old = {"url": URL, "last_error_date": now - 3 * 24 * 3600}
     assert webhook_alert(URL, old, now) is None                         # stale error: quiet
 

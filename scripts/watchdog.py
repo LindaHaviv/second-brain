@@ -73,10 +73,15 @@ def webhook_alert(expected_url, info, now=None):
                 f"Expected {expected_url}; a polling listener may have stolen it "
                 f"(re-run setWebhook).")
     led = (info or {}).get("last_error_date")
-    if led and now and 0 <= (now - led) < 24 * 3600:
+    pending = (info or {}).get("pending_update_count") or 0
+    # A delivery error with NOTHING pending is a transient that already healed —
+    # on a scale-to-zero host the classic case is a cold start outrunning the
+    # sender's patience, after which the retry lands. Alerting on that trains
+    # her to ignore the channel. Only a real backlog means messages are stuck.
+    if led and now and 0 <= (now - led) < 24 * 3600 and pending > 0:
         msg = ((info or {}).get("last_error_message") or "")[:120]
-        return (f"second brain: chat webhook deliveries FAILING — last error "
-                f"{int((now - led) // 3600)}h ago: {msg}")
+        return (f"second brain: chat webhook deliveries FAILING — {pending} message(s) "
+                f"stuck, last error {int((now - led) // 3600)}h ago: {msg}")
     return None
 
 
