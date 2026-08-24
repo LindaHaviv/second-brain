@@ -822,6 +822,10 @@ def caption_pack(topic: str, platforms: str = "instagram, linkedin, x, youtube, 
     return f"""Draft captions for new content about: "{topic}". Platforms: "{platforms}".
 
 Playbook (use the second-brain tools):
+0. FIRST: search for a note titled "WORKFLOW: caption drafting" and, if one exists, fetch
+   the newest version and FOLLOW IT — it is my own standing procedure and it overrides the
+   generic steps below wherever the two differ (it carries my per-platform rules). Steps
+   1-5 are the fallback for when no such note exists.
 1. search my recent posts about "{topic}" (and by_series if a series fits) — read 4-6 of my
    REAL captions first; learn my hooks, emoji, rhythm, CTA style from them. That's the voice.
 2. wiki the topic if a page exists — for the substance to draw on.
