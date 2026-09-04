@@ -83,7 +83,7 @@ def main():
                          "oracle/agent/requirements.txt")
 
     failures = 0
-    conn = db.connect()
+    conn = db.open_connection()
 
     # ---- 6. UPGRADE CANARY first: if the API surface moved, fail before touching data
     with warnings.catch_warnings(record=True) as caught:

@@ -30,7 +30,7 @@ def main():
         print("oamp sweep: memory backend is not 'oamp' — nothing to sweep")
         return
     import oamp_memory
-    conn = db.connect()
+    conn = db.open_connection()
     try:
         removed = oamp_memory.enforce_privacy(conn)   # full scan
         print(f"oamp sweep: scanned all extracted memories, removed {len(removed)}")

@@ -18,7 +18,7 @@ import oracledb
 import anthropic
 
 import llm
-from db import connect          # importing db loads oracle/.env (incl. the LLM config)
+from db import open_connection          # importing db loads oracle/.env (incl. the LLM config)
 from content import search_content
 
 MODEL = "claude-opus-4-8"
@@ -265,7 +265,7 @@ def refresh_wiki(client, conn):
 
 def main():
     client = anthropic.Anthropic()
-    conn = connect()
+    conn = open_connection()
     try:
         if "--refresh" in sys.argv:
             refresh_wiki(client, conn)

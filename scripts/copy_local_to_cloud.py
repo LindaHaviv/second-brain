@@ -2,7 +2,7 @@
 
 Fast migration: copies the content tables (content, chunks, memory types, the compiled wiki)
 INCLUDING precomputed embeddings — so no re-ingest, no embedding recomputation, no re-hitting
-source APIs. db.connect() is the CLOUD target (oracle/.env); local is explicit.
+source APIs. db.open_connection() is the CLOUD target (oracle/.env); local is explicit.
 
   python scripts/copy_local_to_cloud.py
 
@@ -78,7 +78,7 @@ def main():
         user=os.environ.get("LOCAL_DB_USER", "CCC"),
         password=local_pwd,
         dsn=os.environ.get("LOCAL_DB_DSN", "localhost:1521/FREEPDB1"))
-    cloud = db.connect()
+    cloud = db.open_connection()
     lc, cc = local.cursor(), cloud.cursor()
 
     # PREFLIGHT (fail closed): the content-only filter treats NULL visibility as 'content',

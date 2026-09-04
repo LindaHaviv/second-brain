@@ -79,7 +79,7 @@ def main():
                          "in ChatGPT (Settings -> Data controls), then unzip it there — or just "
                          "drop the zip in ~/Downloads and run scripts/sync.py "
                          "(see docs/EXPORT_GUIDE.md).")
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     cur.execute("alter session disable parallel dml")   # Autonomous DB: allow delete+insert in one txn
     cur.execute("merge into platforms p using (select 'chatgpt' id from dual) s "

@@ -31,7 +31,7 @@ def connect():
     import sys
     sys.path.insert(0, str(ROOT / "oracle" / "agent"))
     import db
-    return db.connect()
+    return db.open_connection()
 
 
 def messages_of(path):

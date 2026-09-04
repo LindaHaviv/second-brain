@@ -87,7 +87,7 @@ def main():
     if ran_recently():
         print(f"tiktok scrape ran <{CADENCE_DAYS}d ago — nothing to do (weekly cadence)")
         return
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     existing = cur.execute(
         "select count(*) from posts where platform_id='tiktok'").fetchone()[0]

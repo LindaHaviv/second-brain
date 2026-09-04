@@ -26,7 +26,7 @@ from research_agent import run_research  # noqa: E402
 def main(golden_path):
     cases = json.load(open(golden_path))
     client = anthropic.Anthropic()
-    conn = db.connect()
+    conn = db.open_connection()
     failures = 0
     try:
         for c in cases:

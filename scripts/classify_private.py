@@ -69,7 +69,7 @@ def main():
     ap.add_argument("--all", action="store_true", help="reclassify all chats, not just untagged")
     args = ap.parse_args()
     client = None   # provider chosen via LLM_PROVIDER (oracle/.env)
-    conn = db.connect(); cur = conn.cursor()
+    conn = db.open_connection(); cur = conn.cursor()
     cur.execute("alter session disable parallel dml")
     scope = "" if args.all else "and nvl(visibility,'content')='content'"
     rows = [{"id": int(r[0]), "title": (r[1] or "")[:90],

@@ -175,7 +175,7 @@ docker-compose -f oracle/docker-compose.yml up -d
 
 ```bash
 ./.venv/bin/python -c "import sys; sys.path.insert(0,'oracle/agent'); import db; \
-  print(db.connect().cursor().execute( \
+  print(db.open_connection().cursor().execute( \
   \"select product from product_component_version where product like 'Oracle%'\").fetchone()[0])"
 # -> Oracle AI Database 26ai ...   (the edition suffix varies by container image)
 ```
@@ -255,7 +255,7 @@ FETCH FIRST 5 ROWS ONLY;
 ```bash
 ./.venv/bin/python -c "import sys; sys.path.insert(0,'oracle/agent'); import db, content; \
   [print(f\"{r['dist']:.3f}  {r['title']}\") for r in \
-   content.search_content(db.connect(),'protecting data in the cloud',k=3)]"
+   content.search_content(db.open_connection(),'protecting data in the cloud',k=3)]"
 ```
 
 Two refinements the repo adds. It **chunks** long content (transcripts, chats) into a

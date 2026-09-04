@@ -10,7 +10,7 @@ Usage:
 import uuid
 import anthropic
 
-from db import connect
+from db import open_connection
 from agent import run_task
 from memory import tool_stats
 
@@ -19,7 +19,7 @@ TOPIC = "why most creators burn out in year one"
 
 def main():
     client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
-    conn = connect()
+    conn = open_connection()
     try:
         print("\n=== RUN 1 (no memory yet) ===")
         s1 = run_task(client, conn, run_id=f"run-{uuid.uuid4().hex[:8]}", topic=TOPIC)

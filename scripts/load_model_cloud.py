@@ -1,6 +1,6 @@
 """Load the ONNX embedding model ('MINILM') into the database directly as a BLOB.
 
-No Object Storage / PAR needed — reads the local .onnx and streams it to whatever db.connect()
+No Object Storage / PAR needed — reads the local .onnx and streams it to whatever db.open_connection()
 points at (use for the cloud Autonomous DB). Idempotent: drops an existing MINILM first.
 
   python scripts/load_model_cloud.py
@@ -21,7 +21,7 @@ META = '{"function":"embedding","embeddingOutput":"embedding","input":{"input":[
 def main():
     data = MODEL.read_bytes()
     print(f"model: {len(data)/1e6:.0f} MB — connecting")
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     try:
         cur.execute("BEGIN DBMS_VECTOR.DROP_ONNX_MODEL('MINILM', force => true); END;")

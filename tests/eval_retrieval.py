@@ -31,7 +31,7 @@ from content import search_hybrid  # noqa: E402
 
 def run(golden_path):
     cases = json.load(open(golden_path))
-    conn = db.connect()
+    conn = db.open_connection()
     misses = []
     try:
         for c in cases:

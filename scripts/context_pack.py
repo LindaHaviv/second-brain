@@ -71,7 +71,7 @@ def main():
     ap.add_argument("--exclude", nargs="*", default=[],
                     help="fact categories to omit (e.g. --exclude audience)")
     args = ap.parse_args()
-    conn = db.connect()
+    conn = db.open_connection()
     try:
         pack = build(conn, exclude=args.exclude)
     finally:

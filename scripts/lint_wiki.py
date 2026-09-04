@@ -22,7 +22,7 @@ OVERLAP_DIST = 0.20   # cosine distance below this => likely overlap/conflict, r
 
 
 def main():
-    c = db.connect()
+    c = db.open_connection()
     cur = c.cursor()
 
     print(f"=== overlap / contradiction candidates (cosine distance < {OVERLAP_DIST}) ===")

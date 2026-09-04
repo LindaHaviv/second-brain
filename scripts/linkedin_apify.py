@@ -112,7 +112,7 @@ def main():
     if items and not posts:
         sys.exit(f"linkedin_apify: actor returned {len(items)} items but NONE authored "
                  f"by '{expected}' — refusing to ingest (actor changed or wrong target?)")
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     cur.execute("alter session disable parallel dml")
     cur.execute("merge into platforms p using (select 'linkedin' id from dual) s "

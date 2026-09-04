@@ -60,7 +60,7 @@ def main():
             if ACTOR in (i.get("actor") or "").lower() and len((i.get("text") or "").strip()) > 20]
     print(f"{len(data['items'])} harvested items, {len(mine)} are original posts with text")
 
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     cur.execute("alter session disable parallel dml")
     cur.execute("""SELECT post_id, DBMS_LOB.SUBSTR(caption, 300, 1), url

@@ -8,7 +8,7 @@ the agent's tools by relevance to a query.
 """
 import anthropic
 
-from db import connect
+from db import open_connection
 from research_agent import run_research
 from conversation import new_session, record_turn, recent_turns
 from procedural import select_tools
@@ -23,7 +23,7 @@ def show(label, text):
 
 def main():
     client = anthropic.Anthropic()
-    conn = connect()
+    conn = open_connection()
     try:
         # Turn 1 establishes context in a session
         sid = new_session()

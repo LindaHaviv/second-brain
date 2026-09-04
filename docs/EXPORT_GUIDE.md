@@ -220,7 +220,7 @@ GDRIVE_EXCLUDE=<folderId>               # optional — see below
 ```bash
 ./.venv/bin/python -c "import sys; sys.path.insert(0,'oracle/agent'); import db, content; \
   [print(f\"{r['dist']:.3f}  {r['title']}\") for r in \
-   content.search_content(db.connect(), 'a phrase from one of your docs', k=3)]"
+   content.search_content(db.open_connection(), 'a phrase from one of your docs', k=3)]"
 ```
 
 ### What gets ingested (and what never does)

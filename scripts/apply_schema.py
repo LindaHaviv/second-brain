@@ -1,6 +1,6 @@
-"""Apply the schema files (oracle/schema/0*.sql) over a db.connect() connection.
+"""Apply the schema files (oracle/schema/0*.sql) over a db.open_connection() connection.
 
-Works for BOTH local and cloud (Autonomous via wallet) — db.connect() picks the target from
+Works for BOTH local and cloud (Autonomous via wallet) — db.open_connection() picks the target from
 oracle/.env. Idempotent: "already exists" errors are tolerated, so it's safe to re-run.
 
   python scripts/apply_schema.py            # apply to whatever DB_* in oracle/.env points at
@@ -47,7 +47,7 @@ def statements(sql_text):
 def main():
     dry = "--dry-run" in sys.argv
     files = sorted(SCHEMA_DIR.glob("[0-9]*.sql"))
-    conn = None if dry else db.connect()
+    conn = None if dry else db.open_connection()
     ok = skipped = errors = 0
     for f in files:
         stmts = statements(f.read_text())

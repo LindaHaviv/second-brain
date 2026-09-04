@@ -113,7 +113,7 @@ That gives you a live Oracle 26ai with the content schema, the Duality view, the
 
 ```bash
 ./.venv/bin/python -c "import sys; sys.path.insert(0,'oracle/agent'); import db; \
-  print(db.connect().cursor().execute(\"select count(*) from user_objects\").fetchone())"
+  print(db.open_connection().cursor().execute(\"select count(*) from user_objects\").fetchone())"
 ```
 
 ## Step 2 — Collect + search your content

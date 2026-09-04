@@ -1,4 +1,4 @@
-"""Real tests for the second brain — true cases against the live database (db.connect()) plus
+"""Real tests for the second brain — true cases against the live database (db.open_connection()) plus
 pure-function unit tests. No LLM calls, so it's fast and deterministic.
 
   python tests/test_brain.py        # standalone runner (prints PASS/FAIL, exit code)
@@ -32,14 +32,14 @@ import mcp_server        # noqa: E402
 # ---- integration: the live brain ----------------------------------------------------------
 
 def test_connect():
-    c = db.connect()
+    c = db.open_connection()
     user = c.cursor().execute("SELECT user FROM dual").fetchone()[0]
     assert user, "no DB user"
     c.close()
 
 
 def test_tables_have_data():
-    c = db.connect()
+    c = db.open_connection()
     _skip_if_empty(c, "posts", "load content first (Lab 2 sample or your own), then re-run")
     cur = c.cursor()
     # thresholds work for a real library, the 7-video tutorial sample, or a tiny own-data start
@@ -51,7 +51,7 @@ def test_tables_have_data():
 
 
 def test_duality_views_readable():
-    c = db.connect()
+    c = db.open_connection()
     _skip_if_empty(c, "posts", "load content first (Lab 2), then re-run")
     _skip_if_empty(c, "wiki_pages", "compile the wiki first (Lab 5 / Step 5), then re-run")
     cur = c.cursor()
@@ -63,7 +63,7 @@ def test_duality_views_readable():
 
 
 def test_vector_search():
-    c = db.connect()
+    c = db.open_connection()
     _skip_if_empty(c, "posts", "load content first (Lab 2), then re-run")
     res = content.search_content(c, "AI inference and the compute stack", 5)
     assert res and {"lvl", "title", "snippet"} <= set(res[0]), "bad search result shape"
@@ -75,7 +75,7 @@ def test_hybrid_rescues_exact_name():
     """Hybrid search must rescue an exact keyword that vector-only ranking can bury.
     Self-contained + data-independent: seed a post with a unique token, confirm hybrid
     surfaces it by that exact token, then clean up."""
-    c = db.connect()
+    c = db.open_connection()
     token = "zqxwvlemma"   # distinctive — won't collide with real content
     cur = c.cursor()
     cur.execute("alter session disable parallel dml")   # Autonomous DB: delete+insert in one txn
@@ -100,7 +100,7 @@ def test_related_posts_visibility_and_shape():
     """related() must connect by meaning but NEVER across the privacy line: a business-scope
     sibling must not surface as a neighbor, a business-scope anchor must return [] (it must
     not act as a query vector), and a no-embedding anchor is an empty result, not an error."""
-    c = db.connect()
+    c = db.open_connection()
     token = "zqxrelprobe"   # distinctive — won't collide with real content
     cur = c.cursor()
     cur.execute("alter session disable parallel dml")
@@ -143,7 +143,7 @@ def test_graph_data_visibility():
     """The graph payload must not leak private items through citation edges: a business post
     cited by a wiki page appears in neither nodes nor links. Seeded in a transaction and
     rolled back — nothing persists."""
-    c = db.connect()
+    c = db.open_connection()
     token = "zqxgraphprobe"
     cur = c.cursor()
     cur.execute("alter session disable parallel dml")
@@ -183,7 +183,7 @@ def test_related_topics_visibility():
     """related_topics (semantic neighbors of a wiki topic) must also respect the privacy line:
     a business post must never surface as a topic's nearest item. Sibling of related_posts,
     same filter — pinned separately because it joins wiki_pages to posts, not posts to posts."""
-    c = db.connect()
+    c = db.open_connection()
     token = "zqxreltopic"
     cur = c.cursor()
     cur.execute("alter session disable parallel dml")
@@ -212,7 +212,7 @@ def test_related_topics_visibility():
 
 
 def test_get_wiki_page():
-    c = db.connect()
+    c = db.open_connection()
     _skip_if_empty(c, "wiki_pages", "compile the wiki first (Lab 5 / Step 5), then re-run")
     topic = content.list_topics(c)[0]
     p = content.get_wiki_page(c, topic)
@@ -221,7 +221,7 @@ def test_get_wiki_page():
 
 
 def test_get_post():
-    c = db.connect()
+    c = db.open_connection()
     _skip_if_empty(c, "posts", "load content first (Lab 2), then re-run")
     pid = c.cursor().execute("SELECT MIN(post_id) FROM posts").fetchone()[0]
     post = content.get_post(c, pid)
@@ -230,7 +230,7 @@ def test_get_post():
 
 
 def test_memory_recall_shapes():
-    c = db.connect()
+    c = db.open_connection()
     assert isinstance(memory.recall(c, "AI inference", k=3), list)
     assert isinstance(semantic_memory.semantic_recall(c, "audience", k=3), list)
     c.close()
@@ -242,7 +242,7 @@ def test_episodic_memory_privacy_filter():
     privacy, not deletion) but filtered from every read — same contract as posts.visibility.
     This also protects the agent itself: private memories never resurface in its reasoning."""
     import memory
-    c = db.connect()
+    c = db.open_connection()
     cur = c.cursor()
     try:
         memory.record(c, "test-priv", "zqxbizprobe negotiating a $5,000 brand deal fee",
@@ -271,7 +271,7 @@ def test_conversation_privacy_filter():
     """A dialogue turn mentioning a rate must be tagged business and kept out of both the
     working-memory window (recent_turns) and the Memory view list (list_recent_turns)."""
     import conversation
-    c = db.connect()
+    c = db.open_connection()
     cur = c.cursor()
     sess = "test-conv-priv"
     try:
@@ -316,7 +316,7 @@ def test_memory_read_functions():
     """The Memory view's read helpers return the expected shapes over all four memory kinds."""
     import memory
     import procedural
-    c = db.connect()
+    c = db.open_connection()
     try:
         assert isinstance(memory.list_recent(c, k=3), list)
         counts = memory.memory_counts(c)
@@ -496,7 +496,7 @@ def test_memory_expiry_rotates_only_old_rows():
     catch a real row, only the probes."""
     sys.path.insert(0, str(ROOT / "scripts"))
     import memory_expire
-    c = db.connect()
+    c = db.open_connection()
     cur = c.cursor()
     try:
         cur.execute("INSERT INTO agent_memory (run_id, task, action, outcome, created_at) "
@@ -532,7 +532,7 @@ def test_memory_expiry_tombstone_is_content_scope():
     import tempfile
     sys.path.insert(0, str(ROOT / "scripts"))
     import memory_expire
-    c = db.connect()
+    c = db.open_connection()
     cur = c.cursor()
     tmp = pathlib.Path(tempfile.mkdtemp()) / "tombstones.jsonl"
     try:
@@ -567,7 +567,7 @@ def test_mcp_query_logging_feeds_conversation_signal():
     """Search queries are the purest 'what does the user keep needing' signal: _log_query
     must write them into conversations (an mcp-<day> session), stay silent under the env
     kill-switch, and write NOTHING on a read-only deployment."""
-    c = db.connect()
+    c = db.open_connection()
     cur = c.cursor()
 
     def probe_count():
@@ -690,7 +690,7 @@ def test_consolidation_inputs_are_content_scope():
     builds — via a stub LLM that raises before any write — and asserts the business
     probes are absent while the content probes made it in. No LLM call, no DB write."""
     import llm as llm_mod
-    c = db.connect()
+    c = db.open_connection()
     cur = c.cursor()
     captured = {}
 
@@ -752,7 +752,7 @@ def test_backend_resolution_parity():
 
 def test_record_clamps_long_values():
     """A question longer than VARCHAR2(500) must not crash the save (ORA-12899 regression)."""
-    c = db.connect()
+    c = db.open_connection()
     cur = c.cursor()
     run_id = "test-clamp"
     try:
@@ -782,7 +782,7 @@ def test_set_hwm_survives_missing_seed_row():
     """_set_hwm must MERGE: after the seed row disappears (e.g. a data reset), the
     high-water mark must still advance instead of silently updating 0 rows."""
     import wiki
-    c = db.connect()
+    c = db.open_connection()
     cur = c.cursor()
     try:
         # Match the production write paths: disable parallel DML before any DML so the
@@ -919,7 +919,7 @@ def test_webui_api_routes_live():
         # end-to-end privacy pin: a fee-mentioning memory must not escape via the endpoint
         # (write-tag -> read-filter -> API wiring, all in one assertion)
         import memory as _mem
-        _c = db.connect(); _cur = _c.cursor()
+        _c = db.open_connection(); _cur = _c.cursor()
         try:
             _mem.record(_c, "test-api-priv", "zqxapibiz our fee is $9,000 for the campaign",
                         "logged", "none", "success", detail="private")
@@ -999,7 +999,7 @@ def test_research_verify_gate_is_wired():
 def test_research_tool_errors_are_recoverable():
     """Malformed model tool input must return an error RESULT, not raise."""
     import research_agent
-    c = db.connect()
+    c = db.open_connection()
     out = research_agent._run_tool(c, "get_post", {"post_id": None})
     assert isinstance(out, dict) and "error" in out
     out = research_agent._run_tool(c, "search_content", {})
@@ -1148,7 +1148,7 @@ def test_health_heartbeat_roundtrip_live():
     """Live DB: record_run writes a heartbeat that last_heartbeat reads back; the test row
     is removed afterwards so the real panel is untouched."""
     import health
-    c = db.connect()
+    c = db.open_connection()
     try:
         try:
             probe = health.last_heartbeat(c)

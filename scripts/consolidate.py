@@ -22,7 +22,7 @@ from semantic_memory import consolidate   # noqa: E402
 
 
 def main():
-    facts = consolidate(anthropic.Anthropic(), db.connect())
+    facts = consolidate(anthropic.Anthropic(), db.open_connection())
     print(f"[{datetime.datetime.now():%Y-%m-%d %H:%M}] consolidated {len(facts)} semantic facts")
 
 

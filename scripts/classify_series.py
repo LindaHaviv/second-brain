@@ -52,7 +52,7 @@ def main():
                     help="the series label to tag matches with (e.g. your series' name, snake_case)")
     args = ap.parse_args()
     client = None   # provider via LLM_PROVIDER
-    conn = db.connect(); cur = conn.cursor()
+    conn = db.open_connection(); cur = conn.cursor()
     cur.execute("alter session disable parallel dml")
     rows = [{"id": int(r[0]), "title": (r[1] or "")[:90], "snip": (r[2] or "").replace("\n", " ")[:200]}
             for r in cur.execute("select post_id, title, dbms_lob.substr(caption,240,1) from posts "

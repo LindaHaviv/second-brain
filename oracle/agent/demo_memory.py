@@ -3,13 +3,13 @@
   cd oracle/agent && ../../.venv/bin/python demo_memory.py
 """
 import anthropic
-from db import connect
+from db import open_connection
 from semantic_memory import consolidate, semantic_recall
 
 
 def main():
     client = anthropic.Anthropic()
-    conn = connect()
+    conn = open_connection()
     try:
         print("Consolidating episodic memory (past research runs) -> semantic facts...\n")
         facts = consolidate(client, conn)

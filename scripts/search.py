@@ -22,7 +22,7 @@ def main():
     ap.add_argument("-k", type=int, default=5, help="number of results (default 5)")
     args = ap.parse_args()
 
-    results = content.search_content(db.connect(), args.query, k=args.k)
+    results = content.search_content(db.open_connection(), args.query, k=args.k)
     if not results:
         print("no matches — is content loaded? (README step 2)")
         return

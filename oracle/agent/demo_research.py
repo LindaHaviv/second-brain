@@ -5,7 +5,7 @@ Needs ANTHROPIC_API_KEY (in oracle/.env). The DB + content are already loaded.
   cd oracle/agent
   ../../.venv/bin/python demo_research.py
 """
-from db import connect
+from db import open_connection
 from research_agent import run_research
 import anthropic
 
@@ -22,7 +22,7 @@ QUESTIONS = [
 
 def main():
     client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
-    conn = connect()
+    conn = open_connection()
     try:
         for q in QUESTIONS:
             print("\n" + "=" * 70)

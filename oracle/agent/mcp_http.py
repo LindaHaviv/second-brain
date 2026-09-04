@@ -63,7 +63,7 @@ def _keep_warm():
     while True:
         conn = None
         try:
-            conn = db.connect()
+            conn = db.open_connection()
             with conn.cursor() as cur:
                 cur.execute("SELECT VECTOR_EMBEDDING(MINILM USING 'warm' AS DATA) FROM dual").fetchone()
         except Exception:
@@ -102,7 +102,7 @@ def _readiness():
                             status_code=200 if _READY_CACHE["ok"] else 503)
     conn = None
     try:
-        conn = db.connect()
+        conn = db.open_connection()
         conn.cursor().execute("SELECT 1 FROM dual").fetchone()
         _READY_CACHE.update(at=now, ok=True)
         return JSONResponse({"ready": True})

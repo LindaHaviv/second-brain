@@ -130,7 +130,7 @@ def main():
                          "of markdown works, not just Obsidian.")
     vault = pathlib.Path(vault)
 
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     cur.execute("alter session disable parallel dml")
     cur.execute("merge into platforms p using (select 'obsidian' id from dual) s "

@@ -20,7 +20,7 @@ import db  # noqa: E402
 import backlog_store as store  # noqa: E402
 from backlog_core import Item  # noqa: E402
 
-conn = db.connect()
+conn = db.open_connection()
 with conn.cursor() as cur:
     try:
         cur.execute(f"DROP TABLE {TEST_TABLE}")

@@ -129,7 +129,7 @@ def _check_webhook():
 
 
 def main():
-    conn = db.connect()
+    conn = db.open_connection()
     try:
         verdict = health.verdict(health.last_heartbeat(conn))
     finally:

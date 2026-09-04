@@ -132,7 +132,7 @@ def main():
                          "(comma-separated folder ids) must be set in oracle/.env — "
                          "see the setup steps in this file's docstring.")
     sess = _session()
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     cur.execute("alter session disable parallel dml")
     cur.execute("merge into platforms p using (select 'gdrive' id from dual) s "

@@ -9,7 +9,7 @@ import content
 
 
 def main():
-    c = db.connect()
+    c = db.open_connection()
     cur = c.cursor()
 
     print("=== 1. the brain (one Oracle 26ai database) ===")

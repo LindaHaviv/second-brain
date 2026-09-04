@@ -69,7 +69,7 @@ def _views(media_id):
 def main():
     if not TOKEN:
         sys.exit("set IG_ACCESS_TOKEN (see scripts/instagram_token.py)")
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     cur.execute("merge into platforms p using (select 'instagram' id from dual) s "
                 "on (p.platform_id=s.id) when not matched then "

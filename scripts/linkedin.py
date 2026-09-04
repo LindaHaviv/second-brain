@@ -38,7 +38,7 @@ def main():
     if len(sys.argv) < 2:
         sys.exit("usage: linkedin.py /path/to/linkedin_posts.json")
     posts = json.load(open(sys.argv[1]))
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     cur.execute("alter session disable parallel dml")
     cur.execute("merge into platforms p using (select 'linkedin' id from dual) s "

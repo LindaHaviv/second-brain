@@ -42,7 +42,7 @@ def _date(s):
 def load(conn=None) -> list[Item]:
     """Every item, insertion order (item_id), done included — same shape parse_items gave."""
     own = conn is None
-    conn = conn or db.connect()
+    conn = conn or db.open_connection()
     try:
         with conn.cursor() as cur:
             cur.execute(f"SELECT title, item_type, strategic, deadline, effort, since_d, "
@@ -65,7 +65,7 @@ def save(items: list[Item], conn=None):
     """Replace the whole set in ONE transaction (delete + insert, ~dozens of rows).
     Matches the file-rewrite semantics exactly; item order is preserved via insert order."""
     own = conn is None
-    conn = conn or db.connect()
+    conn = conn or db.open_connection()
     try:
         with conn.cursor() as cur:
             # Autonomous enables parallel DML by default; a delete+insert cycle then

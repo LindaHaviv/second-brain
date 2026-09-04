@@ -50,7 +50,7 @@ def scan_secrets(conn):
 
 
 def main():
-    conn = db.connect()
+    conn = db.open_connection()
     print("=== SECURITY: leaked-secret scan over ingested content ===")
     hits = scan_secrets(conn)
     if hits:

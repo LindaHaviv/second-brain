@@ -107,7 +107,7 @@ def save_note(conn, title, text):
 
 
 def main():
-    conn = db.connect()
+    conn = db.open_connection()
     try:
         body = report(collect(conn))
         print(body)

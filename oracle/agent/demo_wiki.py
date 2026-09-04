@@ -9,7 +9,7 @@ import db
 
 
 def main():
-    c = db.connect()
+    c = db.open_connection()
     cur = c.cursor()
     cur.execute("SELECT page_id, topic FROM wiki_pages ORDER BY topic")
     pages = cur.fetchall()

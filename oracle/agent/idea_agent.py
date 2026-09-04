@@ -10,7 +10,7 @@ import json
 import anthropic
 
 import llm
-from db import connect          # importing db loads oracle/.env
+from db import open_connection          # importing db loads oracle/.env
 from content import list_topics
 
 SCHEMA = {
@@ -67,7 +67,7 @@ def suggest(client, conn, n=6):
 
 def main():
     client = anthropic.Anthropic()
-    conn = connect()
+    conn = open_connection()
     try:
         out = suggest(client, conn)
         print("=== NEW IDEAS ===")

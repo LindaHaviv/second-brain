@@ -179,7 +179,7 @@ def main():
                  "(the tracker database id) in oracle/.env")
     from notion_client import Client
     notion = Client(auth=os.environ["NOTION_TOKEN"])
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     rows = tracker_rows(notion, dbid)
     now = datetime.datetime.now()

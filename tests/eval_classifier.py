@@ -31,7 +31,7 @@ def main():
     ap.add_argument("--seed", type=int, default=26, help="sampling seed (repeatable)")
     args = ap.parse_args()
 
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     sample = []
     for label in ("content", "business", "archived"):

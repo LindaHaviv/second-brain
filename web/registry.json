@@ -257,7 +257,7 @@
       "items": [
         {
           "name": "Apply schema",
-          "desc": "Apply the schema files (oracle/schema/0*.sql) over a db.connect() connection.",
+          "desc": "Apply the schema files (oracle/schema/0*.sql) over a db.open_connection() connection.",
           "where": "scripts/apply_schema.py",
           "scope": "generic"
         },

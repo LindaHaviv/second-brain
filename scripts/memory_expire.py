@@ -153,7 +153,7 @@ def main():
         print("memory expire: MEMORY_RETENTION_DAYS=0 — rotation disabled, nothing scanned")
         return
     apply = "--apply" in sys.argv
-    conn = db.connect()
+    conn = db.open_connection()
     try:
         counts = expiry_counts(conn, days)
         total = sum(n for t in counts.values() for n in t.values())

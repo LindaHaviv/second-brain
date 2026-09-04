@@ -37,7 +37,7 @@ def collect():
 
 
 def main():
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     cur.execute("alter session disable parallel dml")
     cur.execute("merge into platforms p using (select :i id from dual) s "

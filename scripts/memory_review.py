@@ -184,7 +184,7 @@ def review(conn):
 
 
 def main():
-    conn = db.connect()
+    conn = db.open_connection()
     try:
         out = review(conn)
     finally:

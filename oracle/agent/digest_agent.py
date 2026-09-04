@@ -70,7 +70,7 @@ def save_note(conn, title, text):
 
 
 def main():
-    conn = db.connect()
+    conn = db.open_connection()
     try:
         published, wiki, total, facts, runs = collect(conn)
         prompt = (

@@ -79,7 +79,7 @@ def _tags_look_reset():
     are searchable again, so classification must run BEFORE the wiki/memory rebuild."""
     try:
         import db
-        conn = db.connect()
+        conn = db.open_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT COUNT(*) FROM posts WHERE platform_id IN "
                         "('chatgpt','claude','claude_code')")
@@ -117,7 +117,7 @@ def _write_status(results):
         import socket
         import db
         import health
-        conn = db.connect()
+        conn = db.open_connection()
         try:
             health.record_run(conn, results, host=socket.gethostname())
         finally:

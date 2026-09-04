@@ -37,6 +37,11 @@ def _params():
         user=os.environ.get("DB_USER", "CCC"),
         password=pwd,
         dsn=os.environ.get("DB_DSN", "localhost:1521/FREEPDB1"),
+        # A silently dropped connection (machine sleep, NAT idle-kill) must ERROR, not
+        # block a socket read forever — without keepalives one stale session can wedge a
+        # scheduled job for days, and launchd never starts the next run while it hangs.
+        expire_time=2,             # minutes between keepalive probes on an idle line
+        tcp_connect_timeout=20.0,  # a connect that can't complete fails fast
     )
     wallet = os.environ.get("DB_WALLET_DIR")
     if wallet:   # Autonomous Database (cloud) — mTLS via wallet
@@ -51,8 +56,9 @@ def _params():
 # A per-process session POOL. The hosted MCP opens a connection per tool call; against a cloud
 # Autonomous DB each fresh connect pays TLS + wallet + auth (hundreds of ms) and eats one of the
 # Always-Free session slots. A pool amortizes that to ~0, caps concurrent sessions, and keeps a
-# session hot (min=1). Every caller keeps the same `connect()` / `.close()` contract — closing a
-# pooled connection just returns it to the pool. Set DB_POOL=0 to fall back to direct connects.
+# session hot (min=1). Every caller keeps the same `open_connection()` / `.close()` contract —
+# closing a pooled connection just returns it to the pool. Set DB_POOL=0 to fall back to direct
+# connects.
 _pool = None
 
 
@@ -65,7 +71,20 @@ def _get_pool():
     return _pool
 
 
-def connect():
+def open_connection():
     if os.environ.get("DB_POOL", "1") == "0":
-        return oracledb.connect(**_params())
-    return _get_pool().acquire()
+        conn = oracledb.connect(**_params())
+    else:
+        conn = _get_pool().acquire()
+    # Ceiling on any single round trip: if the peer dies MID-CALL, keepalives alone don't
+    # unblock an in-flight read, so the call must time out on its own. Generous by design
+    # (in-database embedding of a big batch is minutes, not hours). 0 disables.
+    timeout_ms = int(os.environ.get("DB_CALL_TIMEOUT_MS", "600000"))
+    if timeout_ms:
+        conn.call_timeout = timeout_ms
+    return conn
+
+
+# Back-compat: the 2026-08 rename to open_connection() left private-side callers
+# (agents, server ext) on the old name; keep the alias until every caller migrates.
+connect = open_connection

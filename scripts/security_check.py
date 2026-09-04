@@ -126,7 +126,7 @@ def check_pins(findings):
 def check_db(findings):
     try:
         import db
-        conn = db.connect()
+        conn = db.open_connection()
     except Exception as e:                                   # no DB is a skip, not a failure
         findings.append(("SKIP", f"database checks skipped ({type(e).__name__})"))
         return

@@ -47,7 +47,7 @@ DB_WALLET_PASSWORD=<wallet password>
 ```
 Test the connection:
 ```bash
-cd oracle/agent && ../../.venv/bin/python -c "import db; print(db.connect().cursor().execute(
+cd oracle/agent && ../../.venv/bin/python -c "import db; print(db.open_connection().cursor().execute(
   \"select 'connected to '||sys_context('userenv','con_name') from dual\").fetchone()[0])"
 ```
 

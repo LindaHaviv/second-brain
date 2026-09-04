@@ -8,14 +8,14 @@ Type a question and press enter. Type 'exit' (or Ctrl-D) to quit.
 """
 import anthropic
 
-from db import connect
+from db import open_connection
 from research_agent import run_research
 from conversation import new_session, record_turn, recent_turns
 
 
 def main():
     client = anthropic.Anthropic()
-    conn = connect()
+    conn = open_connection()
     sid = new_session()
     print(f"🧠  Ask your brain. (type 'exit' to quit)  [session {sid}]\n")
     try:

@@ -111,7 +111,7 @@ def main():
     if not args:
         sys.exit("usage: instagram_export.py /path/to/extracted-export-root [--dry]")
     root = pathlib.Path(args[0])
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     cur.execute("alter session disable parallel dml")
     cur.execute("merge into platforms p using (select 'instagram' id from dual) s "

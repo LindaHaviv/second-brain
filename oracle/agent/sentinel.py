@@ -61,7 +61,7 @@ def check_once():
     """One check: read the heartbeat, decide, deliver. Returns the message sent (or that
     would have been sent, when Telegram is unconfigured) for logging/tests; None if quiet."""
     import db
-    conn = db.connect()
+    conn = db.open_connection()
     try:
         verdict = health.verdict(health.last_heartbeat(conn))
     finally:

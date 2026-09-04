@@ -22,7 +22,7 @@ def _stat(conn, sql):
 
 def main():
     client = anthropic.Anthropic()
-    conn = db.connect()
+    conn = db.open_connection()
 
     print("=== the brain (one Oracle database) ===")
     print("  content items :", _stat(conn, "SELECT COUNT(*) FROM posts"))

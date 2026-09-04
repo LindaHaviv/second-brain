@@ -46,7 +46,7 @@ SERIES_FROM_CHECKBOX = SERIES_CHECKBOX.lower().replace(" ", "_")[:20] or None
 
 
 def connect():
-    return db.connect()
+    return db.open_connection()
 
 
 def rich(arr):

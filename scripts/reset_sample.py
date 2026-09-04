@@ -31,7 +31,7 @@ TABLES = [
 
 
 def main():
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     for t in TABLES:
         try:

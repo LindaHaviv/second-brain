@@ -102,7 +102,7 @@ def chunks_of(text, size=1500):
 
 
 def main():
-    conn = db.connect()
+    conn = db.open_connection()
     cur = conn.cursor()
     cur.execute("alter session disable parallel dml")   # Autonomous DB: allow delete+insert in one txn
     cur.execute("merge into platforms p using (select 'substack' id from dual) s "
