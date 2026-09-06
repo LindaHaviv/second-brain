@@ -1288,9 +1288,11 @@ def test_reconcile_matching():
 
 def test_script_draft_weight():
     """Unfilmed script drafts (kind='script') fuse below genuine notes and published
-    work, above workflow chats — and a chat platform's weight wins over the kind."""
+    work, above workflow chats — and a chat platform's weight wins over the kind.
+    Published platforms sit above all of those: what shipped beats what was drafted."""
     assert content._src_weight({"platform_id": "note", "kind": "note"}) == 1.0
-    assert content._src_weight({"platform_id": "instagram", "kind": "reel"}) == 1.0
+    assert (content._src_weight({"platform_id": "instagram", "kind": "reel"})
+            == content.PUBLISHED_SOURCE_WEIGHT > 1.0)
     w = content._src_weight({"platform_id": "note", "kind": "script"})
     assert content.CHAT_SOURCE_WEIGHT < w < 1.0, w
     assert (content._src_weight({"platform_id": "claude_code", "kind": "script"})

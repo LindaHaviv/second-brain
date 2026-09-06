@@ -130,12 +130,22 @@ CHAT_SOURCE_WEIGHT = float(__import__("os").environ.get("CHAT_SOURCE_WEIGHT", "0
 # calls while a draft still surfaces when it is honestly the best match. 1.0 disables.
 SCRIPT_DRAFT_WEIGHT = float(__import__("os").environ.get("SCRIPT_DRAFT_WEIGHT", "0.85"))
 
+PUBLISHED_PLATFORMS = {"instagram", "tiktok", "youtube", "linkedin", "substack", "x"}
+# What actually shipped outranks what was merely drafted: a script note and the reel it
+# became are near-duplicates in embedding space, and the filmed version is the truth of
+# what was said. A gentle boost (>1) breaks those ties toward the published item without
+# burying notes that are genuinely the only match. 1.0 disables.
+PUBLISHED_SOURCE_WEIGHT = float(__import__("os").environ.get("PUBLISHED_SOURCE_WEIGHT", "1.15"))
+
 
 def _src_weight(r):
-    if r.get("platform_id") in CHAT_PLATFORMS:
+    pid = r.get("platform_id")
+    if pid in CHAT_PLATFORMS:
         return CHAT_SOURCE_WEIGHT
     if r.get("kind") == "script":
         return SCRIPT_DRAFT_WEIGHT
+    if pid in PUBLISHED_PLATFORMS:
+        return PUBLISHED_SOURCE_WEIGHT
     return 1.0
 
 
