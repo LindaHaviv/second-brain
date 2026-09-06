@@ -1286,6 +1286,58 @@ def test_reconcile_matching():
     assert hi == exp + datetime.timedelta(days=rc.AFTER_DAYS)
 
 
+def test_script_draft_weight():
+    """Unfilmed script drafts (kind='script') fuse below genuine notes and published
+    work, above workflow chats — and a chat platform's weight wins over the kind."""
+    assert content._src_weight({"platform_id": "note", "kind": "note"}) == 1.0
+    assert content._src_weight({"platform_id": "instagram", "kind": "reel"}) == 1.0
+    w = content._src_weight({"platform_id": "note", "kind": "script"})
+    assert content.CHAT_SOURCE_WEIGHT < w < 1.0, w
+    assert (content._src_weight({"platform_id": "claude_code", "kind": "script"})
+            == content.CHAT_SOURCE_WEIGHT)
+
+
+def test_reconcile_scripts_logic():
+    """Pure draft-vs-published matching: the 'Script: ' prefix is stripped for title
+    comparison, title agreement or a very close embedding confirms, a merely-nearby
+    embedding is report-only, and far pairs are ignored."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import reconcile_scripts as rs
+    assert rs.draft_topic("Script: RAG explained") == "RAG explained"
+    assert rs.draft_topic("SCRIPT: RAG explained") == "RAG explained"
+    assert rs.draft_topic("RAG explained") == "RAG explained"
+    assert rs.classify(0.9, 0.5) == "confirmed"           # title alone confirms
+    assert rs.classify(0.1, rs.CONFIRM_DIST) == "confirmed"   # embedding alone confirms
+    assert rs.classify(0.1, rs.POSSIBLE_DIST) == "possible"   # close, unconfirmed
+    assert rs.classify(0.1, 0.9) is None                  # unrelated
+
+
+def test_ingest_note_kind():
+    """ingest_note stamps the caller's kind ('script' marks a draft), refuses kinds
+    outside the closed set, and defaults to 'note'."""
+    from fastmcp.exceptions import ToolError as TE
+    try:
+        mcp_server.ingest_note("bad kind", "x", kind="poem")
+        raise AssertionError("kind='poem' was accepted")
+    except TE:
+        pass
+    title = f"test_ingest_note_kind {os.getpid()}"
+    out = mcp_server.ingest_note(title, "draft body.\n\nsecond beat.", kind="script")
+    assert out == f"saved note: {title}"
+    c = db.open_connection()
+    try:
+        with c.cursor() as cur:
+            cur.execute("SELECT post_id, platform_id, kind FROM posts WHERE title = :t",
+                        t=title)
+            rows = cur.fetchall()
+            assert len(rows) == 1 and rows[0][1:] == ("note", "script"), rows
+            cur.execute("DELETE FROM content_chunks WHERE post_id = :p", p=rows[0][0])
+            cur.execute("DELETE FROM posts WHERE post_id = :p", p=rows[0][0])
+        c.commit()
+    finally:
+        c.close()
+
+
 if __name__ == "__main__":
     tests = [(n, f) for n, f in sorted(globals().items())
              if n.startswith("test_") and callable(f)]

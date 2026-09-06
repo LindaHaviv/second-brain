@@ -328,6 +328,12 @@
           "scope": "generic"
         },
         {
+          "name": "Reconcile scripts",
+          "desc": "Reconcile script DRAFTS with what actually got filmed and posted.",
+          "where": "scripts/reconcile_scripts.py",
+          "scope": "generic"
+        },
+        {
           "name": "Reset sample",
           "desc": "Wipe the sample content (and everything derived from it) for a clean start.",
           "where": "scripts/reset_sample.py",

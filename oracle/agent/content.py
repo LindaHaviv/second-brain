@@ -123,10 +123,20 @@ CHAT_PLATFORMS = {"chatgpt", "claude", "claude_code"}
 # content it summarizes. A gentle fusion weight (<1) makes published work win close calls
 # while chats still surface whenever they're genuinely the best match. 1.0 disables.
 CHAT_SOURCE_WEIGHT = float(__import__("os").environ.get("CHAT_SOURCE_WEIGHT", "0.75"))
+# kind='script' marks an unfilmed video-script draft (saved via ingest_note by the
+# scripting workflow). A draft paraphrases the same material its filmed post will carry,
+# so unweighted it ties or beats genuine reference notes on the topics it covers. Demote
+# gently — below notes (1.0), above chats — so real notes and published work win close
+# calls while a draft still surfaces when it is honestly the best match. 1.0 disables.
+SCRIPT_DRAFT_WEIGHT = float(__import__("os").environ.get("SCRIPT_DRAFT_WEIGHT", "0.85"))
 
 
 def _src_weight(r):
-    return CHAT_SOURCE_WEIGHT if r.get("platform_id") in CHAT_PLATFORMS else 1.0
+    if r.get("platform_id") in CHAT_PLATFORMS:
+        return CHAT_SOURCE_WEIGHT
+    if r.get("kind") == "script":
+        return SCRIPT_DRAFT_WEIGHT
+    return 1.0
 
 
 def _collapse(rows):

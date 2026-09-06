@@ -642,19 +642,37 @@ def related(
 # The WRITE tools. Marked non-read-only (clients should gate them / ask before calling),
 # and omitted entirely when MCP_READONLY=1 — so a read-only deployment exposes no way to
 # mutate the brain. Anything more powerful than this (e.g. editing Notion) stays human-in-the-loop.
+
+# What ingest_note may stamp as `kind`. 'script' marks an unfilmed video-script draft:
+# same platform ('note'), but rankable below genuine reference notes (content._src_weight)
+# and reconcilable against the published post once filmed (scripts/reconcile_scripts.py).
+# `kind` is otherwise a per-loader format label — keep this a closed set so a client
+# can't invent values the read paths have never seen.
+NOTE_KINDS = {"note", "script"}
+
 if not READONLY:
     @mcp.tool(annotations={**_WRITE, "title": "Save a note to the brain"})
     def ingest_note(
         title: Annotated[str, Field(description="Short title for the note")],
         text: Annotated[str, Field(description="The note body")],
+        kind: Annotated[str, Field(description=(
+            "What this note IS: 'note' (default) for an idea/decision/reference note; "
+            "'script' for an unfilmed video-script draft, so search can rank drafts "
+            "below genuine notes and a reconcile pass can archive them once filmed"
+        ))] = "note",
     ) -> str:
         """Save a note/idea to the brain, embedded for future semantic search.
         WHEN TO USE: "save this idea/note to my brain", "remember that…", "add this to my second
         brain" — for a discrete piece of content (an idea, a draft, a decision, a list). For
         capturing THIS WHOLE CONVERSATION, use save_chat instead. Write a title the user would
-        search for later; put the substance in text (don't summarize it away)."""
+        search for later; put the substance in text (don't summarize it away).
+        Pass kind='script' when saving a video-script DRAFT (e.g. a scripting workflow's
+        output): drafts are marked distinctly so they never outrank real reference notes."""
         if not title or not str(title).strip():
             raise ToolError("a title is required")
+        if kind not in NOTE_KINDS:
+            raise ToolError(f"unsupported kind {str(kind)!r} — use one of: "
+                            + ", ".join(sorted(NOTE_KINDS)))
         conn = None
         try:
             conn = db.open_connection()
@@ -666,10 +684,10 @@ if not READONLY:
                 outid = cur.var(int)
                 cur.execute(
                     "INSERT INTO posts (platform_id, kind, title, caption, content_embedding) "
-                    "VALUES ('note','note', :t, :c, VECTOR_EMBEDDING(MINILM USING :e AS DATA)) "
+                    "VALUES ('note', :k, :t, :c, VECTOR_EMBEDDING(MINILM USING :e AS DATA)) "
                     "RETURNING post_id INTO :outid",
-                    t=title[:1000], c=(text or "")[:8000], e=f"{title}. {text}"[:3000],
-                    outid=outid)
+                    k=kind, t=title[:1000], c=(text or "")[:8000],
+                    e=f"{title}. {text}"[:3000], outid=outid)
                 pid = int(outid.getvalue()[0])
                 # paragraph chunks -> passage-level search can land on the right part of the note
                 for i, para in enumerate(content.note_chunks(text)):
