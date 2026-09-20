@@ -52,6 +52,11 @@ MCP server. Everything below is what a maintainer would tell you on day one.
    Keep that property — it's what makes the system auditable with plain SQL.
 7. **Don't scrape platforms.** Loaders use official APIs and user-requested exports
    only. If a platform has neither, the answer is "not yet," not a headless browser.
+8. **Money stays out of the Content Tracker.** In the user's Notion, fees, rates,
+   invoice numbers, payment status, and contract terms live ONLY in the deal tracker
+   (Brand Collab Tracker). Content/calendar rows may reference "paid collab — terms
+   in the deal tracker" and nothing more. Any agent flow that logs content from a
+   brief strips the money facts and routes them to the deal tracker instead.
 
 ## Common tasks, the sanctioned way
 
