@@ -38,6 +38,8 @@ STEPS = [
     ("IG token refresh", [str(ROOT / "scripts" / "instagram_token.py"),
                           "--refresh", "--auto"],                       "IG_ACCESS_TOKEN"),
     ("Instagram",    [str(ROOT / "scripts" / "instagram.py")],          "IG_ACCESS_TOKEN"),
+    # apify fallback keeps IG fresh while the official-API token path is unconfigured
+    ("Instagram (Apify)", [str(ROOT / "scripts" / "instagram_apify.py")], "IG_HANDLE"),
     ("LinkedIn",     [str(ROOT / "scripts" / "linkedin_apify.py")],     "APIFY_TOKEN"),
     ("TikTok",       [str(ROOT / "scripts" / "tiktok_apify.py")],       "TIKTOK_HANDLE"),
     ("X",            [str(ROOT / "scripts" / "x_apify.py")],            "X_HANDLE"),

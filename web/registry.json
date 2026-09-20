@@ -189,6 +189,12 @@
           "scope": "generic"
         },
         {
+          "name": "Instagram apify",
+          "desc": "Collect step (Instagram): scheduled self-scrape of YOUR OWN public posts via a",
+          "where": "scripts/instagram_apify.py",
+          "scope": "generic"
+        },
+        {
           "name": "Instagram export",
           "desc": "Backfill Instagram from a data export: captions + dates + spoken-word transcripts.",
           "where": "scripts/instagram_export.py",

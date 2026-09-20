@@ -1248,6 +1248,40 @@ def test_x_apify_parse_guards():
     assert xa.parse_items([foreign], "lindavivah") == []
 
 
+def test_instagram_apify_parse_guards():
+    """Pure parse: foreign owners and missing URLs are dropped; kinds map from
+    productType/type; the media code extracts from every URL style; the fuzzy
+    signature normalizes whitespace/case; allowlisted fields only."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import instagram_apify as ia
+    good = {"ownerUsername": "lindavivah",
+            "url": "https://www.instagram.com/p/ABC123xyz/?igsh=extra",
+            "caption": "Agents need memory.\nHere's why.", "type": "Video",
+            "productType": "clips", "timestamp": "2026-09-18T14:00:00.000Z",
+            "likesCount": 12, "commentsCount": 3, "videoPlayCount": 900}
+    foreign = dict(good, ownerUsername="someone-else")
+    nourl = dict(good, url="")
+    out = ia.parse_items([good, foreign, nourl, "junk"], "lindavivah")
+    assert len(out) == 1
+    row = out[0]
+    assert sorted(row.keys()) == ["caption", "code", "comments", "kind", "likes",
+                                  "published_at", "title", "url", "views"]
+    assert row["url"] == "https://www.instagram.com/p/ABC123xyz/"  # ?igsh stripped
+    assert row["code"] == "ABC123xyz" and row["kind"] == "reel"    # clips wins over Video
+    assert row["published_at"].year == 2026
+    carousel = dict(good, productType="feed", type="Sidecar")
+    assert ia.parse_items([carousel], "lindavivah")[0]["kind"] == "carousel"
+    # media code extracts from every URL style the brain holds
+    assert ia.code_of("https://www.instagram.com/reel/17907771003435801/") == "17907771003435801"
+    assert ia.code_of("https://www.instagram.com/tv/XyZ/") == "XyZ"
+    assert ia.code_of("https://example.com/nope") == ""
+    # fuzzy signature: same day + same caption modulo case/whitespace collide
+    d = row["published_at"]
+    assert ia.sig_of(d, "Agents  NEED memory.") == ia.sig_of(d, "agents need memory.")
+    # all-foreign payload -> parse yields nothing (main() turns that into a hard FAIL)
+    assert ia.parse_items([foreign], "lindavivah") == []
+
+
 def test_reconcile_matching():
     """Pure reconcile logic: title matching is emoji/punctuation-proof, containment
     counts, weak matches are refused, link merging is idempotent, and the candidate
