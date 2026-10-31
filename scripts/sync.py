@@ -146,8 +146,13 @@ def main():
     results = []
     # FIRST: pick up any new chat-export zips (drop-zip-and-forget). Runs before the
     # tags-reset check so a fresh import gets classified in THIS run, not tomorrow's.
-    print("=== Chat exports (watch folder) ===", flush=True)
-    _run_step("Chat exports", [str(ROOT / "scripts" / "ingest_exports.py")], results)
+    if "Chat exports" in {x.strip() for x in os.environ.get("SYNC_SKIP_STEPS", "").split(",")}:
+        print("— skip Chat exports (SYNC_SKIP_STEPS)")
+        results.append({"label": "Chat exports", "status": "skip", "seconds": 0,
+                        "why": "skipped on this runner (SYNC_SKIP_STEPS)"})
+    else:
+        print("=== Chat exports (watch folder) ===", flush=True)
+        _run_step("Chat exports", [str(ROOT / "scripts" / "ingest_exports.py")], results)
 
     steps = list(STEPS)
     if _tags_look_reset():
@@ -158,8 +163,18 @@ def main():
         steps.insert(wiki_at, ("Classify (safety net)",
                                [str(ROOT / "scripts" / "classify_private.py"), "--apply"],
                                LLM_KEY))
+    # SYNC_SKIP_STEPS: comma-separated step labels to skip on THIS runner. The cloud
+    # runner (private/jobs/) sets it to the steps that only make sense on the Mac
+    # (local vault, local Claude Code transcripts, the Downloads watch folder); the
+    # Mac runner leaves it unset. Skips are recorded like credential skips.
+    skip = {x.strip() for x in os.environ.get("SYNC_SKIP_STEPS", "").split(",") if x.strip()}
     failed = []
     for label, argv, need in steps:
+        if label in skip:
+            print(f"— skip {label} (SYNC_SKIP_STEPS)")
+            results.append({"label": label, "status": "skip", "seconds": 0,
+                            "why": "skipped on this runner (SYNC_SKIP_STEPS)"})
+            continue
         if need and not os.environ.get(need):
             print(f"— skip {label} (no {need})")
             results.append({"label": label, "status": "skip", "seconds": 0,
