@@ -52,6 +52,9 @@ STEPS = [
     # what actually shipped (its report-note then rides the wiki/consolidate rebuild)
     ("Reconcile",    [str(ROOT / "scripts" / "reconcile_content.py")],  "NOTION_CONTENT_TRACKER"),
     ("Claude Code",  [str(ROOT / "scripts" / "claude_code.py")],        None),
+    # what the OTHER Claude Code folders learned about the user (their memory files +
+    # explicit feedback in their sessions) -> notes, one way, before the wiki sees them
+    ("Claude Code learnings", [str(ROOT / "scripts" / "claude_code_sweep.py")], LLM_KEY),
     ("Wiki refresh", [str(ROOT / "oracle" / "agent" / "wiki.py"), "--refresh"], None),
     ("Consolidate",  [str(ROOT / "scripts" / "consolidate.py")],        None),
     # forgetting stages, in the only safe order: distill first (Consolidate, above), THEN

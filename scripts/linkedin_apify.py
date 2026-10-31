@@ -14,9 +14,14 @@ Hardening (each line here is deliberate — adapt, don't delete):
   - Every returned post must be AUTHORED BY the configured handle; if none are,
     nothing is ingested and the step FAILS (guards against actor bugs/swaps
     poisoning your voice corpus with someone else's posts).
-  - Only an allowlist of fields is ingested (text, date, url); everything else
-    the actor returns is dropped. Text is length-capped. Scraped content is
-    data, never instructions.
+  - Only an allowlist of fields is ingested (text, date, url, like/comment
+    counts); everything else the actor returns is dropped. Text is length-capped.
+    Scraped content is data, never instructions.
+  - Engagement refreshes for free: delete-then-insert by URL means every weekly
+    run rewrites likes/comments for the posts it returns (the actor also sends
+    shares, but the posts table has no column for it, so it is dropped).
+  - published_at comes from the actor's timestamp; if that is ever missing, the
+    exact time is decoded from the post id in the URL (linkedin_ids.py).
   - Fail-closed: credit exhaustion, HTTP errors, and empty/foreign payloads all
     exit non-zero, which lands in the sync heartbeat -> health panel -> alert.
   - Weekly cadence: the daily sync calls this, but it no-ops unless >=7 days
@@ -33,6 +38,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "oracle" / "agent"))
 import db  # noqa: E402  (also resolves keychain:<item> env values)
+from linkedin_ids import published_at_from_url  # noqa: E402
 
 ACTOR_ID = "A3cAPGpwBEG8RJwse"   # harvestapi/linkedin-profile-posts (no-cookie, pay-per-event)
 API = f"https://api.apify.com/v2/acts/{ACTOR_ID}/run-sync-get-dataset-items"
@@ -49,10 +55,18 @@ def handle_of(profile_url):
     return (m.group(1) if m else "").lower()
 
 
+def _count(v):
+    """Engagement counter -> non-negative int; anything odd (None, '', junk) is 0."""
+    try:
+        return max(0, int(v or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 def parse_items(items, expected_handle):
-    """Pure: actor output -> [{url, text, title, published_at}] for posts that are
-    (a) authored by expected_handle, (b) real posts with a URL and enough text.
-    Everything else — other authors, junk, extra fields — is dropped here."""
+    """Pure: actor output -> [{url, text, title, published_at, likes, comments}] for
+    posts that are (a) authored by expected_handle, (b) real posts with a URL and
+    enough text. Everything else — other authors, junk, extra fields — is dropped here."""
     out = []
     for it in items or []:
         if not isinstance(it, dict):
@@ -72,8 +86,16 @@ def parse_items(items, expected_handle):
                     raw_date.replace("Z", "+00:00")).replace(tzinfo=None)
             except ValueError:
                 published = None
+        if published is None:   # the id in the URL carries the exact time too
+            exact = published_at_from_url(url)
+            published = exact.replace(tzinfo=None) if exact else None
+        eng = it.get("engagement") or {}
+        if not isinstance(eng, dict):
+            eng = {}
         out.append({"url": url[:600], "text": text[:4000],
-                    "title": text.split("\n", 1)[0][:150], "published_at": published})
+                    "title": text.split("\n", 1)[0][:150], "published_at": published,
+                    "likes": _count(eng.get("likes")),
+                    "comments": _count(eng.get("comments"))})
     return out
 
 
@@ -123,10 +145,11 @@ def main():
         cur.execute("delete from posts where url = :u", u=p["url"])
         cur.execute(
             """insert into posts (platform_id, kind, title, caption, url, published_at,
-                   visibility, content_embedding)
-               values ('linkedin', 'post', :t, :c, :u, :p, 'content',
+                   likes, comments, visibility, content_embedding)
+               values ('linkedin', 'post', :t, :c, :u, :p, :l, :m, 'content',
                    vector_embedding(MINILM using :e as data))""",
             t=p["title"], c=p["text"], u=p["url"], p=p["published_at"],
+            l=p["likes"], m=p["comments"],
             e=(p["title"] + ". " + p["text"])[:3000])
         n += 1
     conn.commit()

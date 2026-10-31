@@ -201,6 +201,8 @@ can never leak or go stale:
 ```
 sync.py:  pick up new chat-export zips (ingest_exports.py watches your downloads folder)
           → pull API sources (Instagram, Notion) → Claude Code sessions (local, automatic)
+          → Claude Code learnings sweep (what your OTHER project folders learned about you:
+            their memory files + explicit feedback in their sessions → notes, one way)
           → classify private vs content (safety net re-runs after fresh imports)
           → refresh + GROW the wiki → consolidate memory
           → OAMP privacy sweep (auto-added on the package backend)

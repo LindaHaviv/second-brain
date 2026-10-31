@@ -171,6 +171,12 @@
           "scope": "generic"
         },
         {
+          "name": "Claude code sweep",
+          "desc": "Claude Code learnings sweep: what the OTHER Claude Code folders learned about you -> the brain.",
+          "where": "scripts/claude_code_sweep.py",
+          "scope": "generic"
+        },
+        {
           "name": "Freshness",
           "desc": "Source freshness check: how long since each source last got new data?",
           "where": "scripts/freshness.py",
@@ -202,7 +208,7 @@
         },
         {
           "name": "Linkedin",
-          "desc": "Ingest LinkedIn posts into the brain from a JSON file of {time, text} objects.",
+          "desc": "Ingest LinkedIn posts into the brain from a JSON file of {time, text[, url]} objects.",
           "where": "scripts/linkedin.py",
           "scope": "generic"
         },
@@ -295,6 +301,12 @@
           "name": "Copy local to cloud",
           "desc": "Copy the brain from the local Oracle container to the cloud Autonomous DB.",
           "where": "scripts/copy_local_to_cloud.py",
+          "scope": "generic"
+        },
+        {
+          "name": "Linkedin backfill dates",
+          "desc": "One-shot: re-derive published_at for LinkedIn posts from the id in their URL.",
+          "where": "scripts/linkedin_backfill_dates.py",
           "scope": "generic"
         },
         {

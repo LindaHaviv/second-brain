@@ -60,10 +60,29 @@ def record_usage(model, tokens_in, tokens_out, label=None):
         pass
 
 
-def structured(system, prompt, schema, max_tokens=4096, model=None):
-    """One prompt in, schema-validated JSON out — on whichever provider is configured.
-    `model` overrides per call on anthropic (e.g. a cheap classifier model); other
-    providers use the configured LLM_MODEL."""
+# A structured reply cut off by its token budget is not JSON (json.loads: "Unterminated
+# string"). Every provider reports that case (anthropic stop_reason=max_tokens, openai
+# finish_reason=length, ollama done_reason=length); structured() retries with a doubled
+# budget up to this cap, then fails LOUDLY naming the truncation — a silent parse error
+# at 03:00 is how the memory consolidation step went dark for twelve days.
+STRUCTURED_MAX_TOKENS = int(os.environ.get("LLM_STRUCTURED_MAX_TOKENS", "32000"))
+
+
+def next_budget(budget, cap=None):
+    """Pure (unit-tested): the retry budget after a truncation at `budget`, or None when
+    the cap is already reached (no retry — fail with a clear error instead)."""
+    cap = STRUCTURED_MAX_TOKENS if cap is None else cap
+    if budget >= cap:
+        return None
+    return min(budget * 2, cap)
+
+
+class TruncatedOutput(RuntimeError):
+    """The model hit max_tokens mid-JSON even at the retry cap."""
+
+
+def _call(system, prompt, schema, max_tokens, model):
+    """One provider round-trip -> (text, truncated). Usage is recorded here."""
     if PROVIDER == "anthropic":
         import anthropic
         r = anthropic.Anthropic().messages.create(
@@ -71,7 +90,8 @@ def structured(system, prompt, schema, max_tokens=4096, model=None):
             messages=[{"role": "user", "content": prompt}],
             output_config={"format": {"type": "json_schema", "schema": schema}})
         record_usage(model or MODEL, r.usage.input_tokens, r.usage.output_tokens)
-        return json.loads(next(b.text for b in r.content if b.type == "text"))
+        text = next((b.text for b in r.content if b.type == "text"), "")
+        return text, r.stop_reason == "max_tokens"
 
     if PROVIDER == "openai":
         try:
@@ -86,11 +106,13 @@ def structured(system, prompt, schema, max_tokens=4096, model=None):
                              "json_schema": {"name": "out", "strict": True, "schema": schema}})
         if getattr(r, "usage", None):
             record_usage(MODEL, r.usage.prompt_tokens, r.usage.completion_tokens)
-        return json.loads(r.choices[0].message.content)
+        choice = r.choices[0]
+        return choice.message.content or "", choice.finish_reason == "length"
 
     if PROVIDER == "ollama":
         host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
         body = json.dumps({"model": MODEL, "stream": False, "format": schema,
+                           "options": {"num_predict": max_tokens},
                            "messages": [{"role": "system", "content": system},
                                         {"role": "user", "content": prompt}]}).encode()
         req = urllib.request.Request(f"{host}/api/chat", data=body,
@@ -98,6 +120,29 @@ def structured(system, prompt, schema, max_tokens=4096, model=None):
         with urllib.request.urlopen(req, timeout=600) as resp:
             data = json.loads(resp.read())
         record_usage(MODEL, data.get("prompt_eval_count"), data.get("eval_count"))
-        return json.loads(data["message"]["content"])
+        return data["message"]["content"], data.get("done_reason") == "length"
 
     raise SystemExit(f"unknown LLM_PROVIDER={PROVIDER!r} (anthropic | openai | ollama)")
+
+
+def structured(system, prompt, schema, max_tokens=4096, model=None):
+    """One prompt in, schema-validated JSON out — on whichever provider is configured.
+    `model` overrides per call on anthropic (e.g. a cheap classifier model); other
+    providers use the configured LLM_MODEL. A reply truncated by `max_tokens` is retried
+    with a doubled budget (up to STRUCTURED_MAX_TOKENS); past the cap it raises
+    TruncatedOutput instead of handing back half a JSON document."""
+    import sys
+    budget = max_tokens
+    while True:
+        text, truncated = _call(system, prompt, schema, budget, model)
+        if not truncated:
+            return json.loads(text)
+        nxt = next_budget(budget)
+        if nxt is None:
+            raise TruncatedOutput(
+                f"structured output truncated at the {budget}-token cap (provider "
+                f"{PROVIDER}): the reply needs more JSON than LLM_STRUCTURED_MAX_TOKENS "
+                f"allows — shrink the input or raise the cap")
+        print(f"(llm: structured reply hit its {budget}-token budget — retrying with {nxt})",
+              file=sys.stderr)
+        budget = nxt

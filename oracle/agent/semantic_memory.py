@@ -92,7 +92,7 @@ def consolidate(client, conn, limit=30, title_sample=80):
         ("\n".join(f"- {q}" for q in questions) if questions else "(none yet)") +
         "\n\nReturn the full updated fact set."
     )
-    facts = llm.structured(_SYS, prompt, _SCHEMA, max_tokens=8192)["facts"]
+    facts = llm.structured(_SYS, prompt, _SCHEMA, max_tokens=16384)["facts"]
 
     # rebuild the consolidation snapshot in ONE transaction; roll back on ANY failure
     # so a half-done rebuild can never leave a pending DELETE of all facts that a

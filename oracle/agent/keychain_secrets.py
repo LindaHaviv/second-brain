@@ -23,6 +23,7 @@ import sys
 
 SERVICE = "second-brain"
 _PREFIX = "keychain:"
+_WARNED = set()
 
 
 def resolve(value):
@@ -37,8 +38,10 @@ def resolve(value):
         print(f"(secrets: keyring unavailable for '{item}': {e})", file=sys.stderr)
         return value
     if secret is None:
-        print(f"(secrets: no keychain item '{item}' under service '{SERVICE}')",
-              file=sys.stderr)
+        if item not in _WARNED:   # once per process: a 60-second poller must not fill a log with this
+            _WARNED.add(item)
+            print(f"(secrets: no keychain item '{item}' under service '{SERVICE}')",
+                  file=sys.stderr)
         return value
     return secret
 

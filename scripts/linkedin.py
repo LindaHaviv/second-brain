@@ -1,8 +1,13 @@
-"""Ingest LinkedIn posts into the brain from a JSON file of {time, text} objects.
+"""Ingest LinkedIn posts into the brain from a JSON file of {time, text[, url]} objects.
 
 LinkedIn has no clean API for your own posts, so this takes posts captured from your activity
 page (relative times like '2w', '1mo') or a future export, converts the times to approximate
 dates, and loads them as content. Idempotent per post (dedups on a content hash).
+
+If an item carries a "url" with the post's id in it (…/feed/update/urn:li:activity:<id>/ or
+…/posts/<handle>_<slug>-activity-<id>-xxxx), the EXACT publish time is decoded from that id
+(linkedin_ids.py) and the real URL is stored, so the weekly self-scrape dedupes against it.
+The relative label stays as the fallback for items without a usable URL.
 
   ./.venv/bin/python scripts/linkedin.py ~/Downloads/linkedin_posts.json
 """
@@ -16,6 +21,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "oracle" / "agent"))
 import db  # noqa: E402
+from linkedin_ids import post_id_from_url, published_at_from_url  # noqa: E402
 
 NOW = datetime.datetime.now()
 DOW = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
@@ -51,15 +57,20 @@ def main():
             skip += 1
             continue
         h = hashlib.md5(text[:200].encode("utf-8")).hexdigest()[:12]
-        url = f"https://www.linkedin.com/feed/update/lh-{h}"
+        hash_url = f"https://www.linkedin.com/feed/update/lh-{h}"
+        real_url = (p.get("url") or "").split("?")[0].strip()[:600]
+        url = real_url if post_id_from_url(real_url) else hash_url
+        exact = published_at_from_url(url)   # id in the URL beats the relative label
+        published = exact.replace(tzinfo=None) if exact else to_date(p.get("time"))
         title = text.split("\n", 1)[0][:150]
-        cur.execute("delete from posts where url = :u", u=url)
+        # an earlier import of the same post may sit under the hash URL — replace it too
+        cur.execute("delete from posts where url in (:u, :h)", u=url, h=hash_url)
         cur.execute(
             """insert into posts (platform_id, kind, title, caption, url, published_at,
                    visibility, content_embedding)
                values ('linkedin', 'post', :t, :c, :u, :p, 'content',
                    vector_embedding(MINILM using :e as data))""",
-            t=title, c=text[:4000], u=url, p=to_date(p.get("time")),
+            t=title, c=text[:4000], u=url, p=published,
             e=(title + ". " + text)[:3000])
         n += 1
     conn.commit()

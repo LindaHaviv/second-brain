@@ -1172,8 +1172,10 @@ def test_health_heartbeat_roundtrip_live():
 
 def test_linkedin_apify_parse_guards():
     """Pure parse: foreign authors, short text, and missing URLs are dropped; good
-    items come through with allowlisted fields only and a parsed date."""
+    items come through with allowlisted fields only, a parsed date, and the
+    engagement counts (likes/comments; shares has no column and is dropped)."""
     sys.path.insert(0, str(ROOT / "scripts"))
+    import datetime
     import linkedin_apify as la
     assert la.handle_of("https://www.linkedin.com/in/lindahaviv/") == "lindahaviv"
     assert la.handle_of("https://www.linkedin.com/in/LindaHaviv?x=1") == "lindahaviv"
@@ -1182,18 +1184,87 @@ def test_linkedin_apify_parse_guards():
             "linkedinUrl": "https://www.linkedin.com/posts/lindahaviv_abc?utm=x",
             "content": "A real post with plenty of text to pass the minimum bar.",
             "postedAt": {"date": "2026-07-11T16:58:53.581Z"},
-            "reactions": ["dropped"], "comments": ["dropped"]}
+            # the actor's real shape: counts under engagement, plus noise we drop
+            "engagement": {"likes": 128, "comments": 9, "shares": 4, "id": "x",
+                           "reactions": [{"type": "LIKE", "count": 100}]},
+            "reactionIds": ["dropped"], "commentIds": ["dropped"]}
     foreign = dict(good, author={"publicIdentifier": "someone-else"})
     short = dict(good, content="too short")
     nourl = dict(good, linkedinUrl="")
     out = la.parse_items([good, foreign, short, nourl, "junk"], "lindahaviv")
     assert len(out) == 1
     row = out[0]
-    assert sorted(row.keys()) == ["published_at", "text", "title", "url"]
+    assert sorted(row.keys()) == ["comments", "likes", "published_at", "text", "title", "url"]
     assert row["url"] == "https://www.linkedin.com/posts/lindahaviv_abc"  # ?utm stripped
     assert row["published_at"].year == 2026
+    assert (row["likes"], row["comments"]) == (128, 9)
+    # no/odd engagement block -> zeros, never a crash or a None bind
+    noeng = {k: v for k, v in good.items() if k != "engagement"}
+    assert (la.parse_items([noeng], "lindahaviv")[0]["likes"],
+            la.parse_items([noeng], "lindahaviv")[0]["comments"]) == (0, 0)
+    junk_eng = dict(good, engagement={"likes": "n/a", "comments": None})
+    assert la.parse_items([junk_eng], "lindahaviv")[0]["likes"] == 0
+    assert la.parse_items([dict(good, engagement="weird")], "lindahaviv")[0]["likes"] == 0
+    # actor timestamp missing -> the exact time is decoded from the id in the URL
+    noposted = dict(good, postedAt=None, linkedinUrl=(
+        "https://www.linkedin.com/posts/lindahaviv_one-of-my-favorite-conferences-"
+        "activity-7517687465206394880-L2iY"))
+    assert la.parse_items([noposted], "lindahaviv")[0]["published_at"] == \
+        datetime.datetime(2026, 10, 18, 20, 46, 3, 584000)
     # all-foreign payload -> parse yields nothing (main() turns that into a hard FAIL)
     assert la.parse_items([foreign], "lindahaviv") == []
+
+
+def test_linkedin_id_decoder():
+    """Pure: the 19-digit activity/ugcPost/share id in any LinkedIn post URL carries
+    the exact publish time in its top 41 bits (id >> 22 = Unix ms). The example row
+    was stored as 2016-07-05 by the relative-label importer; the id says 2015-09-18
+    (an iOS 9 share — iOS 9 shipped Sept 16, 2015)."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import datetime
+    import linkedin_ids as li
+    utc = datetime.timezone.utc
+    urn = "https://www.linkedin.com/feed/update/urn:li:activity:6050442574873796609/"
+    assert li.post_id_from_url(urn) == 6050442574873796609
+    assert li.published_at_from_url(urn) == datetime.datetime(2015, 9, 18, 0, 58, 41, 637000, tzinfo=utc)
+    # the /posts/<handle>_<slug>-activity-<id>-<suffix> shape the scrape stores
+    slug = ("https://www.linkedin.com/posts/lindahaviv_one-of-my-favorite-conferences-"
+            "of-the-year-activity-7517687465206394880-L2iY")
+    assert li.published_at_from_url(slug) == datetime.datetime(2026, 10, 18, 20, 46, 3, 584000, tzinfo=utc)
+    # ugcPost / share URNs carry the same id layout (documented; none in the brain yet)
+    assert li.post_id_from_url("urn:li:ugcPost:7517687465206394880") == 7517687465206394880
+    assert li.post_id_from_url("https://www.linkedin.com/feed/update/urn:li:share:7517687465206394880") \
+        == 7517687465206394880
+    # no id -> None, never a guess: the synthetic lh-<hash> URLs, a bare 19-digit number,
+    # an id that decodes to an implausible year
+    assert li.published_at_from_url("https://www.linkedin.com/feed/update/lh-0123456789ab") is None
+    assert li.post_id_from_url("https://example.com/1234567890123456789") is None
+    assert li.post_id_from_url("") is None and li.post_id_from_url(None) is None
+    assert li.datetime_from_post_id(1000000000000000000) is None   # -> 1977
+
+
+def test_linkedin_backfill_plan():
+    """Pure planning for the one-shot date backfill: approximate rows get the decoded
+    time, rows already within the actor's 1s truncation stay put, id-less rows are
+    counted and left alone. Output datetimes are naive UTC like every loader's."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import datetime
+    import linkedin_backfill_dates as bf
+    urn = "https://www.linkedin.com/feed/update/urn:li:activity:6050442574873796609/"
+    slug = ("https://www.linkedin.com/posts/lindahaviv_one-of-my-favorite-conferences-"
+            "of-the-year-activity-7517687465206394880-L2iY")
+    rows = [
+        (1, urn, datetime.datetime(2016, 7, 5, 1, 55, 2), "content"),          # a year off
+        (2, slug, datetime.datetime(2026, 10, 18, 20, 46, 3), "content"),      # exact (ms truncated)
+        (3, "https://www.linkedin.com/feed/update/lh-0123456789ab", datetime.datetime(2026, 5, 1), "content"),
+        (4, urn, None, "business"),                                            # never dated
+    ]
+    changes, exact, no_id = bf.plan(rows)
+    assert (exact, no_id) == (1, 1)
+    assert [c[0] for c in changes] == [1, 4]
+    pid, url, old, new, vis = changes[0]
+    assert new == datetime.datetime(2015, 9, 18, 0, 58, 41, 637000) and new.tzinfo is None
+    assert changes[1][2] is None and changes[1][4] == "business"
 
 
 def test_tiktok_apify_parse_guards():
@@ -1372,6 +1443,119 @@ def test_ingest_note_kind():
         c.commit()
     finally:
         c.close()
+
+
+# ---- Claude Code learnings sweep (scripts/claude_code_sweep.py): pure parts -----------------
+
+def _sweep():
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import claude_code_sweep
+    return claude_code_sweep
+
+
+def test_sweep_folder_filter():
+    """One-way by construction: the brain's own folder, its worktrees, the desktop app's scratch
+    workspaces and sibling clones are never read; include/exclude are case-insensitive."""
+    s = _sweep()
+    own = "-Users-me-Development-Second-Brain-Main"
+    ok = lambda name, **kw: s.is_candidate(name, root_name=own, marker="second-brain", **kw)
+    assert ok("-Users-me-Projects-Reels-Editing-Engine")
+    assert not ok(own)
+    assert not ok(own + "--claude-worktrees-serene-newton-524ba8")
+    assert not ok("-Users-me-Library-Application-Support-Claude-scratch-workspaces-abc-scratch-2026-09-15-009ba3")
+    assert not ok("-Users-me-Development-second-brain-demo")
+    assert ok("-Users-me-Projects-Reels-Editing-Engine", include=["reels"])
+    assert not ok("-Users-me-Projects-Reels-Editing-Engine", include=["other"])
+    assert not ok("-Users-me-Projects-Reels-Editing-Engine", exclude=["REELS"])
+    assert s.project_slug("-Users-me-Projects-Reels-Editing-Engine") == "Reels-Editing-Engine"
+    assert s.project_slug("-Users-me-Development-Content-Control-Center") == "Content-Control-Center"
+
+
+def test_sweep_memory_note_shape():
+    """A memory file's one-line description becomes the searchable title, the lane is named,
+    the url is stable per (folder, name) so re-runs update instead of duplicating."""
+    s = _sweep()
+    text = ("---\nname: no-dig-hooks\ndescription: never a hook that digs at another company\n"
+            "metadata:\n  type: feedback\n---\n\nBody line one.\n\n**Why:** reputation.\n")
+    meta, body = s.parse_memory_file(text)
+    assert meta == {"name": "no-dig-hooks", "description": "never a hook that digs at another company",
+                    "type": "feedback"}   # nested under metadata: in the real files; still wanted
+    assert body.startswith("Body line one.") and body.endswith("reputation.")
+    title, note, url = s.memory_note("-Users-me-Projects-Reels-Editing-Engine",
+                                    pathlib.Path("no-dig-hooks.md"), text)
+    assert title == "Reels-Editing-Engine learned: never a hook that digs at another company"
+    assert url == "claude-memory://Reels-Editing-Engine/no-dig-hooks"
+    assert "Source: Claude Code memory of the Reels-Editing-Engine project" in note
+    # no frontmatter at all: filename stands in for the name
+    meta2, body2 = s.parse_memory_file("just a body")
+    assert meta2 == {} and body2 == "just a body"
+
+
+def test_sweep_user_text_only():
+    """The distill input is HER words: assistant turns, tool results, harness notices and
+    slash-command echoes are dropped, and the shared redactor runs over what remains."""
+    import json as _json
+    import tempfile
+    s = _sweep()
+    # credential-shaped on purpose, assembled at runtime so no key-like literal sits in a
+    # tracked file (the weekly secret scan reads this file too)
+    fake_key = "sk-ant-" + "api03-" + "x" * 46
+    rows = [
+        {"message": {"role": "user", "content": "I don't do hooks like that, clickbait that digs."}},
+        {"message": {"role": "assistant", "content": [{"type": "text", "text": "Understood, new hook:"}]}},
+        {"message": {"role": "user", "content": [{"type": "tool_result", "content": "stdout junk"}]}},
+        {"message": {"role": "user", "content": [{"type": "text", "text":
+            "<system-reminder>harness noise</system-reminder>keep the cutaways short"}]}},
+        {"message": {"role": "user", "content": "<local-command-stdout>ignored</local-command-stdout>"}},
+        {"message": {"role": "user", "content": "my key is " + fake_key}},
+        {"not": "a message line"},
+    ]
+    with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
+        for r in rows:
+            f.write(_json.dumps(r) + "\n")
+        f.write("not json\n")
+    texts = s.user_text_of(f.name)
+    assert texts[0].startswith("I don't do hooks")
+    assert texts[1] == "keep the cutaways short"
+    assert not any("Understood" in t or "stdout" in t for t in texts)
+    assert all(fake_key not in t for t in texts), texts
+
+
+def test_sweep_learning_note_and_sync_step():
+    """A distilled learning carries the quote it rests on and a per-session url; the sweep is
+    scheduled by the sync right after the Claude Code loader and before the wiki refresh."""
+    s = _sweep()
+    it = {"title": "No dig hooks", "rule": "Hook from the idea, never knock a third party.",
+          "why": "relationships", "quote": "I don't do hooks like that", "kind": "correction", "topic": "hooks"}
+    title, body, url = s.learning_note("Reels-Editing-Engine", "abc123", 2, it, "2026-10-09")
+    assert title == "Reels-Editing-Engine feedback: No dig hooks"
+    assert url == "claude-session://Reels-Editing-Engine/abc123#2"
+    assert 'Her words: "I don\'t do hooks like that"' in body and "Why: relationships" in body
+    labels = [ln.strip().split('"')[1] for ln in (ROOT / "scripts" / "sync.py").read_text().splitlines()
+              if ln.strip().startswith('("')]
+    assert labels.index("Claude Code") < labels.index("Claude Code learnings") < labels.index("Wiki refresh")
+
+
+def test_sweep_exit_code_ignores_session_errors():
+    """A sweep that ran and wrote its report is a healthy step even when some sessions
+    failed to distill (they stay in the report and retry next run); only a fatal
+    failure exits non-zero."""
+    s = _sweep()
+    assert s.exit_code({"errors": []}) == 0
+    assert s.exit_code({"errors": ["proj/abc: distill failed: Unterminated string"]}) == 0
+    assert s.exit_code({"errors": [], "fatal": "no folders readable"}) == 1
+
+
+def test_llm_truncation_retry_budget():
+    """A structured reply cut off by max_tokens is retried with a doubled budget up to
+    the cap; at the cap there is no retry (the caller gets a clear error, not half a JSON)."""
+    sys.path.insert(0, str(ROOT / "oracle" / "agent"))
+    import llm
+    assert llm.next_budget(8192, cap=32000) == 16384
+    assert llm.next_budget(20000, cap=32000) == 32000
+    assert llm.next_budget(32000, cap=32000) is None
+    assert llm.next_budget(40000, cap=32000) is None
+    assert llm.next_budget(16384) == min(32768, llm.STRUCTURED_MAX_TOKENS)
 
 
 if __name__ == "__main__":
