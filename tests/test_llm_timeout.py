@@ -64,3 +64,24 @@ def test_consolidate_revives_a_dropped_db_session(monkeypatch):
     monkeypatch.setitem(sys.modules, "db", types.SimpleNamespace(open_connection=lambda: fresh))
     assert sm._alive(Dead()) is fresh
     assert sm._alive(fresh) is fresh
+
+
+def test_sync_lock_refuses_a_second_runner(tmp_path, monkeypatch):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "sync_mod", pathlib.Path(__file__).resolve().parent.parent / "scripts" / "sync.py")
+    sync_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sync_mod)
+    monkeypatch.setattr(sync_mod, "ROOT", tmp_path)
+    first = sync_mod._lock()
+    assert first is not None
+    import pytest
+    with pytest.raises(SystemExit) as ex:
+        sync_mod._lock()
+    assert ex.value.code == 0
+    first.close()
+
+
+def test_reconcile_skips_x_replies():
+    src = (pathlib.Path(__file__).resolve().parent.parent / "scripts" / "reconcile_content.py").read_text()
+    assert 'startswith("@")' in src

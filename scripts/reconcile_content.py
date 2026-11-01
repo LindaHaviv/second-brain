@@ -216,6 +216,8 @@ def main():
         for url, title, published in candidates_for(cur, pid, lo, now):
             if url in matched_urls:
                 continue
+            if (title or "").lstrip().startswith("@"):   # a reply, never a calendar item
+                continue
             key = (plat, normalize(title)[:60])   # harvests can hold URL variants of
             if key in seen_titles:                # one post — report each post once
                 continue

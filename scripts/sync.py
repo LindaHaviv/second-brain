@@ -146,7 +146,25 @@ def _run_step(label, argv, results):
     return rc
 
 
+def _lock():
+    """One sync at a time. The 9:00 LaunchAgent and a manual run overlapped this morning
+    and both re-embedded the same transcripts; the loser of the race just exits."""
+    import fcntl
+    path = ROOT / "exports" / "sync.lock"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fh = open(path, "w")
+    try:
+        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        print("sync: another sync is already running (exports/sync.lock held) — exiting")
+        sys.exit(0)
+    fh.write(str(os.getpid()))
+    fh.flush()
+    return fh   # keep the handle alive for the whole run
+
+
 def main():
+    _lock_fh = _lock()  # noqa: F841 - released when the process exits
     results = []
     # FIRST: pick up any new chat-export zips (drop-zip-and-forget). Runs before the
     # tags-reset check so a fresh import gets classified in THIS run, not tomorrow's.
