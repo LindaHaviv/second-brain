@@ -47,3 +47,20 @@ def test_wiki_growth_failure_does_not_block_bookkeeping():
     growth = src[src.index("# growth:"):src.index("_set_hwm(cur, cur_max)")]
     assert "try:" in growth and "except Exception" in growth, "growth step must be fenced"
     assert "growth step skipped" in growth
+
+
+def test_consolidate_revives_a_dropped_db_session(monkeypatch):
+    import semantic_memory as sm
+
+    class Dead:
+        def ping(self):
+            raise RuntimeError("DPY-1001: not connected to database")
+
+    class Fresh:
+        def ping(self):
+            return None
+
+    fresh = Fresh()
+    monkeypatch.setitem(sys.modules, "db", types.SimpleNamespace(open_connection=lambda: fresh))
+    assert sm._alive(Dead()) is fresh
+    assert sm._alive(fresh) is fresh

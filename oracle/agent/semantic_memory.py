@@ -94,6 +94,12 @@ def consolidate(client, conn, limit=30, title_sample=80):
     )
     facts = llm.structured(_SYS, prompt, _SCHEMA, max_tokens=16384)["facts"]
 
+    # The model call above can take minutes (a timed-out attempt plus its retry is ~20).
+    # Autonomous DB drops a session that idles that long, and the write below then dies
+    # with DPY-1001 "not connected" (and so does the rollback). Revive before writing.
+    conn = _alive(conn)
+    cur = conn.cursor()
+
     # rebuild the consolidation snapshot in ONE transaction; roll back on ANY failure
     # so a half-done rebuild can never leave a pending DELETE of all facts that a
     # later, unrelated commit() on this shared connection would silently finalize.
@@ -112,6 +118,18 @@ def consolidate(client, conn, limit=30, title_sample=80):
         conn.rollback()
         raise
     return facts
+
+
+def _alive(conn):
+    """Return a usable connection: `conn` if it still answers a ping, else a fresh one."""
+    try:
+        conn.ping()
+        return conn
+    except Exception as e:  # noqa: BLE001 - any failure means: reconnect
+        import db
+        print(f"  (db session dropped during the model call: {type(e).__name__}; reconnecting)",
+              flush=True)
+        return db.open_connection()
 
 
 def _clamp_bytes(s, limit):
