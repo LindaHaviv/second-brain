@@ -243,6 +243,12 @@
           "scope": "generic"
         },
         {
+          "name": "Threads apify",
+          "desc": "Collect step (Threads): scheduled self-scrape of YOUR OWN public Threads posts via a",
+          "where": "scripts/threads_apify.py",
+          "scope": "generic"
+        },
+        {
           "name": "Tiktok apify",
           "desc": "Collect step (TikTok): scheduled self-scrape of YOUR OWN public videos via a",
           "where": "scripts/tiktok_apify.py",
@@ -379,6 +385,12 @@
           "name": "Sync",
           "desc": "Keep the brain current: and never let the derived layers go stale.",
           "where": "scripts/sync.py",
+          "scope": "generic"
+        },
+        {
+          "name": "Transcribe posts",
+          "desc": "Transcribe the videos you actually published, across every platform, into the brain.",
+          "where": "scripts/transcribe_posts.py",
           "scope": "generic"
         },
         {

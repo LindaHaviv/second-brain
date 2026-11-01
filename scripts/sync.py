@@ -43,6 +43,7 @@ STEPS = [
     ("LinkedIn",     [str(ROOT / "scripts" / "linkedin_apify.py")],     "APIFY_TOKEN"),
     ("TikTok",       [str(ROOT / "scripts" / "tiktok_apify.py")],       "TIKTOK_HANDLE"),
     ("X",            [str(ROOT / "scripts" / "x_apify.py")],            "X_HANDLE"),
+    ("Threads",      [str(ROOT / "scripts" / "threads_apify.py")],      "THREADS_HANDLE"),
     ("YouTube",      [str(ROOT / "scripts" / "youtube_harvest.py")],    "YT_CHANNEL_URL"),
     ("Obsidian",     [str(ROOT / "scripts" / "obsidian.py")],           "OBSIDIAN_VAULT"),
     ("Google Drive", [str(ROOT / "scripts" / "gdrive.py")],             "GDRIVE_KEY"),
@@ -55,6 +56,9 @@ STEPS = [
     # what the OTHER Claude Code folders learned about the user (their memory files +
     # explicit feedback in their sessions) -> notes, one way, before the wiki sees them
     ("Claude Code learnings", [str(ROOT / "scripts" / "claude_code_sweep.py")], LLM_KEY),
+    # the spoken words of every published video, daily, newest first (TRANSCRIBE_MAX/run);
+    # after every loader so new posts are seen, before the wiki so it compiles from them
+    ("Transcripts",  [str(ROOT / "scripts" / "transcribe_posts.py")],   "TRANSCRIBE_BACKEND"),
     ("Wiki refresh", [str(ROOT / "oracle" / "agent" / "wiki.py"), "--refresh"], None),
     ("Consolidate",  [str(ROOT / "scripts" / "consolidate.py")],        None),
     # forgetting stages, in the only safe order: distill first (Consolidate, above), THEN
