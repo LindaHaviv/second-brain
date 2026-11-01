@@ -69,14 +69,36 @@ def _build_auth():
         raise SystemExit("could not access AuthKitProvider's token verifier to apply the allowlist")
     _orig_verify = verifier.verify_token
 
+    # SCOPED CALLERS (2026-10-31): a sub listed in PRINCIPALS is admitted with ONLY its
+    # scopes (scope_middleware.py filters the tool list); a sub on the allowlist with no
+    # PRINCIPALS entry stays owner. STATIC_TOKENS ({"pearl": "<token>"}) admits a named
+    # bearer token beside OAuth for clients that can't do the browser flow (a personal
+    # agent app); its name MUST appear in PRINCIPALS or it is refused — a static token is
+    # never owner.
+    import hmac as _hmac
+    import scopes as _sc
+    principals = _sc.load_principals()
+    static = json.loads(os.environ.get("STATIC_TOKENS") or "{}")
+    for name, tok in static.items():
+        if len(tok) < 32:
+            raise SystemExit(f"STATIC_TOKENS[{name!r}] is shorter than 32 chars; refusing")
+        if name not in principals:
+            raise SystemExit(f"STATIC_TOKENS[{name!r}] has no PRINCIPALS entry (scopes); refusing")
+
     async def _verify_with_allowlist(token):
+        for name, tok in static.items():
+            if _hmac.compare_digest(token or "", tok):
+                from fastmcp.server.auth import AccessToken
+                return AccessToken(token=token, client_id=name,
+                                   scopes=sorted(principals[name]), expires_at=None)
         at = await _orig_verify(token)
         if not at:
             return None
         claims = getattr(at, "claims", None) or {}
         email = str(claims.get("email") or "").lower()
         sub = str(claims.get("sub") or "")
-        ok = (email and email in allowed) or (sub and sub in allowed_subs)
+        ok = ((email and email in allowed) or (sub and sub in allowed_subs)
+              or (sub and sub in principals))
         if not ok:   # log denials only (security signal); allowed requests stay quiet
             print(f"[allowlist] DENIED email={email!r} sub={sub!r}", flush=True)
         return at if ok else None
@@ -114,6 +136,11 @@ caption_pack, weekly_review). Each is a ready-to-run agent recipe that YOU execu
 the tools above — prefer them when the user asks for that kind of deliverable."""
 
 mcp = FastMCP("second-brain", auth=_build_auth(), instructions=INSTRUCTIONS)
+
+# Scopes: what each caller may see (scopes.py). No token -> owner, so the local stdio
+# server and the single-owner hosted setup behave exactly as before.
+from scope_middleware import ScopeMiddleware   # noqa: E402
+mcp.add_middleware(ScopeMiddleware())
 
 # Read/write separation (best practice). MCP tool *annotations* tell every client which tools
 # only read vs. which mutate the brain, so a client can auto-allow reads and gate writes:
