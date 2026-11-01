@@ -69,6 +69,13 @@ MCP server. Everything below is what a maintainer would tell you on day one.
 - **Touch the MCP server:** `oracle/agent/mcp_server.py`. Read tools get
   `readOnlyHint`; write tools must stay gated and unregistered under `MCP_READONLY=1`.
   `tests/test_brain.py` pins the exact public tool list — update it deliberately.
+  **The tool CONTRACT is frozen** (`tests/test_tool_contract.py` + `tool_contract.json`):
+  connected clients snapshot `tools/list` when they connect and never re-read it on a
+  redeploy, so a shipped tool keeps its name, description and input schema forever.
+  New capability = a new tool or a new OPTIONAL field. Changing the snapshot is a
+  deliberate act (`--update`), and the commit message says that every client needs
+  "Refresh tools list". Behaviour behind a tool (what it returns, how it searches) can
+  change freely — that is never cached.
 - **Set up the database:** don't hand-roll SQL; `oracle/bootstrap.sh` applies the
   schema idempotently. The schema files assume the `CCC` schema — restoring into
   another schema name requires stripping the `current_schema` lines.
