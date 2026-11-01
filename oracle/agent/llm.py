@@ -67,6 +67,12 @@ def record_usage(model, tokens_in, tokens_out, label=None):
 # at 03:00 is how the memory consolidation step went dark for twelve days.
 STRUCTURED_MAX_TOKENS = int(os.environ.get("LLM_STRUCTURED_MAX_TOKENS", "32000"))
 
+# One round-trip may not outlive this (seconds). The SDK defaults (600 s, 2 silent retries)
+# let a dead connection hold a sync for ~30 min with nothing in the ledger; a long page
+# at the 32k cap streams in well under 10 min, so 600 s with ONE retry bounds the worst
+# case at 20 min and the usual case at 10.
+LLM_TIMEOUT = float(os.environ.get("LLM_TIMEOUT", "600"))
+
 
 def next_budget(budget, cap=None):
     """Pure (unit-tested): the retry budget after a truncation at `budget`, or None when
@@ -85,7 +91,7 @@ def _call(system, prompt, schema, max_tokens, model):
     """One provider round-trip -> (text, truncated). Usage is recorded here."""
     if PROVIDER == "anthropic":
         import anthropic
-        r = anthropic.Anthropic().messages.create(
+        r = anthropic.Anthropic(timeout=LLM_TIMEOUT, max_retries=1).messages.create(
             model=model or MODEL, max_tokens=max_tokens, system=system,
             messages=[{"role": "user", "content": prompt}],
             output_config={"format": {"type": "json_schema", "schema": schema}})
@@ -98,7 +104,7 @@ def _call(system, prompt, schema, max_tokens, model):
             from openai import OpenAI
         except ImportError:
             raise SystemExit("LLM_PROVIDER=openai needs the sdk: ./.venv/bin/pip install openai")
-        r = OpenAI().chat.completions.create(
+        r = OpenAI(timeout=LLM_TIMEOUT, max_retries=1).chat.completions.create(
             model=MODEL, max_completion_tokens=max_tokens,
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": prompt}],
@@ -117,7 +123,7 @@ def _call(system, prompt, schema, max_tokens, model):
                                         {"role": "user", "content": prompt}]}).encode()
         req = urllib.request.Request(f"{host}/api/chat", data=body,
                                      headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=600) as resp:
+        with urllib.request.urlopen(req, timeout=LLM_TIMEOUT) as resp:
             data = json.loads(resp.read())
         record_usage(MODEL, data.get("prompt_eval_count"), data.get("eval_count"))
         return data["message"]["content"], data.get("done_reason") == "length"

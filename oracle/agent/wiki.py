@@ -6,6 +6,7 @@ stored in Oracle (wiki_pages + page_sources + page_links).
 
   python wiki.py            # full (re)build: propose topics + compile every page
   python wiki.py --refresh  # SELF-IMPROVING: update touched pages + GROW new ones (cheap)
+  python wiki.py --catch-up # after an interrupted --refresh: record progress, compile nothing
 
 The refresh is what makes the layer self-improving, in both directions: it recompiles the
 pages your new content touches, AND proposes new topic pages when new content clusters
@@ -245,15 +246,22 @@ def refresh_wiki(client, conn):
     uncovered = new_ids - covered
     added = []
     if len(uncovered) >= int(__import__("os").environ.get("WIKI_NEW_TOPIC_MIN", "15")):
-        for topic in propose_new_topics(client, conn, topics, uncovered):
-            body, cites, links = compile_page(client, conn, topic, topics + added)
-            pid = _insert_page(cur, topic, body)
-            name2id[topic.lower()] = pid
-            link_plan[pid] = links
-            _set_citations(cur, pid, cites)
-            added.append(topic)
-            conn.commit()
-            print(f"  NEW page '{topic}'  ({len(cites)} citations)")
+        # Growth is optional: the refreshes above are already committed, so a failure here
+        # (model timeout, bad JSON) must not stop the links + high-water mark below, or the
+        # next run re-compiles every page it just finished.
+        print(f"  growth: {len(uncovered)} new posts reached by no topic; asking for new pages", flush=True)
+        try:
+            for topic in propose_new_topics(client, conn, topics, uncovered):
+                body, cites, links = compile_page(client, conn, topic, topics + added)
+                pid = _insert_page(cur, topic, body)
+                name2id[topic.lower()] = pid
+                link_plan[pid] = links
+                _set_citations(cur, pid, cites)
+                added.append(topic)
+                conn.commit()
+                print(f"  NEW page '{topic}'  ({len(cites)} citations)")
+        except Exception as e:  # noqa: BLE001 - growth never blocks bookkeeping
+            print(f"  growth step skipped: {type(e).__name__}: {str(e)[:200]}", flush=True)
 
     for pid, links in link_plan.items():
         _set_links(cur, pid, links, name2id)
@@ -267,7 +275,17 @@ def main():
     client = anthropic.Anthropic()
     conn = open_connection()
     try:
-        if "--refresh" in sys.argv:
+        if "--catch-up" in sys.argv:
+            # After an interrupted --refresh: the per-topic recompiles are committed one by
+            # one, but the high-water mark is only written at the end, so the next run would
+            # redo every page. This records "seen up to now" without any model calls.
+            cur = conn.cursor()
+            cur.execute("alter session disable parallel dml")
+            hwm, cur_max = _get_hwm(cur), _max_post_id(cur)
+            _set_hwm(cur, cur_max)
+            conn.commit()
+            print(f"wiki high-water mark {hwm} -> {cur_max} (no pages compiled)")
+        elif "--refresh" in sys.argv:
             refresh_wiki(client, conn)
         else:
             build_wiki(client, conn)
