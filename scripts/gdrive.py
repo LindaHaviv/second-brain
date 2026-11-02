@@ -26,6 +26,7 @@ re-import in place. Safe for the scheduled daily sync (pure API, no browser).
 """
 import hashlib
 import io
+import json
 import os
 import pathlib
 import re
@@ -121,6 +122,21 @@ def fetch_text(sess, f, handler):
     return ""
 
 
+FORBIDDEN = pathlib.Path(__file__).resolve().parents[1] / "exports" / "gdrive_forbidden.json"
+
+
+def _load_forbidden():
+    try:
+        return json.loads(FORBIDDEN.read_text())
+    except Exception:
+        return {}
+
+
+def _save_forbidden(d):
+    FORBIDDEN.parent.mkdir(parents=True, exist_ok=True)
+    FORBIDDEN.write_text(json.dumps(d, indent=1, sort_keys=True))
+
+
 def main():
     key = os.environ.get("GDRIVE_KEY")
     folders = [x.strip() for x in os.environ.get("GDRIVE_FOLDERS", "").split(",") if x.strip()]
@@ -140,6 +156,7 @@ def main():
                 "insert (platform_id, display_name) values ('gdrive','Google Drive')")
 
     new = updated = unchanged = skipped = 0
+    forbidden = _load_forbidden()
     for fid in folders:
         r = sess.get(f"{API}/files/{fid}", params={"fields": "name"}, timeout=60)
         r.raise_for_status()
@@ -162,10 +179,23 @@ def main():
             if cur.fetchone():
                 unchanged += 1
                 continue
+            if f["id"] in forbidden:
+                skipped += 1            # already known: this account may not download it
+                continue
             try:
                 body = fetch_text(sess, f, handler).strip()
             except Exception as e:
-                print(f"  ! {f['name']}: {e}")
+                if "403" in str(e):
+                    # The service account can list it but not download it (owner set
+                    # "viewers can't download", or it is shared view-only). Retrying every
+                    # morning only fills the log; remember it and say so once.
+                    forbidden[f["id"]] = f["name"]
+                    _save_forbidden(forbidden)
+                    print(f"  ! {f['name']}: 403 forbidden to download — skipping from now on "
+                          f"(share it with the service account with download allowed, or "
+                          f"remove it from exports/gdrive_forbidden.json to retry)")
+                else:
+                    print(f"  ! {f['name']}: {e}")
                 continue
             if len(body) < 15:
                 continue

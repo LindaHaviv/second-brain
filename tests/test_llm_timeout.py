@@ -85,3 +85,9 @@ def test_sync_lock_refuses_a_second_runner(tmp_path, monkeypatch):
 def test_reconcile_skips_x_replies():
     src = (pathlib.Path(__file__).resolve().parent.parent / "scripts" / "reconcile_content.py").read_text()
     assert 'startswith("@")' in src
+
+
+def test_reconcile_never_calls_parked_or_complete_rows_late():
+    src = (pathlib.Path(__file__).resolve().parent.parent / "scripts" / "reconcile_content.py").read_text()
+    assert 'PARKED = "On Hold"' in src
+    assert 'row["phase"] in (PARKED, COMPLETE)' in src

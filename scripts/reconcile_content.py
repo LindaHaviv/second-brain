@@ -44,6 +44,7 @@ NO_DATE_WINDOW = 90                # rows without an expected date: recent posts
 LATE_AFTER_DAYS = 3                # expected date this far past + no match = "late"
 UNTRACKED_WINDOW = 30              # shipped-but-not-tracked lookback
 COMPLETE = "Complete"
+PARKED = "On Hold"                 # a parked plan is not late; it is parked
 
 
 def normalize(s):
@@ -205,6 +206,8 @@ def main():
                 stamp(notion, row, actual, links, complete)
             stamped.append(f"- {row['title']}: {', '.join(p for p, _, _ in found)}"
                            f"{' -> Complete' if complete else ''}")
+        elif row["phase"] in (PARKED, COMPLETE):
+            continue   # parked on purpose, or marked done by hand: never "late"
         elif row["expected"] and (now - row["expected"]).days > LATE_AFTER_DAYS:
             late.append(f"- {row['title']} (expected {row['expected'].date()}, "
                         f"{', '.join(row['platforms'])})")
